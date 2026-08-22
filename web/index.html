@@ -30,6 +30,7 @@
             <p class="eyebrow" id="topbar-label">LOADING COURSE</p>
             <p class="topbar-title" id="topbar-title">Preparing your study space…</p>
           </div>
+          <button class="icon-button" id="auth-lock" aria-label="Lock workspace" title="Lock workspace">🔒</button>
           <button class="icon-button" id="theme-toggle" aria-label="Switch color theme" title="Switch color theme">◐</button>
         </header>
 
@@ -42,6 +43,39 @@
       </main>
     </div>
     <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <div class="auth-overlay" id="auth-overlay" hidden>
+      <div class="auth-card">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">S</div>
+          <div>
+            <p class="eyebrow">PRIVATE ACCESS</p>
+            <h1>Switch</h1>
+          </div>
+        </div>
+        <h2>Sign in to Study</h2>
+        <p class="subtitle">Enter your credentials to unlock your curriculum.</p>
+        <form class="auth-form" id="auth-form">
+          <div class="auth-field">
+            <label for="auth-username">Username</label>
+            <input type="text" id="auth-username" autocomplete="username" required placeholder="Enter username" />
+          </div>
+          <div class="auth-field">
+            <label for="auth-password">Password</label>
+            <input type="password" id="auth-password" autocomplete="current-password" required placeholder="Enter password" />
+          </div>
+          <div class="auth-options">
+            <label>
+              <input type="checkbox" id="auth-remember" checked />
+              <span>Remember me</span>
+            </label>
+          </div>
+          <div class="auth-error" id="auth-error" hidden>Invalid username or password</div>
+          <button type="submit" class="auth-submit">Unlock Workspace</button>
+        </form>
+      </div>
+    </div>
+
     <script src="app.js"></script>
   </body>
 </html>

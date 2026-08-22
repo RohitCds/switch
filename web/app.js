@@ -186,12 +186,119 @@ function render() {
 function openSidebar() { $("#sidebar").classList.add("open"); $("#sidebar-backdrop").classList.add("open"); }
 function closeSidebar() { $("#sidebar").classList.remove("open"); $("#sidebar-backdrop").classList.remove("open"); }
 
+// Auth credentials config: SHA-256 of "username:password"
+// Default credentials: username = "rohit", password = "switch2026"
+// To change, generate a new hash: python3 -c "import hashlib; print(hashlib.sha256('your_username:your_password'.encode()).hexdigest())"
+const AUTH_CONFIG = {
+  username: "Rohit",
+  hash: "cf7788adb0ebbad8f664be49effd683504e7364ba60682a5c65627ab055a015e",
+};
+
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function isAuthenticated() {
+  return sessionStorage.getItem("switch:auth") === "true" || localStorage.getItem("switch:auth") === "true";
+}
+
+function showAuthModal() {
+  const overlay = $("#auth-overlay");
+  overlay.removeAttribute("hidden");
+  $("#auth-error").setAttribute("hidden", "");
+  $("#auth-username").value = "";
+  $("#auth-password").value = "";
+  setTimeout(() => $("#auth-username")?.focus(), 50);
+}
+
+function hideAuthModal() {
+  $("#auth-overlay").setAttribute("hidden", "");
+}
+
+async function handleLogin(event) {
+  event.preventDefault();
+  const username = $("#auth-username").value.trim();
+  const password = $("#auth-password").value;
+  const remember = $("#auth-remember").checked;
+  const errorEl = $("#auth-error");
+
+  const computedHash = await sha256(`${username}:${password}`);
+  if (username.toLowerCase() === AUTH_CONFIG.username.toLowerCase() && computedHash === AUTH_CONFIG.hash) {
+    errorEl.setAttribute("hidden", "");
+    if (remember) {
+      localStorage.setItem("switch:auth", "true");
+    } else {
+      sessionStorage.setItem("switch:auth", "true");
+    }
+    hideAuthModal();
+    if (!state.index) {
+      await loadCourseData();
+    }
+  } else {
+    errorEl.removeAttribute("hidden");
+    errorEl.textContent = "Invalid username or password";
+    $("#auth-password").value = "";
+    $("#auth-password").focus();
+  }
+}
+
+function handleLock() {
+  sessionStorage.removeItem("switch:auth");
+  localStorage.removeItem("switch:auth");
+  showAuthModal();
+}
+
+async function loadCourseData() {
+  try {
+    const response = await fetch("../generated/index.json");
+    if (!response.ok) throw new Error("Could not load generated/index.json.");
+    state.index = await response.json();
+    await loadDay(state.selectedDay);
+  } catch (error) {
+    $("#workspace").innerHTML = `<div class="empty"><h2>Couldn’t load your study data.</h2><p>${escapeHtml(error.message)} Run the site through a local server from the project root, not by opening this file directly.</p></div>`;
+  }
+}
+
 async function init() {
-  $("#open-sidebar").addEventListener("click", openSidebar); $("#close-sidebar").addEventListener("click", closeSidebar); $("#sidebar-backdrop").addEventListener("click", closeSidebar);
-  $("#theme-toggle").addEventListener("click", () => { const dark = document.documentElement.dataset.theme !== "dark"; document.documentElement.dataset.theme = dark ? "dark" : ""; localStorage.setItem("switch:theme", dark ? "dark" : "light"); });
+  $("#open-sidebar").addEventListener("click", openSidebar);
+  $("#close-sidebar").addEventListener("click", closeSidebar);
+  $("#sidebar-backdrop").addEventListener("click", closeSidebar);
+  $("#auth-form").addEventListener("submit", handleLogin);
+  $("#auth-lock").addEventListener("click", handleLock);
+
+  $("#theme-toggle").addEventListener("click", () => {
+    const dark = document.documentElement.dataset.theme !== "dark";
+    document.documentElement.dataset.theme = dark ? "dark" : "";
+    localStorage.setItem("switch:theme", dark ? "dark" : "light");
+  });
   if (localStorage.getItem("switch:theme") === "dark") document.documentElement.dataset.theme = "dark";
-  document.addEventListener("keydown", (event) => { if (event.target.matches("input")) return; if (state.mode === "learn" && event.key === "ArrowRight" && state.selectedCard < filteredCards().length - 1) { state.selectedCard += 1; render(); } if (state.mode === "learn" && event.key === "ArrowLeft" && state.selectedCard > 0) { state.selectedCard -= 1; render(); } if (state.mode === "drill" && event.key === " ") { event.preventDefault(); state.revealed = !state.revealed; render(); } });
-  try { const response = await fetch("../generated/index.json"); if (!response.ok) throw new Error("Could not load generated/index.json."); state.index = await response.json(); await loadDay(state.selectedDay); } catch (error) { $("#workspace").innerHTML = `<div class="empty"><h2>Couldn’t load your study data.</h2><p>${escapeHtml(error.message)} Run the site through a local server from the project root, not by opening this file directly.</p></div>`; }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.target.matches("input")) return;
+    if (state.mode === "learn" && event.key === "ArrowRight" && state.selectedCard < filteredCards().length - 1) {
+      state.selectedCard += 1;
+      render();
+    }
+    if (state.mode === "learn" && event.key === "ArrowLeft" && state.selectedCard > 0) {
+      state.selectedCard -= 1;
+      render();
+    }
+    if (state.mode === "drill" && event.key === " ") {
+      event.preventDefault();
+      state.revealed = !state.revealed;
+      render();
+    }
+  });
+
+  if (isAuthenticated()) {
+    hideAuthModal();
+    await loadCourseData();
+  } else {
+    showAuthModal();
+  }
 }
 
 init();
