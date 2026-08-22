@@ -12,6 +12,8 @@
   --lime: #dbec7a;
   --sand: #f7e7bf;
   --coral: #e67458;
+  --code-bg: #15221d;
+  --code-ink: #e8f1ea;
   --shadow: 0 16px 38px rgba(34, 45, 39, 0.09);
 }
 
@@ -27,6 +29,8 @@
   --lime: #38bdf8;
   --sand: #312e81;
   --coral: #f43f5e;
+  --code-bg: #07090c;
+  --code-ink: #e2e8f0;
   --shadow: 0 16px 38px rgba(0, 0, 0, 0.45);
 }
 
@@ -120,8 +124,8 @@ button { cursor: pointer; }
 .markdown { padding: 8px 25px 21px; font-size: 14px; line-height: 1.72; }
 .markdown h4 { margin: 24px 0 7px; color: var(--forest); font-size: 13px; letter-spacing: -.1px; }
 .markdown p { margin: 0 0 14px; }.markdown ul, .markdown ol { padding-left: 21px; margin: 0 0 14px; }.markdown li { margin-bottom: 5px; }
-.markdown pre { overflow-x: auto; padding: 14px; border-radius: 10px; color: #e8f1ea; background: #15221d; font: 12px/1.6 "DM Mono", monospace; }.markdown code { padding: 1px 4px; border-radius: 4px; background: var(--surface-soft); font: .88em "DM Mono", monospace; }.markdown pre code { padding: 0; background: transparent; }
-.markdown blockquote { margin: 15px 0; padding: 10px 14px; border-left: 3px solid var(--lime); background: var(--surface-soft); color: var(--muted); }.markdown table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 14px 0; }.markdown th, .markdown td { padding: 8px 10px; border: 1px solid var(--line); text-align: left; white-space: nowrap; }.markdown th { background: var(--surface-soft); }
+.markdown pre { overflow-x: auto; padding: 14px; border: 1px solid var(--line); border-radius: 10px; color: var(--code-ink); background: var(--code-bg); font: 12px/1.6 "DM Mono", monospace; }.markdown code { padding: 1px 4px; border-radius: 4px; background: var(--surface-soft); font: .88em "DM Mono", monospace; }.markdown pre code { padding: 0; background: transparent; }
+.markdown blockquote { margin: 16px 0; padding: 12px 18px; border-left: 3px solid var(--forest); border-radius: 0 10px 10px 0; background: var(--surface-soft); color: var(--ink); font-size: 13.5px; line-height: 1.65; }.markdown table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 14px 0; }.markdown th, .markdown td { padding: 8px 10px; border: 1px solid var(--line); text-align: left; white-space: nowrap; }.markdown th { background: var(--surface-soft); }
 .card-actions { display: flex; justify-content: space-between; gap: 10px; padding: 16px 25px 23px; border-top: 1px solid var(--line); }
 .button { padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface); font-size: 12px; font-weight: 800; }.button:hover { border-color: var(--forest); color: var(--forest); }.button.primary { border-color: var(--forest); color: #fff; background: var(--forest); }.button.primary:hover { color: #fff; background: var(--forest-deep); }
 .empty { padding: 45px 20px; color: var(--muted); text-align: center; font-size: 13px; }

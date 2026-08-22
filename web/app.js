@@ -29,13 +29,24 @@ function inlineMarkdown(text) {
 }
 
 function markdownToHtml(markdown) {
-  const lines = markdown.replace(/\n---\s*$/m, "").split("\n");
+  // Notes use both `> text` and indented `  > text` for callouts. Normalize the
+  // latter first so the Interview-Ready Explanation always renders as a quote.
+  const lines = markdown
+    .replace(/\n---\s*$/m, "")
+    .replace(/^\s{1,3}(?=>\s?)/gm, "")
+    .split("\n");
   let html = "";
   let inCode = false;
   let code = [];
   let listType = null;
+  let quote = [];
   let table = [];
   const closeList = () => { if (listType) { html += `</${listType}>`; listType = null; } };
+  const flushQuote = () => {
+    if (!quote.length) return;
+    html += `<blockquote>${quote.map((q) => inlineMarkdown(q)).join("<br>")}</blockquote>`;
+    quote = [];
+  };
   const flushTable = () => {
     if (!table.length) return;
     const rows = table.filter((row, index) => index !== 1 || !/^\|?\s*:?-+/.test(row.trim()));
@@ -48,21 +59,37 @@ function markdownToHtml(markdown) {
   };
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
-    if (line.trim().startsWith("```")) { closeList(); flushTable(); if (inCode) { html += `<pre><code>${escapeHtml(code.join("\n"))}</code></pre>`; code = []; } inCode = !inCode; continue; }
+    if (line.trim().startsWith("```")) {
+      closeList(); flushQuote(); flushTable();
+      if (inCode) { html += `<pre><code>${escapeHtml(code.join("\n"))}</code></pre>`; code = []; }
+      inCode = !inCode;
+      continue;
+    }
     if (inCode) { code.push(line); continue; }
-    if (/^\s*\|.*\|\s*$/.test(line)) { closeList(); table.push(line); continue; }
+    if (/^\s*\|.*\|\s*$/.test(line)) { closeList(); flushQuote(); table.push(line); continue; }
     flushTable();
-    if (!line.trim()) { closeList(); continue; }
+    if (!line.trim()) { closeList(); flushQuote(); continue; }
     const heading = line.match(/^\*\*(.+)\*\*$/);
-    const quoted = line.match(/^>\s?(.*)$/);
+    const quoted = line.match(/^\s*>\s?(.*)$/);
     const bullet = line.match(/^\s*[-*]\s+(.+)$/);
     const numbered = line.match(/^\s*\d+\.\s+(.+)$/);
-    if (heading) { closeList(); html += `<h4>${inlineMarkdown(heading[1])}</h4>`; }
-    else if (quoted) { closeList(); html += `<blockquote>${inlineMarkdown(quoted[1])}</blockquote>`; }
-    else if (bullet || numbered) { const type = bullet ? "ul" : "ol"; if (listType !== type) { closeList(); listType = type; html += `<${type}>`; } html += `<li>${inlineMarkdown((bullet || numbered)[1])}</li>`; }
-    else { closeList(); html += `<p>${inlineMarkdown(line)}</p>`; }
+    if (heading) {
+      closeList(); flushQuote();
+      html += `<h4>${inlineMarkdown(heading[1])}</h4>`;
+    } else if (quoted) {
+      closeList();
+      quote.push(quoted[1]);
+    } else if (bullet || numbered) {
+      closeList(); flushQuote();
+      const type = bullet ? "ul" : "ol";
+      if (listType !== type) { closeList(); listType = type; html += `<${type}>`; }
+      html += `<li>${inlineMarkdown((bullet || numbered)[1])}</li>`;
+    } else {
+      closeList(); flushQuote();
+      html += `<p>${inlineMarkdown(line)}</p>`;
+    }
   }
-  closeList(); flushTable();
+  closeList(); flushQuote(); flushTable();
   return html;
 }
 
