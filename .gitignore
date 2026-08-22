@@ -23,4 +23,7 @@ venv/
 flashcards-build-*
 notes/
 *.pages
+*.icon
+*.icon/
 ML Engineer Interview Syllabus.md
+
