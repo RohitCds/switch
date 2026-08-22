@@ -1,0 +1,449 @@
+{
+  "schema_version": 1,
+  "day": 18,
+  "title": "Python Concurrency: GIL, Threading, Multiprocessing & Asyncio",
+  "topics": [
+    "python-concurrency",
+    "threading",
+    "multiprocessing",
+    "asyncio",
+    "synchronization"
+  ],
+  "tags": [
+    "python",
+    "concurrency",
+    "software-engineering",
+    "mle-systems"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 0,
+    "must_know": 14,
+    "should_know": 2
+  },
+  "daily_objective_markdown": "Understand how to choose and safely use Python's three main concurrency models: threads, processes, and `asyncio`. By the end, you should be able to explain the CPython GIL precisely, recognize race conditions and blocking calls, and select an appropriate model for CPU-bound work, blocking I/O, or large numbers of waiting network requests.\n\n---",
+  "syllabus_markdown": "- 🔴 **MUST KNOW:** concurrency vs. parallelism, I/O-bound vs. CPU-bound work, CPython GIL, threads, race conditions, locks, thread pools, processes, the asyncio event loop, coroutines/`await`, blocking the event loop, tasks, cancellation/timeouts, choosing threads vs. processes vs. asyncio.\n- 🟡 **SHOULD KNOW:** queues, semaphores/backpressure, process start/pickling constraints.\n- 🟢 **NICE TO KNOW:** advanced event-loop implementations, lock-free programming, distributed concurrency patterns.\n\n---",
+  "cards": [
+    {
+      "id": "d18-concurrency-vs-parallelism",
+      "title": "Concurrency vs. Parallelism",
+      "priority": "must_know",
+      "category": "python-concurrency",
+      "tags": [
+        "concurrency",
+        "parallelism",
+        "scheduling"
+      ],
+      "content_markdown": "**Core Concept**\n\n**Concurrency** is the ability to make progress on multiple tasks during the same overall period by interleaving them. **Parallelism** is literally executing multiple computations at the same instant on separate CPU cores or hardware resources.\n\n**Why It Matters**\n\nThe distinction prevents a common mistake: assuming every concurrency tool makes CPU computation faster. A single-threaded `asyncio` program is highly concurrent but is not CPU-parallel.\n\n**Example**\n\n```text\nConcurrency:  start API request A → wait → start API request B → handle A\nParallelism:   CPU core 1 computes batch A while CPU core 2 computes batch B\n```\n\n**Interview-Ready Explanation**\n\n> Concurrency coordinates many in-progress tasks, often by switching when one waits. Parallelism runs computations simultaneously on multiple execution resources. They overlap, but they are not the same thing.\n\n---",
+      "markdown": "### [CARD: Concurrency vs. Parallelism]\n<!-- id: d18-concurrency-vs-parallelism -->\n\n- **Priority:** must_know\n- **Category:** python-concurrency\n- **Tags:** concurrency, parallelism, scheduling\n\n**Core Concept**\n\n**Concurrency** is the ability to make progress on multiple tasks during the same overall period by interleaving them. **Parallelism** is literally executing multiple computations at the same instant on separate CPU cores or hardware resources.\n\n**Why It Matters**\n\nThe distinction prevents a common mistake: assuming every concurrency tool makes CPU computation faster. A single-threaded `asyncio` program is highly concurrent but is not CPU-parallel.\n\n**Example**\n\n```text\nConcurrency:  start API request A → wait → start API request B → handle A\nParallelism:   CPU core 1 computes batch A while CPU core 2 computes batch B\n```\n\n**Interview-Ready Explanation**\n\n> Concurrency coordinates many in-progress tasks, often by switching when one waits. Parallelism runs computations simultaneously on multiple execution resources. They overlap, but they are not the same thing.\n\n---"
+    },
+    {
+      "id": "d18-io-bound-vs-cpu-bound",
+      "title": "I/O-Bound vs. CPU-Bound Work",
+      "priority": "must_know",
+      "category": "python-concurrency",
+      "tags": [
+        "io-bound",
+        "cpu-bound",
+        "workload-selection"
+      ],
+      "content_markdown": "**Core Concept**\n\nAn I/O-bound task spends most of its time waiting for an external system: network responses, disks, databases, or a remote model API. A CPU-bound task spends most of its time executing computations locally: image transforms, tokenization at scale, or pure-Python numerical work.\n\n**Why It Matters**\n\nThe workload, not personal preference, should determine the concurrency tool. While one I/O task waits, another can proceed. CPU-bound work needs actual parallel compute or optimized native libraries.\n\n**Example**\n\n| Workload | Typical best starting point |\n|---|---|\n| Call 500 HTTP APIs | `asyncio` or threads |\n| Read many blocking SDK/database clients | threads |\n| Run pure-Python CPU-heavy transforms | processes |\n| NumPy/PyTorch compute | let optimized native/GPU libraries manage parallelism |\n\n**Interview-Ready Explanation**\n\n> I/O-bound tasks benefit from overlapping waiting time. CPU-bound tasks need parallel compute, so in CPython I usually consider processes or optimized native libraries rather than expecting threads or asyncio to speed up the computation.\n\n---",
+      "markdown": "### [CARD: I/O-Bound vs. CPU-Bound Work]\n<!-- id: d18-io-bound-vs-cpu-bound -->\n\n- **Priority:** must_know\n- **Category:** python-concurrency\n- **Tags:** io-bound, cpu-bound, workload-selection\n\n**Core Concept**\n\nAn I/O-bound task spends most of its time waiting for an external system: network responses, disks, databases, or a remote model API. A CPU-bound task spends most of its time executing computations locally: image transforms, tokenization at scale, or pure-Python numerical work.\n\n**Why It Matters**\n\nThe workload, not personal preference, should determine the concurrency tool. While one I/O task waits, another can proceed. CPU-bound work needs actual parallel compute or optimized native libraries.\n\n**Example**\n\n| Workload | Typical best starting point |\n|---|---|\n| Call 500 HTTP APIs | `asyncio` or threads |\n| Read many blocking SDK/database clients | threads |\n| Run pure-Python CPU-heavy transforms | processes |\n| NumPy/PyTorch compute | let optimized native/GPU libraries manage parallelism |\n\n**Interview-Ready Explanation**\n\n> I/O-bound tasks benefit from overlapping waiting time. CPU-bound tasks need parallel compute, so in CPython I usually consider processes or optimized native libraries rather than expecting threads or asyncio to speed up the computation.\n\n---"
+    },
+    {
+      "id": "d18-cpython-gil",
+      "title": "The CPython Global Interpreter Lock",
+      "priority": "must_know",
+      "category": "python-concurrency",
+      "tags": [
+        "gil",
+        "cpython",
+        "threads",
+        "cpu-bound"
+      ],
+      "content_markdown": "**Core Concept**\n\nIn the standard CPython interpreter, the Global Interpreter Lock (GIL) allows only one thread at a time to execute Python bytecode within a process. It simplifies parts of CPython's memory-management implementation, but limits CPU-parallel execution of pure Python code by threads.\n\n**Why It Matters**\n\nThe GIL explains why threads remain useful for I/O but normally do not accelerate CPU-bound pure-Python workloads on multiple cores.\n\n**Mental Model / Mechanics**\n\n```text\nOne CPython process\n  Thread A ─┐\n  Thread B ─┼─ only one can execute Python bytecode at a time\n  Thread C ─┘\n```\n\nWhen a thread waits on I/O, another thread can run. Some native extensions can release the GIL while doing heavy native work, so the exact behavior of NumPy, PyTorch, or a library call depends on that library.\n\n**Failure Modes / Tradeoffs**\n\nThe GIL is specific to CPython; do not make blanket claims about every Python implementation. It also does not make shared Python state automatically safe from logical race conditions.\n\n**Interview-Ready Explanation**\n\n> In CPython, one process's threads cannot execute Python bytecode in parallel because of the GIL. Threads are still effective for I/O because a waiting thread does not need the CPU; for CPU-bound pure Python, I use processes or native code that can run outside the GIL.\n\n---",
+      "markdown": "### [CARD: The CPython Global Interpreter Lock]\n<!-- id: d18-cpython-gil -->\n\n- **Priority:** must_know\n- **Category:** python-concurrency\n- **Tags:** gil, cpython, threads, cpu-bound\n\n**Core Concept**\n\nIn the standard CPython interpreter, the Global Interpreter Lock (GIL) allows only one thread at a time to execute Python bytecode within a process. It simplifies parts of CPython's memory-management implementation, but limits CPU-parallel execution of pure Python code by threads.\n\n**Why It Matters**\n\nThe GIL explains why threads remain useful for I/O but normally do not accelerate CPU-bound pure-Python workloads on multiple cores.\n\n**Mental Model / Mechanics**\n\n```text\nOne CPython process\n  Thread A ─┐\n  Thread B ─┼─ only one can execute Python bytecode at a time\n  Thread C ─┘\n```\n\nWhen a thread waits on I/O, another thread can run. Some native extensions can release the GIL while doing heavy native work, so the exact behavior of NumPy, PyTorch, or a library call depends on that library.\n\n**Failure Modes / Tradeoffs**\n\nThe GIL is specific to CPython; do not make blanket claims about every Python implementation. It also does not make shared Python state automatically safe from logical race conditions.\n\n**Interview-Ready Explanation**\n\n> In CPython, one process's threads cannot execute Python bytecode in parallel because of the GIL. Threads are still effective for I/O because a waiting thread does not need the CPU; for CPU-bound pure Python, I use processes or native code that can run outside the GIL.\n\n---"
+    },
+    {
+      "id": "d18-threads-and-shared-memory",
+      "title": "Threads and Shared Address Space",
+      "priority": "must_know",
+      "category": "python-threading",
+      "tags": [
+        "threads",
+        "shared-memory",
+        "io-bound"
+      ],
+      "content_markdown": "**Core Concept**\n\nThreads are independently scheduled execution paths within one process. They share the process's memory, open resources, and object graph.\n\n**Why It Matters**\n\nShared memory makes threads convenient for wrapping blocking I/O libraries, but it creates shared-state hazards. Day 1's reference semantics now matter across execution paths, not just across function calls.\n\n**Example**\n\n```python\nimport threading\n\ndef fetch(url):\n    # blocking network call\n    ...\n\nthread = threading.Thread(target=fetch, args=(\"https://example.com\",))\nthread.start()\nthread.join()\n```\n\n**Failure Modes / Tradeoffs**\n\nDo not create an unbounded number of threads for an unbounded workload. Thread creation and context switching have costs; a bounded thread pool is often the safer abstraction.\n\n**Interview-Ready Explanation**\n\n> Threads share a process's memory, which is convenient for blocking I/O but requires synchronization around mutable state. I generally use a bounded pool instead of manually creating unlimited threads.\n\n---",
+      "markdown": "### [CARD: Threads and Shared Address Space]\n<!-- id: d18-threads-and-shared-memory -->\n\n- **Priority:** must_know\n- **Category:** python-threading\n- **Tags:** threads, shared-memory, io-bound\n\n**Core Concept**\n\nThreads are independently scheduled execution paths within one process. They share the process's memory, open resources, and object graph.\n\n**Why It Matters**\n\nShared memory makes threads convenient for wrapping blocking I/O libraries, but it creates shared-state hazards. Day 1's reference semantics now matter across execution paths, not just across function calls.\n\n**Example**\n\n```python\nimport threading\n\ndef fetch(url):\n    # blocking network call\n    ...\n\nthread = threading.Thread(target=fetch, args=(\"https://example.com\",))\nthread.start()\nthread.join()\n```\n\n**Failure Modes / Tradeoffs**\n\nDo not create an unbounded number of threads for an unbounded workload. Thread creation and context switching have costs; a bounded thread pool is often the safer abstraction.\n\n**Interview-Ready Explanation**\n\n> Threads share a process's memory, which is convenient for blocking I/O but requires synchronization around mutable state. I generally use a bounded pool instead of manually creating unlimited threads.\n\n---"
+    },
+    {
+      "id": "d18-race-conditions",
+      "title": "Race Conditions and Critical Sections",
+      "priority": "must_know",
+      "category": "python-threading",
+      "tags": [
+        "race-condition",
+        "shared-state",
+        "critical-section"
+      ],
+      "content_markdown": "**Core Concept**\n\nA race condition occurs when the result depends on an unpredictable interleaving of concurrent operations. A critical section is code that reads or changes shared state and must not be interleaved unsafely.\n\n**Why It Matters**\n\nThe GIL does not make a read-modify-write business operation atomic. Lost updates, duplicate jobs, corrupt counters, and incorrect cache state can still occur.\n\n**Example**\n\n```python\n# Not safely atomic as a business operation:\ncounter = counter + 1\n\n# Two workers can both read 10, then both write 11.\n```\n\n**Failure Modes / Tradeoffs**\n\nThe best solution is often to avoid shared mutable state: return values, use message queues, partition work, or let a database enforce atomicity. Locks are necessary sometimes, but they add deadlock and contention risks.\n\n**Interview-Ready Explanation**\n\n> A race condition occurs when correctness depends on timing between concurrent operations. I first try to eliminate shared mutable state; if a critical section is unavoidable, I protect it with the appropriate synchronization primitive.\n\n---",
+      "markdown": "### [CARD: Race Conditions and Critical Sections]\n<!-- id: d18-race-conditions -->\n\n- **Priority:** must_know\n- **Category:** python-threading\n- **Tags:** race-condition, shared-state, critical-section\n\n**Core Concept**\n\nA race condition occurs when the result depends on an unpredictable interleaving of concurrent operations. A critical section is code that reads or changes shared state and must not be interleaved unsafely.\n\n**Why It Matters**\n\nThe GIL does not make a read-modify-write business operation atomic. Lost updates, duplicate jobs, corrupt counters, and incorrect cache state can still occur.\n\n**Example**\n\n```python\n# Not safely atomic as a business operation:\ncounter = counter + 1\n\n# Two workers can both read 10, then both write 11.\n```\n\n**Failure Modes / Tradeoffs**\n\nThe best solution is often to avoid shared mutable state: return values, use message queues, partition work, or let a database enforce atomicity. Locks are necessary sometimes, but they add deadlock and contention risks.\n\n**Interview-Ready Explanation**\n\n> A race condition occurs when correctness depends on timing between concurrent operations. I first try to eliminate shared mutable state; if a critical section is unavoidable, I protect it with the appropriate synchronization primitive.\n\n---"
+    },
+    {
+      "id": "d18-locks-and-synchronization",
+      "title": "Locks and Safe Synchronization",
+      "priority": "must_know",
+      "category": "python-threading",
+      "tags": [
+        "locks",
+        "mutex",
+        "synchronization",
+        "deadlock"
+      ],
+      "content_markdown": "**Core Concept**\n\nA lock allows only one thread at a time to enter a protected critical section. `with lock:` acquires the lock and reliably releases it, including when an exception occurs.\n\n**Example**\n\n```python\nimport threading\n\nlock = threading.Lock()\ncounter = 0\n\ndef increment():\n    global counter\n    with lock:\n        counter += 1\n```\n\n**Failure Modes / Tradeoffs**\n\n- Keep critical sections short; holding a lock during network I/O harms throughput.\n- Acquire multiple locks in a consistent order to reduce deadlock risk.\n- A lock protects only code that consistently uses that same lock.\n\n**Interview-Ready Explanation**\n\n> A mutex protects a critical section by allowing one thread at a time. I use `with lock:` for reliable release, keep the section small, and prefer designs that minimize shared state to avoid contention and deadlocks.\n\n---",
+      "markdown": "### [CARD: Locks and Safe Synchronization]\n<!-- id: d18-locks-and-synchronization -->\n\n- **Priority:** must_know\n- **Category:** python-threading\n- **Tags:** locks, mutex, synchronization, deadlock\n\n**Core Concept**\n\nA lock allows only one thread at a time to enter a protected critical section. `with lock:` acquires the lock and reliably releases it, including when an exception occurs.\n\n**Example**\n\n```python\nimport threading\n\nlock = threading.Lock()\ncounter = 0\n\ndef increment():\n    global counter\n    with lock:\n        counter += 1\n```\n\n**Failure Modes / Tradeoffs**\n\n- Keep critical sections short; holding a lock during network I/O harms throughput.\n- Acquire multiple locks in a consistent order to reduce deadlock risk.\n- A lock protects only code that consistently uses that same lock.\n\n**Interview-Ready Explanation**\n\n> A mutex protects a critical section by allowing one thread at a time. I use `with lock:` for reliable release, keep the section small, and prefer designs that minimize shared state to avoid contention and deadlocks.\n\n---"
+    },
+    {
+      "id": "d18-threadpoolexecutor",
+      "title": "ThreadPoolExecutor for Blocking I/O",
+      "priority": "must_know",
+      "category": "python-threading",
+      "tags": [
+        "threadpool",
+        "executor",
+        "blocking-io",
+        "futures"
+      ],
+      "content_markdown": "**Core Concept**\n\n`concurrent.futures.ThreadPoolExecutor` manages a bounded set of worker threads and returns `Future` objects representing work that may finish later. It is a practical default for many blocking I/O tasks.\n\n**Example**\n\n```python\nfrom concurrent.futures import ThreadPoolExecutor\n\nwith ThreadPoolExecutor(max_workers=10) as pool:\n    results = list(pool.map(fetch_document, document_urls))\n```\n\n**Why It Matters**\n\nIt avoids manually managing thread lifecycle and limits concurrency so a service does not overwhelm downstream APIs, database pools, or the local machine.\n\n**Interview-Ready Explanation**\n\n> For a blocking I/O client, a bounded `ThreadPoolExecutor` is often the simplest correct design. It overlaps waiting, controls concurrency, and avoids creating a thread per request.\n\n---",
+      "markdown": "### [CARD: ThreadPoolExecutor for Blocking I/O]\n<!-- id: d18-threadpoolexecutor -->\n\n- **Priority:** must_know\n- **Category:** python-threading\n- **Tags:** threadpool, executor, blocking-io, futures\n\n**Core Concept**\n\n`concurrent.futures.ThreadPoolExecutor` manages a bounded set of worker threads and returns `Future` objects representing work that may finish later. It is a practical default for many blocking I/O tasks.\n\n**Example**\n\n```python\nfrom concurrent.futures import ThreadPoolExecutor\n\nwith ThreadPoolExecutor(max_workers=10) as pool:\n    results = list(pool.map(fetch_document, document_urls))\n```\n\n**Why It Matters**\n\nIt avoids manually managing thread lifecycle and limits concurrency so a service does not overwhelm downstream APIs, database pools, or the local machine.\n\n**Interview-Ready Explanation**\n\n> For a blocking I/O client, a bounded `ThreadPoolExecutor` is often the simplest correct design. It overlaps waiting, controls concurrency, and avoids creating a thread per request.\n\n---"
+    },
+    {
+      "id": "d18-processes-and-multiprocessing",
+      "title": "Processes and Multiprocessing",
+      "priority": "must_know",
+      "category": "python-multiprocessing",
+      "tags": [
+        "processes",
+        "multiprocessing",
+        "cpu-bound",
+        "isolation"
+      ],
+      "content_markdown": "**Core Concept**\n\nProcesses have separate memory spaces and separate CPython interpreters. A process pool can therefore run CPU-bound Python work in parallel across CPU cores, without one process's GIL blocking another.\n\n**Why It Matters**\n\nProcesses are the usual Python-level option for CPU-bound pure-Python work, but the isolation that enables parallelism also makes data exchange more expensive.\n\n**Example**\n\n```python\nfrom concurrent.futures import ProcessPoolExecutor\n\nwith ProcessPoolExecutor() as pool:\n    features = list(pool.map(expensive_python_transform, records))\n```\n\n**Failure Modes / Tradeoffs**\n\nArguments and results typically need to be serialized between processes. Large data transfer can erase the performance gain. On macOS, process start behavior means workers should be started under an `if __name__ == \"__main__\":` guard in scripts.\n\n**Interview-Ready Explanation**\n\n> Processes provide true CPU parallelism because each has its own interpreter and GIL. The tradeoff is separate memory, serialization overhead, and higher startup cost, so I use them for sufficiently substantial CPU-bound tasks.\n\n---",
+      "markdown": "### [CARD: Processes and Multiprocessing]\n<!-- id: d18-processes-and-multiprocessing -->\n\n- **Priority:** must_know\n- **Category:** python-multiprocessing\n- **Tags:** processes, multiprocessing, cpu-bound, isolation\n\n**Core Concept**\n\nProcesses have separate memory spaces and separate CPython interpreters. A process pool can therefore run CPU-bound Python work in parallel across CPU cores, without one process's GIL blocking another.\n\n**Why It Matters**\n\nProcesses are the usual Python-level option for CPU-bound pure-Python work, but the isolation that enables parallelism also makes data exchange more expensive.\n\n**Example**\n\n```python\nfrom concurrent.futures import ProcessPoolExecutor\n\nwith ProcessPoolExecutor() as pool:\n    features = list(pool.map(expensive_python_transform, records))\n```\n\n**Failure Modes / Tradeoffs**\n\nArguments and results typically need to be serialized between processes. Large data transfer can erase the performance gain. On macOS, process start behavior means workers should be started under an `if __name__ == \"__main__\":` guard in scripts.\n\n**Interview-Ready Explanation**\n\n> Processes provide true CPU parallelism because each has its own interpreter and GIL. The tradeoff is separate memory, serialization overhead, and higher startup cost, so I use them for sufficiently substantial CPU-bound tasks.\n\n---"
+    },
+    {
+      "id": "d18-asyncio-event-loop",
+      "title": "The Asyncio Event Loop",
+      "priority": "must_know",
+      "category": "python-asyncio",
+      "tags": [
+        "asyncio",
+        "event-loop",
+        "cooperative-concurrency"
+      ],
+      "content_markdown": "**Core Concept**\n\n`asyncio` is Python's framework for cooperative asynchronous I/O. An event loop coordinates many tasks in one thread, running a task until it reaches an `await` point and can let another ready task make progress.\n\n**Why It Matters**\n\nIt can efficiently manage many network-bound operations without needing one operating-system thread per operation, provided the whole I/O path is asynchronous.\n\n**Mental Model / Mechanics**\n\n```text\ntask A starts HTTP request → await (yields control)\ntask B starts database request → await (yields control)\nevent loop resumes whichever task's I/O is now ready\n```\n\n**Interview-Ready Explanation**\n\n> Asyncio uses one event loop to coordinate many cooperative tasks. A task must explicitly yield at `await`; while it waits for non-blocking I/O, the event loop runs other ready tasks.\n\n---",
+      "markdown": "### [CARD: The Asyncio Event Loop]\n<!-- id: d18-asyncio-event-loop -->\n\n- **Priority:** must_know\n- **Category:** python-asyncio\n- **Tags:** asyncio, event-loop, cooperative-concurrency\n\n**Core Concept**\n\n`asyncio` is Python's framework for cooperative asynchronous I/O. An event loop coordinates many tasks in one thread, running a task until it reaches an `await` point and can let another ready task make progress.\n\n**Why It Matters**\n\nIt can efficiently manage many network-bound operations without needing one operating-system thread per operation, provided the whole I/O path is asynchronous.\n\n**Mental Model / Mechanics**\n\n```text\ntask A starts HTTP request → await (yields control)\ntask B starts database request → await (yields control)\nevent loop resumes whichever task's I/O is now ready\n```\n\n**Interview-Ready Explanation**\n\n> Asyncio uses one event loop to coordinate many cooperative tasks. A task must explicitly yield at `await`; while it waits for non-blocking I/O, the event loop runs other ready tasks.\n\n---"
+    },
+    {
+      "id": "d18-coroutines-and-await",
+      "title": "Coroutines, await, and Async I/O",
+      "priority": "must_know",
+      "category": "python-asyncio",
+      "tags": [
+        "coroutines",
+        "await",
+        "async",
+        "non-blocking-io"
+      ],
+      "content_markdown": "**Core Concept**\n\nCalling an `async def` function creates a coroutine object; it does not immediately run its body to completion. `await` pauses the current coroutine until an awaitable completes, giving the event loop a chance to run other work.\n\n**Example**\n\n```python\nasync def fetch_score(client, record_id):\n    response = await client.get(f\"/scores/{record_id}\")\n    return response.json()[\"score\"]\n```\n\nCoroutines need to be awaited or scheduled as tasks. At a program boundary, `asyncio.run(main())` creates and runs the event loop for a top-level coroutine.\n\n**Failure Modes / Tradeoffs**\n\nCreating a coroutine and forgetting to await or schedule it means the intended work never runs. Python commonly warns about an un-awaited coroutine.\n\n**Interview-Ready Explanation**\n\n> `async def` creates a coroutine. `await` suspends that coroutine at an asynchronous boundary so the event loop can make progress on other tasks; it does not make arbitrary synchronous code non-blocking.\n\n---",
+      "markdown": "### [CARD: Coroutines, await, and Async I/O]\n<!-- id: d18-coroutines-and-await -->\n\n- **Priority:** must_know\n- **Category:** python-asyncio\n- **Tags:** coroutines, await, async, non-blocking-io\n\n**Core Concept**\n\nCalling an `async def` function creates a coroutine object; it does not immediately run its body to completion. `await` pauses the current coroutine until an awaitable completes, giving the event loop a chance to run other work.\n\n**Example**\n\n```python\nasync def fetch_score(client, record_id):\n    response = await client.get(f\"/scores/{record_id}\")\n    return response.json()[\"score\"]\n```\n\nCoroutines need to be awaited or scheduled as tasks. At a program boundary, `asyncio.run(main())` creates and runs the event loop for a top-level coroutine.\n\n**Failure Modes / Tradeoffs**\n\nCreating a coroutine and forgetting to await or schedule it means the intended work never runs. Python commonly warns about an un-awaited coroutine.\n\n**Interview-Ready Explanation**\n\n> `async def` creates a coroutine. `await` suspends that coroutine at an asynchronous boundary so the event loop can make progress on other tasks; it does not make arbitrary synchronous code non-blocking.\n\n---"
+    },
+    {
+      "id": "d18-blocking-the-event-loop",
+      "title": "Blocking the Event Loop",
+      "priority": "must_know",
+      "category": "python-asyncio",
+      "tags": [
+        "asyncio",
+        "blocking",
+        "cooperative-scheduling",
+        "performance"
+      ],
+      "content_markdown": "**Core Concept**\n\nAsyncio concurrency is cooperative. If a coroutine runs blocking I/O, `time.sleep`, or a long CPU-bound loop without awaiting, it blocks the event-loop thread and prevents every other task on that loop from progressing.\n\n**Example**\n\n```python\n# Bad inside async code: blocks the entire event loop\ntime.sleep(1)\n\n# Good: yields control while waiting\nawait asyncio.sleep(1)\n```\n\n**Why It Matters**\n\nA single accidental blocking library call can make an apparently concurrent API service slow under load.\n\n**Failure Modes / Tradeoffs**\n\nUse an asynchronous client library when available. For unavoidable blocking I/O, offload it with `await asyncio.to_thread(blocking_function, arg)`. For CPU work, use a process pool or move the computation to an optimized service—not `asyncio` alone.\n\n**Interview-Ready Explanation**\n\n> Asyncio is cooperative, so a blocking call blocks all tasks sharing that loop. I use async-native I/O, offload unavoidable blocking calls to a thread, and move CPU-heavy work to processes or optimized infrastructure.\n\n---",
+      "markdown": "### [CARD: Blocking the Event Loop]\n<!-- id: d18-blocking-the-event-loop -->\n\n- **Priority:** must_know\n- **Category:** python-asyncio\n- **Tags:** asyncio, blocking, cooperative-scheduling, performance\n\n**Core Concept**\n\nAsyncio concurrency is cooperative. If a coroutine runs blocking I/O, `time.sleep`, or a long CPU-bound loop without awaiting, it blocks the event-loop thread and prevents every other task on that loop from progressing.\n\n**Example**\n\n```python\n# Bad inside async code: blocks the entire event loop\ntime.sleep(1)\n\n# Good: yields control while waiting\nawait asyncio.sleep(1)\n```\n\n**Why It Matters**\n\nA single accidental blocking library call can make an apparently concurrent API service slow under load.\n\n**Failure Modes / Tradeoffs**\n\nUse an asynchronous client library when available. For unavoidable blocking I/O, offload it with `await asyncio.to_thread(blocking_function, arg)`. For CPU work, use a process pool or move the computation to an optimized service—not `asyncio` alone.\n\n**Interview-Ready Explanation**\n\n> Asyncio is cooperative, so a blocking call blocks all tasks sharing that loop. I use async-native I/O, offload unavoidable blocking calls to a thread, and move CPU-heavy work to processes or optimized infrastructure.\n\n---"
+    },
+    {
+      "id": "d18-asyncio-tasks-and-gather",
+      "title": "Tasks, gather, and Bounded Fan-Out",
+      "priority": "must_know",
+      "category": "python-asyncio",
+      "tags": [
+        "asyncio",
+        "tasks",
+        "gather",
+        "concurrency-limit"
+      ],
+      "content_markdown": "**Core Concept**\n\nA Task schedules a coroutine to run concurrently on the event loop. `asyncio.gather()` waits for a group of awaitables and collects their results. Creating thousands of tasks without a limit can overload memory or downstream dependencies.\n\n**Example**\n\n```python\nasync def fetch_all(ids, client):\n    return await asyncio.gather(\n        *(fetch_score(client, record_id) for record_id in ids)\n    )\n```\n\nThis is appropriate only when the input size and remote-service capacity are controlled. For large inputs, combine tasks with a semaphore or queue.\n\n**Interview-Ready Explanation**\n\n> Tasks make coroutines concurrently schedulable and `gather` joins their results. I do not blindly fan out unlimited tasks; I bound concurrency to protect the service, remote dependency, and memory.\n\n---",
+      "markdown": "### [CARD: Tasks, gather, and Bounded Fan-Out]\n<!-- id: d18-asyncio-tasks-and-gather -->\n\n- **Priority:** must_know\n- **Category:** python-asyncio\n- **Tags:** asyncio, tasks, gather, concurrency-limit\n\n**Core Concept**\n\nA Task schedules a coroutine to run concurrently on the event loop. `asyncio.gather()` waits for a group of awaitables and collects their results. Creating thousands of tasks without a limit can overload memory or downstream dependencies.\n\n**Example**\n\n```python\nasync def fetch_all(ids, client):\n    return await asyncio.gather(\n        *(fetch_score(client, record_id) for record_id in ids)\n    )\n```\n\nThis is appropriate only when the input size and remote-service capacity are controlled. For large inputs, combine tasks with a semaphore or queue.\n\n**Interview-Ready Explanation**\n\n> Tasks make coroutines concurrently schedulable and `gather` joins their results. I do not blindly fan out unlimited tasks; I bound concurrency to protect the service, remote dependency, and memory.\n\n---"
+    },
+    {
+      "id": "d18-asyncio-cancellation-and-timeouts",
+      "title": "Cancellation, Timeouts, and Cleanup",
+      "priority": "must_know",
+      "category": "python-asyncio",
+      "tags": [
+        "asyncio",
+        "cancellation",
+        "timeout",
+        "cleanup"
+      ],
+      "content_markdown": "**Core Concept**\n\nCancellation is a normal control-flow path in asynchronous systems: client requests end, deadlines expire, or a parent operation fails. Cancellation is delivered to a coroutine at an await point, so coroutines must release resources promptly and should not swallow cancellation accidentally.\n\n**Example**\n\n```python\nasync with asyncio.timeout(2):\n    result = await fetch_score(client, record_id)\n```\n\nUse `try`/`finally` or `async with` around resources that must be released. Let cancellation propagate after necessary cleanup unless there is a clear, documented reason to transform it.\n\n**Interview-Ready Explanation**\n\n> I treat cancellation and deadlines as normal production behavior. I put timeouts around remote work, clean up in `finally` or `async with`, and avoid swallowing cancellation because callers need to know the operation stopped.\n\n---",
+      "markdown": "### [CARD: Cancellation, Timeouts, and Cleanup]\n<!-- id: d18-asyncio-cancellation-and-timeouts -->\n\n- **Priority:** must_know\n- **Category:** python-asyncio\n- **Tags:** asyncio, cancellation, timeout, cleanup\n\n**Core Concept**\n\nCancellation is a normal control-flow path in asynchronous systems: client requests end, deadlines expire, or a parent operation fails. Cancellation is delivered to a coroutine at an await point, so coroutines must release resources promptly and should not swallow cancellation accidentally.\n\n**Example**\n\n```python\nasync with asyncio.timeout(2):\n    result = await fetch_score(client, record_id)\n```\n\nUse `try`/`finally` or `async with` around resources that must be released. Let cancellation propagate after necessary cleanup unless there is a clear, documented reason to transform it.\n\n**Interview-Ready Explanation**\n\n> I treat cancellation and deadlines as normal production behavior. I put timeouts around remote work, clean up in `finally` or `async with`, and avoid swallowing cancellation because callers need to know the operation stopped.\n\n---"
+    },
+    {
+      "id": "d18-backpressure-with-queues-and-semaphores",
+      "title": "Queues, Semaphores, and Backpressure",
+      "priority": "should_know",
+      "category": "python-concurrency",
+      "tags": [
+        "queue",
+        "semaphore",
+        "backpressure",
+        "producer-consumer"
+      ],
+      "content_markdown": "**Core Concept**\n\nA queue decouples producers from consumers and can bound pending work. A semaphore limits how many tasks may use a constrained resource at once. Both create backpressure: producers cannot create unlimited work faster than the system can safely consume it.\n\n**Example**\n\n```python\nsemaphore = asyncio.Semaphore(20)\n\nasync def limited_fetch(record_id):\n    async with semaphore:\n        return await fetch_score(client, record_id)\n```\n\n**Why It Matters**\n\nWithout limits, a batch job can overwhelm an embedding API, database connection pool, rate limit, or memory budget.\n\n**Interview-Ready Explanation**\n\n> A semaphore bounds concurrent access to a scarce resource, while a bounded queue controls accumulated work. They provide backpressure, which keeps a fast producer from overwhelming a slower dependency.\n\n---",
+      "markdown": "### [CARD: Queues, Semaphores, and Backpressure]\n<!-- id: d18-backpressure-with-queues-and-semaphores -->\n\n- **Priority:** should_know\n- **Category:** python-concurrency\n- **Tags:** queue, semaphore, backpressure, producer-consumer\n\n**Core Concept**\n\nA queue decouples producers from consumers and can bound pending work. A semaphore limits how many tasks may use a constrained resource at once. Both create backpressure: producers cannot create unlimited work faster than the system can safely consume it.\n\n**Example**\n\n```python\nsemaphore = asyncio.Semaphore(20)\n\nasync def limited_fetch(record_id):\n    async with semaphore:\n        return await fetch_score(client, record_id)\n```\n\n**Why It Matters**\n\nWithout limits, a batch job can overwhelm an embedding API, database connection pool, rate limit, or memory budget.\n\n**Interview-Ready Explanation**\n\n> A semaphore bounds concurrent access to a scarce resource, while a bounded queue controls accumulated work. They provide backpressure, which keeps a fast producer from overwhelming a slower dependency.\n\n---"
+    },
+    {
+      "id": "d18-choosing-a-concurrency-model",
+      "title": "Choosing Threads, Processes, or Asyncio",
+      "priority": "must_know",
+      "category": "python-concurrency",
+      "tags": [
+        "threads",
+        "processes",
+        "asyncio",
+        "design-tradeoffs"
+      ],
+      "content_markdown": "**Core Concept**\n\nThreads, processes, and asyncio solve different problems. The correct choice follows the workload, library interfaces, desired concurrency level, state-sharing needs, and operational complexity.\n\n**Mental Model / Mechanics**\n\n| Situation | Good default | Main tradeoff |\n|---|---|---|\n| Few-to-moderate blocking I/O operations | Threads / thread pool | Shared-state safety, thread overhead |\n| Very many async-native network operations | `asyncio` | Entire I/O path must avoid blocking |\n| CPU-bound pure-Python work | Process pool | Serialization and memory overhead |\n| Heavy numerical/ML computation | Native/GPU library or worker service | Library/runtime-specific behavior |\n\n**Interview-Ready Explanation**\n\n> I start from the bottleneck. For blocking I/O I use a bounded thread pool; for large-scale async-native I/O I use asyncio; for CPU-bound pure Python I use processes. I then add limits, timeouts, and observability rather than treating concurrency as a free speed-up.\n\n---",
+      "markdown": "### [CARD: Choosing Threads, Processes, or Asyncio]\n<!-- id: d18-choosing-a-concurrency-model -->\n\n- **Priority:** must_know\n- **Category:** python-concurrency\n- **Tags:** threads, processes, asyncio, design-tradeoffs\n\n**Core Concept**\n\nThreads, processes, and asyncio solve different problems. The correct choice follows the workload, library interfaces, desired concurrency level, state-sharing needs, and operational complexity.\n\n**Mental Model / Mechanics**\n\n| Situation | Good default | Main tradeoff |\n|---|---|---|\n| Few-to-moderate blocking I/O operations | Threads / thread pool | Shared-state safety, thread overhead |\n| Very many async-native network operations | `asyncio` | Entire I/O path must avoid blocking |\n| CPU-bound pure-Python work | Process pool | Serialization and memory overhead |\n| Heavy numerical/ML computation | Native/GPU library or worker service | Library/runtime-specific behavior |\n\n**Interview-Ready Explanation**\n\n> I start from the bottleneck. For blocking I/O I use a bounded thread pool; for large-scale async-native I/O I use asyncio; for CPU-bound pure Python I use processes. I then add limits, timeouts, and observability rather than treating concurrency as a free speed-up.\n\n---"
+    },
+    {
+      "id": "d18-process-serialization-and-main-guard",
+      "title": "Process Serialization and the Main Guard",
+      "priority": "should_know",
+      "category": "python-multiprocessing",
+      "tags": [
+        "multiprocessing",
+        "pickling",
+        "main-guard",
+        "macos"
+      ],
+      "content_markdown": "**Core Concept**\n\nProcess workers do not share normal Python memory with the parent. Functions, arguments, and return values commonly need to be serializable. Script entry points should use an `if __name__ == \"__main__\":` guard so child-process startup does not re-run top-level work unexpectedly.\n\n**Example**\n\n```python\ndef main():\n    with ProcessPoolExecutor() as pool:\n        print(list(pool.map(expensive_python_transform, records)))\n\nif __name__ == \"__main__\":\n    main()\n```\n\n**Interview-Ready Explanation**\n\n> Process pools require explicit boundaries: work functions and data must be serializable, and the main guard prevents worker startup from recursively executing the script's top-level code.\n\n---",
+      "markdown": "### [CARD: Process Serialization and the Main Guard]\n<!-- id: d18-process-serialization-and-main-guard -->\n\n- **Priority:** should_know\n- **Category:** python-multiprocessing\n- **Tags:** multiprocessing, pickling, main-guard, macos\n\n**Core Concept**\n\nProcess workers do not share normal Python memory with the parent. Functions, arguments, and return values commonly need to be serializable. Script entry points should use an `if __name__ == \"__main__\":` guard so child-process startup does not re-run top-level work unexpectedly.\n\n**Example**\n\n```python\ndef main():\n    with ProcessPoolExecutor() as pool:\n        print(list(pool.map(expensive_python_transform, records)))\n\nif __name__ == \"__main__\":\n    main()\n```\n\n**Interview-Ready Explanation**\n\n> Process pools require explicit boundaries: work functions and data must be serializable, and the main guard prevents worker startup from recursively executing the script's top-level code.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "- **Day 1:** Shared references and mutability explain why thread races happen; `is`/identity is not a synchronization mechanism.\n- **Day 17:** `with`/`async with` and `finally` give concurrency code reliable cleanup; generators and iterators motivate streaming producer-consumer designs.\n- **MLE systems:** Threads and `asyncio` are common around model APIs, vector stores, and data ingestion. Processes or native/GPU code handle CPU-heavy preprocessing and inference workloads.\n- **Future system design:** Concurrency limits, timeouts, queues, and backpressure are concrete answers to “how does this service survive load?”\n\n---",
+  "common_misconceptions_markdown": "- **Myth:** The GIL means threads are useless in Python.  \n  **Reality:** Threads are useful for blocking I/O; the GIL mainly limits parallel execution of pure Python CPU work within one process.\n\n- **Myth:** `async def` automatically makes code concurrent.  \n  **Reality:** A coroutine must be awaited or scheduled, and it must reach non-blocking `await` points to let other tasks run.\n\n- **Myth:** The GIL prevents race conditions.  \n  **Reality:** Multi-step shared-state operations can still interleave incorrectly.\n\n- **Myth:** More workers always make a system faster.  \n  **Reality:** Unbounded concurrency can overload CPUs, memory, connection pools, or downstream APIs.\n\n- **Myth:** `asyncio` makes CPU-bound code faster.  \n  **Reality:** CPU-heavy code blocks the event loop unless moved elsewhere.\n\n- **Myth:** A process pool has the same sharing behavior as a thread pool.  \n  **Reality:** Processes have isolated memory and require data transfer/serialization.\n\n---",
+  "out_of_scope_markdown": "- Low-level operating-system scheduling and lock-free algorithms\n- Distributed queues, actor systems, and Kubernetes worker orchestration\n- Writing custom event loops or advanced `asyncio` transports/protocols\n- Detailed memory-sharing techniques between processes\n- GPU-stream concurrency and distributed training parallelism\n\n---",
+  "qa_drill": [
+    {
+      "id": "d18-qa-001",
+      "question": "What is the difference between concurrency and parallelism?",
+      "answer": "Concurrency interleaves progress on multiple tasks; parallelism executes computations simultaneously on separate execution resources.",
+      "tags": [
+        "concurrency",
+        "parallelism"
+      ],
+      "linked_card_ids": [
+        "d18-concurrency-vs-parallelism"
+      ]
+    },
+    {
+      "id": "d18-qa-002",
+      "question": "How should workload type influence a concurrency choice?",
+      "answer": "I/O-bound work benefits from overlapping waits with threads or asyncio; CPU-bound pure-Python work needs processes or optimized native computation for parallel speedup.",
+      "tags": [
+        "io-bound",
+        "cpu-bound"
+      ],
+      "linked_card_ids": [
+        "d18-io-bound-vs-cpu-bound"
+      ]
+    },
+    {
+      "id": "d18-qa-003",
+      "question": "What does the CPython GIL do?",
+      "answer": "Within one CPython process, it permits only one thread at a time to execute Python bytecode, limiting thread-based parallelism for pure Python CPU work.",
+      "tags": [
+        "gil",
+        "cpython"
+      ],
+      "linked_card_ids": [
+        "d18-cpython-gil"
+      ]
+    },
+    {
+      "id": "d18-qa-004",
+      "question": "Why can threads still help despite the GIL?",
+      "answer": "While a thread waits for I/O, another thread can run, so threads can overlap blocking network, disk, or database waits.",
+      "tags": [
+        "threads",
+        "io-bound",
+        "gil"
+      ],
+      "linked_card_ids": [
+        "d18-cpython-gil",
+        "d18-threads-and-shared-memory"
+      ]
+    },
+    {
+      "id": "d18-qa-005",
+      "question": "What is a race condition?",
+      "answer": "A correctness bug where the result depends on an unpredictable timing/interleaving of concurrent operations on shared state.",
+      "tags": [
+        "race-condition",
+        "shared-state"
+      ],
+      "linked_card_ids": [
+        "d18-race-conditions"
+      ]
+    },
+    {
+      "id": "d18-qa-006",
+      "question": "What does a lock protect, and what is one lock-design rule?",
+      "answer": "A lock protects a critical section that accesses shared mutable state. Keep the protected section short and avoid holding it during slow I/O.",
+      "tags": [
+        "locks",
+        "critical-section"
+      ],
+      "linked_card_ids": [
+        "d18-locks-and-synchronization"
+      ]
+    },
+    {
+      "id": "d18-qa-007",
+      "question": "Why use a ThreadPoolExecutor instead of manually starting a thread for every request?",
+      "answer": "It manages a bounded worker set, limits pressure on dependencies, and avoids unbounded thread-creation overhead.",
+      "tags": [
+        "threadpool",
+        "blocking-io"
+      ],
+      "linked_card_ids": [
+        "d18-threadpoolexecutor"
+      ]
+    },
+    {
+      "id": "d18-qa-008",
+      "question": "Why can processes parallelize CPU-bound pure-Python work?",
+      "answer": "Each process has its own interpreter and GIL, so separate processes can execute on separate CPU cores.",
+      "tags": [
+        "processes",
+        "cpu-bound",
+        "gil"
+      ],
+      "linked_card_ids": [
+        "d18-processes-and-multiprocessing"
+      ]
+    },
+    {
+      "id": "d18-qa-009",
+      "question": "What does the asyncio event loop do?",
+      "answer": "It coordinates cooperative tasks, running another ready task when the current one awaits non-blocking work.",
+      "tags": [
+        "asyncio",
+        "event-loop"
+      ],
+      "linked_card_ids": [
+        "d18-asyncio-event-loop"
+      ]
+    },
+    {
+      "id": "d18-qa-010",
+      "question": "What happens when you call an `async def` function?",
+      "answer": "It creates a coroutine object. Its work runs only when it is awaited or scheduled as a task.",
+      "tags": [
+        "coroutines",
+        "async"
+      ],
+      "linked_card_ids": [
+        "d18-coroutines-and-await"
+      ]
+    },
+    {
+      "id": "d18-qa-011",
+      "question": "Why is `time.sleep()` harmful inside an asyncio coroutine?",
+      "answer": "It blocks the event-loop thread, preventing all other tasks on that loop from progressing; use `await asyncio.sleep()` for an asynchronous delay.",
+      "tags": [
+        "asyncio",
+        "blocking"
+      ],
+      "linked_card_ids": [
+        "d18-blocking-the-event-loop"
+      ]
+    },
+    {
+      "id": "d18-qa-012",
+      "question": "What does `asyncio.gather()` do, and what risk comes with unlimited fan-out?",
+      "answer": "It waits for a group of awaitables and collects results. Scheduling too many tasks can exhaust memory or overload downstream services.",
+      "tags": [
+        "asyncio",
+        "gather",
+        "backpressure"
+      ],
+      "linked_card_ids": [
+        "d18-asyncio-tasks-and-gather"
+      ]
+    },
+    {
+      "id": "d18-qa-013",
+      "question": "How should asynchronous code handle timeouts and cancellation?",
+      "answer": "Set deadlines around remote work, clean up with `finally` or `async with`, and normally let cancellation propagate after cleanup.",
+      "tags": [
+        "asyncio",
+        "cancellation",
+        "timeout"
+      ],
+      "linked_card_ids": [
+        "d18-asyncio-cancellation-and-timeouts"
+      ]
+    },
+    {
+      "id": "d18-qa-014",
+      "question": "What is backpressure, and how can a semaphore provide it?",
+      "answer": "Backpressure prevents work from accumulating faster than a dependency can handle it. A semaphore bounds how many tasks may access that dependency concurrently.",
+      "tags": [
+        "semaphore",
+        "backpressure"
+      ],
+      "linked_card_ids": [
+        "d18-backpressure-with-queues-and-semaphores"
+      ]
+    },
+    {
+      "id": "d18-qa-015",
+      "question": "Give the default choice for blocking I/O, async-native high-concurrency I/O, and CPU-bound pure-Python work.",
+      "answer": "Use a bounded thread pool for blocking I/O, asyncio for async-native high-concurrency I/O, and processes for CPU-bound pure-Python work.",
+      "tags": [
+        "threads",
+        "processes",
+        "asyncio"
+      ],
+      "linked_card_ids": [
+        "d18-choosing-a-concurrency-model"
+      ]
+    },
+    {
+      "id": "d18-qa-016",
+      "question": "Why is the `if __name__ == \"__main__\":` guard important with multiprocessing scripts?",
+      "answer": "It prevents child-process startup from re-running top-level script code, and keeps process-pool entry points explicit.",
+      "tags": [
+        "multiprocessing",
+        "main-guard"
+      ],
+      "linked_card_ids": [
+        "d18-process-serialization-and-main-guard"
+      ]
+    }
+  ]
+}

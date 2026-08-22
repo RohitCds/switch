@@ -1,0 +1,606 @@
+{
+  "schema_version": 1,
+  "day": 1,
+  "title": "Python Mental Model + Core ML Framing",
+  "topics": [
+    "python",
+    "ml-foundations",
+    "supervised-learning",
+    "generalization",
+    "bias-variance"
+  ],
+  "tags": [
+    "python",
+    "ml-foundations"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 0,
+    "must_know": 17,
+    "should_know": 6
+  },
+  "daily_objective_markdown": "Understand Python's object/reference model, mutable vs immutable types, core data structures, functional tools, copying semantics, and foundational ML concepts including features/labels, supervised vs unsupervised learning, parameters vs hyperparameters, data splits, generalization, overfitting/underfitting, and bias vs variance.\n\n---",
+  "syllabus_markdown": "- 🔴 **MUST KNOW:** Python objects/references, mutable vs immutable, assignment vs copying, shallow vs deep copy, lists, tuples, dictionaries, sets, `*args` / `**kwargs`, slicing, ML problem framing, features vs labels, parameters vs hyperparameters, train/validation/test, generalization, overfitting/underfitting, bias vs variance\n- 🟡 **SHOULD KNOW:** Comprehensions, `enumerate()`, `zip()`, `map()`, `filter()`, `lambda`\n- 🟢 **NICE TO KNOW:** Obscure Python implementation details, CPython internals, bytecode, advanced metaprogramming\n\n---",
+  "cards": [
+    {
+      "id": "d01-python-objects-and-references",
+      "title": "Python Objects and References",
+      "priority": "must_know",
+      "category": "python",
+      "tags": [
+        "objects",
+        "references",
+        "identity"
+      ],
+      "content_markdown": "**Core Concept**\n\nA Python variable is a name (reference) bound to an object, not a box containing a value. Every Python object has a type, a value, and an identity.\n**Why It Matters**\n\nUnderstanding this model prevents confusion around assignment, mutation, and shared state — bugs that are extremely common in data pipelines, ML preprocessing, and concurrent programs.\n**Mental Model / Mechanics**\n  ```\n  x = 10\n\n  x ───────► 10\n             object (type=int, value=10, id=...)\n  ```\n  - `id(x)` inspects object identity\n  - `a == b` checks **value equality** (do two objects have the same value?)\n  - `a is b` checks **object identity** (are they the exact same object in memory?)\n**Example**\n  ```python\n  x = 10\n  y = 10\n  print(x == y)   # True  — same value\n  print(x is y)    # True  — CPython caches small integers (implementation detail)\n\n  a = [1, 2, 3]\n  b = [1, 2, 3]\n  print(a == b)    # True  — same value\n  print(a is b)    # False — different objects\n  ```\n**Failure Modes / Tradeoffs**\n  - Do not confuse `==` with `is` — they are fundamentally different operations\n  - Small integer caching (`-5` to `256` in CPython) can make `is` appear to work like `==` for ints, but this is an implementation detail, not a language guarantee\n**Interview-Ready Explanation**\n  > `==` checks value equality, while `is` checks object identity. A Python variable is a name bound to an object, not a container holding a value.\n\n---",
+      "markdown": "### [CARD: Python Objects and References]\n<!-- id: d01-python-objects-and-references -->\n\n- **Priority:** must_know\n- **Category:** python\n- **Tags:** objects, references, identity\n**Core Concept**\n\nA Python variable is a name (reference) bound to an object, not a box containing a value. Every Python object has a type, a value, and an identity.\n**Why It Matters**\n\nUnderstanding this model prevents confusion around assignment, mutation, and shared state — bugs that are extremely common in data pipelines, ML preprocessing, and concurrent programs.\n**Mental Model / Mechanics**\n  ```\n  x = 10\n\n  x ───────► 10\n             object (type=int, value=10, id=...)\n  ```\n  - `id(x)` inspects object identity\n  - `a == b` checks **value equality** (do two objects have the same value?)\n  - `a is b` checks **object identity** (are they the exact same object in memory?)\n**Example**\n  ```python\n  x = 10\n  y = 10\n  print(x == y)   # True  — same value\n  print(x is y)    # True  — CPython caches small integers (implementation detail)\n\n  a = [1, 2, 3]\n  b = [1, 2, 3]\n  print(a == b)    # True  — same value\n  print(a is b)    # False — different objects\n  ```\n**Failure Modes / Tradeoffs**\n  - Do not confuse `==` with `is` — they are fundamentally different operations\n  - Small integer caching (`-5` to `256` in CPython) can make `is` appear to work like `==` for ints, but this is an implementation detail, not a language guarantee\n**Interview-Ready Explanation**\n  > `==` checks value equality, while `is` checks object identity. A Python variable is a name bound to an object, not a container holding a value.\n\n---"
+    },
+    {
+      "id": "d01-assignment-does-not-mean-copying",
+      "title": "Assignment Does Not Mean Copying",
+      "priority": "must_know",
+      "category": "python",
+      "tags": [
+        "assignment",
+        "references",
+        "shared-state"
+      ],
+      "content_markdown": "**Core Concept**\n\nAssignment (`b = a`) creates another reference to the **same** object. It does not create a new independent copy.\n**Why It Matters**\n\nThis is the root cause of a massive class of bugs involving shared mutable state — function arguments, nested data structures, PyTorch data, caches, and concurrent programs.\n**Mental Model / Mechanics**\n  ```\n  a = [1, 2, 3]\n  b = a\n\n          ┌──► [1, 2, 3]\n  a ──────┤\n  b ──────┘\n  ```\n  Both names point to the **same list object**. Mutating through one name is visible through the other.\n  - **Assignment:** name → existing object\n  - **Copying:** new object → contents copied from existing object\n**Example**\n  ```python\n  a = [1, 2, 3]\n  b = a\n  b.append(4)\n  print(a)       # [1, 2, 3, 4]\n  print(a is b)  # True\n  ```\n**Failure Modes / Tradeoffs**\n  - This distinction is critical when working with: function arguments, nested data structures, ML preprocessing, PyTorch data, caches, shared state, concurrent programs\n**Interview-Ready Explanation**\n  > Assignment creates another reference to an existing object, while copying creates a new object based on the original. `b = a` does not copy the list — both names refer to the same object.\n\n---",
+      "markdown": "### [CARD: Assignment Does Not Mean Copying]\n<!-- id: d01-assignment-does-not-mean-copying -->\n\n- **Priority:** must_know\n- **Category:** python\n- **Tags:** assignment, references, shared-state\n**Core Concept**\n\nAssignment (`b = a`) creates another reference to the **same** object. It does not create a new independent copy.\n**Why It Matters**\n\nThis is the root cause of a massive class of bugs involving shared mutable state — function arguments, nested data structures, PyTorch data, caches, and concurrent programs.\n**Mental Model / Mechanics**\n  ```\n  a = [1, 2, 3]\n  b = a\n\n          ┌──► [1, 2, 3]\n  a ──────┤\n  b ──────┘\n  ```\n  Both names point to the **same list object**. Mutating through one name is visible through the other.\n  - **Assignment:** name → existing object\n  - **Copying:** new object → contents copied from existing object\n**Example**\n  ```python\n  a = [1, 2, 3]\n  b = a\n  b.append(4)\n  print(a)       # [1, 2, 3, 4]\n  print(a is b)  # True\n  ```\n**Failure Modes / Tradeoffs**\n  - This distinction is critical when working with: function arguments, nested data structures, ML preprocessing, PyTorch data, caches, shared state, concurrent programs\n**Interview-Ready Explanation**\n  > Assignment creates another reference to an existing object, while copying creates a new object based on the original. `b = a` does not copy the list — both names refer to the same object.\n\n---"
+    },
+    {
+      "id": "d01-mutable-vs-immutable-objects",
+      "title": "Mutable vs Immutable Objects",
+      "priority": "must_know",
+      "category": "python",
+      "tags": [
+        "mutability",
+        "immutability",
+        "objects"
+      ],
+      "content_markdown": "**Core Concept**\n\nA **mutable** object can be changed in place after creation. An **immutable** object cannot be changed after creation — any \"modification\" creates a new object.\n**Why It Matters**\n\nDetermines whether shared references can cause unintended side effects. Immutability guarantees safety; mutability enables efficient in-place updates.\n**Mental Model / Mechanics**\n  | Mutable          | Immutable          |\n  |------------------|--------------------|\n  | `list`           | `int`              |\n  | `dict`           | `float`            |\n  | `set`            | `bool`             |\n  |                  | `str`              |\n  |                  | `tuple`            |\n  |                  | `frozenset`        |\n\n  Immutable integer rebinding:\n  ```\n  x = 10  →  x ─► 10\n  x = x + 1 →  x ─► 11   (new object; 10 is untouched)\n  ```\n  Mutable list mutation:\n  ```\n  x = [1, 2]  →  x ─► [1, 2]\n  x.append(3) →  x ─► [1, 2, 3]  (same object, modified)\n  ```\n**Example**\n  ```python\n  # Immutable — rebinding, not mutation\n  x = 10\n  x = x + 1  # x now points to a new int object 11\n\n  # Mutable — in-place mutation\n  x = [1, 2]\n  x.append(3)  # The same list object is modified\n  ```\n**Failure Modes / Tradeoffs**\n  - Immutability belongs to the **object**, not to the variable name. `x = 10; x = 20` is valid — the int is immutable, but the name `x` is simply rebound.\n**Interview-Ready Explanation**\n  > A mutable object can be modified in place after creation. An immutable object cannot — a new object must be created if the value changes. Immutability is a property of the object, not the variable name.\n\n---",
+      "markdown": "### [CARD: Mutable vs Immutable Objects]\n<!-- id: d01-mutable-vs-immutable-objects -->\n\n- **Priority:** must_know\n- **Category:** python\n- **Tags:** mutability, immutability, objects\n**Core Concept**\n\nA **mutable** object can be changed in place after creation. An **immutable** object cannot be changed after creation — any \"modification\" creates a new object.\n**Why It Matters**\n\nDetermines whether shared references can cause unintended side effects. Immutability guarantees safety; mutability enables efficient in-place updates.\n**Mental Model / Mechanics**\n  | Mutable          | Immutable          |\n  |------------------|--------------------|\n  | `list`           | `int`              |\n  | `dict`           | `float`            |\n  | `set`            | `bool`             |\n  |                  | `str`              |\n  |                  | `tuple`            |\n  |                  | `frozenset`        |\n\n  Immutable integer rebinding:\n  ```\n  x = 10  →  x ─► 10\n  x = x + 1 →  x ─► 11   (new object; 10 is untouched)\n  ```\n  Mutable list mutation:\n  ```\n  x = [1, 2]  →  x ─► [1, 2]\n  x.append(3) →  x ─► [1, 2, 3]  (same object, modified)\n  ```\n**Example**\n  ```python\n  # Immutable — rebinding, not mutation\n  x = 10\n  x = x + 1  # x now points to a new int object 11\n\n  # Mutable — in-place mutation\n  x = [1, 2]\n  x.append(3)  # The same list object is modified\n  ```\n**Failure Modes / Tradeoffs**\n  - Immutability belongs to the **object**, not to the variable name. `x = 10; x = 20` is valid — the int is immutable, but the name `x` is simply rebound.\n**Interview-Ready Explanation**\n  > A mutable object can be modified in place after creation. An immutable object cannot — a new object must be created if the value changes. Immutability is a property of the object, not the variable name.\n\n---"
+    },
+    {
+      "id": "d01-lists-vs-tuples",
+      "title": "Lists vs Tuples",
+      "priority": "must_know",
+      "category": "python",
+      "tags": [
+        "lists",
+        "tuples",
+        "mutability"
+      ],
+      "content_markdown": "**Core Concept**\n\nLists are mutable ordered sequences. Tuples are immutable ordered sequences.\n**Why It Matters**\n\nLists are used for dynamic collections that change. Tuples represent fixed structures (coordinates, records) and communicate intent that the data should not change.\n**Mental Model / Mechanics**\n  | Property           | List       | Tuple      |\n  |--------------------|------------|------------|\n  | Syntax             | `[1,2,3]`  | `(1,2,3)`  |\n  | Mutable            | ✅ Yes     | ❌ No      |\n  | `append`/`remove`  | ✅ Yes     | ❌ No      |\n  | Hashable           | ❌ No      | ✅ Yes*    |\n  | Use case           | Dynamic    | Fixed      |\n\n  *A tuple is hashable only if all its elements are hashable.\n**Example**\n  ```python\n  # List — mutable\n  numbers = [1, 2, 3]\n  numbers.append(4)\n  numbers[0] = 99\n\n  # Tuple — immutable\n  point = (10, 20)\n  # point[0] = 5  → TypeError\n  ```\n**Failure Modes / Tradeoffs**\n  - A tuple is immutable, but it **can contain mutable objects**:\n    ```python\n    x = ([1, 2], [3, 4])\n    # x[0] = [5, 6]   → Error (can't replace tuple element)\n    x[0].append(3)     # OK (the list inside is still mutable)\n    ```\n  - The tuple still points to the same list object; the list itself changed.\n**Interview-Ready Explanation**\n  > Use lists for dynamic collections that need to change. Use tuples for fixed collections where immutability communicates intent. A tuple itself is immutable, but it can contain mutable objects.\n\n---",
+      "markdown": "### [CARD: Lists vs Tuples]\n<!-- id: d01-lists-vs-tuples -->\n\n- **Priority:** must_know\n- **Category:** python\n- **Tags:** lists, tuples, mutability\n**Core Concept**\n\nLists are mutable ordered sequences. Tuples are immutable ordered sequences.\n**Why It Matters**\n\nLists are used for dynamic collections that change. Tuples represent fixed structures (coordinates, records) and communicate intent that the data should not change.\n**Mental Model / Mechanics**\n  | Property           | List       | Tuple      |\n  |--------------------|------------|------------|\n  | Syntax             | `[1,2,3]`  | `(1,2,3)`  |\n  | Mutable            | ✅ Yes     | ❌ No      |\n  | `append`/`remove`  | ✅ Yes     | ❌ No      |\n  | Hashable           | ❌ No      | ✅ Yes*    |\n  | Use case           | Dynamic    | Fixed      |\n\n  *A tuple is hashable only if all its elements are hashable.\n**Example**\n  ```python\n  # List — mutable\n  numbers = [1, 2, 3]\n  numbers.append(4)\n  numbers[0] = 99\n\n  # Tuple — immutable\n  point = (10, 20)\n  # point[0] = 5  → TypeError\n  ```\n**Failure Modes / Tradeoffs**\n  - A tuple is immutable, but it **can contain mutable objects**:\n    ```python\n    x = ([1, 2], [3, 4])\n    # x[0] = [5, 6]   → Error (can't replace tuple element)\n    x[0].append(3)     # OK (the list inside is still mutable)\n    ```\n  - The tuple still points to the same list object; the list itself changed.\n**Interview-Ready Explanation**\n  > Use lists for dynamic collections that need to change. Use tuples for fixed collections where immutability communicates intent. A tuple itself is immutable, but it can contain mutable objects.\n\n---"
+    },
+    {
+      "id": "d01-dictionaries",
+      "title": "Dictionaries",
+      "priority": "must_know",
+      "category": "python",
+      "tags": [
+        "dictionaries",
+        "hashing",
+        "lookup"
+      ],
+      "content_markdown": "**Core Concept**\n\nA dictionary maps hashable keys to values, implemented using hashing for O(1) average-case lookup.\n**Why It Matters**\n\nProvides fast key-based retrieval. Essential for configuration, caching, counting, grouping, and almost every ML pipeline.\n**Mental Model / Mechanics**\n  ```\n  Dictionary\n      ↓\n  hash(key)\n      ↓\n  locate corresponding entry\n      ↓\n  retrieve value\n  ```\n  Keys must be **hashable** (immutable types like `str`, `int`, `tuple`). Lists cannot be keys because they are mutable and therefore unhashable.\n**Example**\n  ```python\n  user = {\"name\": \"Rohit\", \"age\": 24}\n  print(user[\"name\"])  # \"Rohit\" — O(1) average\n\n  # Valid keys\n  d = {\"hello\": 1, 42: 2, (1, 2): 3}\n\n  # Invalid key — list is unhashable\n  # d = {[1, 2]: 3}  → TypeError\n  ```\n**Failure Modes / Tradeoffs**\n  - O(1) is average case; worst case (hash collisions) is O(n)\n  - Keys must be hashable — mutable objects cannot be keys\n**Interview-Ready Explanation**\n  > Dictionaries map keys to values using hashing for O(1) average-case lookup. Keys must be hashable, which is why mutable types like lists cannot serve as dictionary keys.\n\n---",
+      "markdown": "### [CARD: Dictionaries]\n<!-- id: d01-dictionaries -->\n\n- **Priority:** must_know\n- **Category:** python\n- **Tags:** dictionaries, hashing, lookup\n**Core Concept**\n\nA dictionary maps hashable keys to values, implemented using hashing for O(1) average-case lookup.\n**Why It Matters**\n\nProvides fast key-based retrieval. Essential for configuration, caching, counting, grouping, and almost every ML pipeline.\n**Mental Model / Mechanics**\n  ```\n  Dictionary\n      ↓\n  hash(key)\n      ↓\n  locate corresponding entry\n      ↓\n  retrieve value\n  ```\n  Keys must be **hashable** (immutable types like `str`, `int`, `tuple`). Lists cannot be keys because they are mutable and therefore unhashable.\n**Example**\n  ```python\n  user = {\"name\": \"Rohit\", \"age\": 24}\n  print(user[\"name\"])  # \"Rohit\" — O(1) average\n\n  # Valid keys\n  d = {\"hello\": 1, 42: 2, (1, 2): 3}\n\n  # Invalid key — list is unhashable\n  # d = {[1, 2]: 3}  → TypeError\n  ```\n**Failure Modes / Tradeoffs**\n  - O(1) is average case; worst case (hash collisions) is O(n)\n  - Keys must be hashable — mutable objects cannot be keys\n**Interview-Ready Explanation**\n  > Dictionaries map keys to values using hashing for O(1) average-case lookup. Keys must be hashable, which is why mutable types like lists cannot serve as dictionary keys.\n\n---"
+    },
+    {
+      "id": "d01-sets",
+      "title": "Sets",
+      "priority": "must_know",
+      "category": "python",
+      "tags": [
+        "sets",
+        "hashing",
+        "membership"
+      ],
+      "content_markdown": "**Core Concept**\n\nA set stores unique elements with O(1) average-case membership testing, implemented via hashing.\n**Why It Matters**\n\nDeduplication, fast membership testing, and set operations (union, intersection, difference).\n**Mental Model / Mechanics**\n  ```\n  dict → key → value\n  set  → key only\n  ```\n  Both rely heavily on hashing. A set is essentially a dictionary without values.\n**Example**\n  ```python\n  s = {1, 2, 2, 3}\n  print(s)  # {1, 2, 3} — duplicates removed\n\n  valid_users = {\"alice\", \"bob\", \"charlie\"}\n  if user_id in valid_users:  # O(1) average\n      grant_access()\n  ```\n**Failure Modes / Tradeoffs**\n  - Sets are unordered — no indexing\n  - Elements must be hashable\n**Interview-Ready Explanation**\n  > Sets store unique elements with O(1) average membership testing using hashing. They are ideal for deduplication and fast lookups. Sets are essentially dictionaries without values.\n\n---",
+      "markdown": "### [CARD: Sets]\n<!-- id: d01-sets -->\n\n- **Priority:** must_know\n- **Category:** python\n- **Tags:** sets, hashing, membership\n**Core Concept**\n\nA set stores unique elements with O(1) average-case membership testing, implemented via hashing.\n**Why It Matters**\n\nDeduplication, fast membership testing, and set operations (union, intersection, difference).\n**Mental Model / Mechanics**\n  ```\n  dict → key → value\n  set  → key only\n  ```\n  Both rely heavily on hashing. A set is essentially a dictionary without values.\n**Example**\n  ```python\n  s = {1, 2, 2, 3}\n  print(s)  # {1, 2, 3} — duplicates removed\n\n  valid_users = {\"alice\", \"bob\", \"charlie\"}\n  if user_id in valid_users:  # O(1) average\n      grant_access()\n  ```\n**Failure Modes / Tradeoffs**\n  - Sets are unordered — no indexing\n  - Elements must be hashable\n**Interview-Ready Explanation**\n  > Sets store unique elements with O(1) average membership testing using hashing. They are ideal for deduplication and fast lookups. Sets are essentially dictionaries without values.\n\n---"
+    },
+    {
+      "id": "d01-comprehensions",
+      "title": "Comprehensions",
+      "priority": "should_know",
+      "category": "python",
+      "tags": [
+        "comprehensions",
+        "collections",
+        "iteration"
+      ],
+      "content_markdown": "**Core Concept**\n\nComprehensions are concise syntactic constructs for building lists, dicts, and sets from iterables.\n**Why It Matters**\n\nReplaces verbose loop-append patterns with readable one-liners. Does NOT improve asymptotic complexity.\n**Mental Model / Mechanics**\n  General form: `[expression for item in iterable if condition]`\n**Example**\n  ```python\n  # List comprehension\n  squares = [x * x for x in range(5)]\n\n  # With condition\n  even_squares = [x * x for x in range(10) if x % 2 == 0]\n\n  # Dictionary comprehension\n  sq_dict = {x: x * x for x in range(5)}\n\n  # Set comprehension\n  unique_lengths = {len(word) for word in words}\n  ```\n**Failure Modes / Tradeoffs**\n  - Comprehensions are syntactic convenience — they do not magically improve algorithmic complexity\n  - Deeply nested comprehensions harm readability\n**Interview-Ready Explanation**\n  > Comprehensions are concise syntax for constructing collections. They are equivalent to loop-append patterns and do not change asymptotic complexity.\n\n---",
+      "markdown": "### [CARD: Comprehensions]\n<!-- id: d01-comprehensions -->\n\n- **Priority:** should_know\n- **Category:** python\n- **Tags:** comprehensions, collections, iteration\n**Core Concept**\n\nComprehensions are concise syntactic constructs for building lists, dicts, and sets from iterables.\n**Why It Matters**\n\nReplaces verbose loop-append patterns with readable one-liners. Does NOT improve asymptotic complexity.\n**Mental Model / Mechanics**\n  General form: `[expression for item in iterable if condition]`\n**Example**\n  ```python\n  # List comprehension\n  squares = [x * x for x in range(5)]\n\n  # With condition\n  even_squares = [x * x for x in range(10) if x % 2 == 0]\n\n  # Dictionary comprehension\n  sq_dict = {x: x * x for x in range(5)}\n\n  # Set comprehension\n  unique_lengths = {len(word) for word in words}\n  ```\n**Failure Modes / Tradeoffs**\n  - Comprehensions are syntactic convenience — they do not magically improve algorithmic complexity\n  - Deeply nested comprehensions harm readability\n**Interview-Ready Explanation**\n  > Comprehensions are concise syntax for constructing collections. They are equivalent to loop-append patterns and do not change asymptotic complexity.\n\n---"
+    },
+    {
+      "id": "d01-slicing",
+      "title": "Slicing",
+      "priority": "must_know",
+      "category": "python",
+      "tags": [
+        "slicing",
+        "sequences",
+        "shallow-copy"
+      ],
+      "content_markdown": "**Core Concept**\n\nSlicing extracts subsequences using `sequence[start:stop:step]` syntax, where `stop` is excluded.\n**Why It Matters**\n\nProvides a clean, expressive way to extract, reverse, and copy sequences.\n**Mental Model / Mechanics**\n  `a[start:stop:step]` — start is inclusive, stop is exclusive, step controls direction/stride.\n**Example**\n  ```python\n  a = [0, 1, 2, 3, 4, 5]\n  a[1:4]    # [1, 2, 3]\n  a[:3]     # [0, 1, 2]       — first 3 elements\n  a[3:]     # [3, 4, 5]       — from index 3 onward\n  a[:]      # [0, 1, 2, 3, 4, 5]  — shallow copy\n  a[::2]    # [0, 2, 4]       — every second element\n  a[::-1]   # [5, 4, 3, 2, 1, 0]  — reversed\n  ```\n**Failure Modes / Tradeoffs**\n  - `a[:]` creates a **shallow copy**, not a deep copy\n  - Slicing creates a new list; it does not return a view (unlike NumPy)\n**Interview-Ready Explanation**\n  > Slicing uses `[start:stop:step]` to extract subsequences. The stop index is excluded. `a[:]` creates a shallow copy, `a[::-1]` reverses.\n\n---",
+      "markdown": "### [CARD: Slicing]\n<!-- id: d01-slicing -->\n\n- **Priority:** must_know\n- **Category:** python\n- **Tags:** slicing, sequences, shallow-copy\n**Core Concept**\n\nSlicing extracts subsequences using `sequence[start:stop:step]` syntax, where `stop` is excluded.\n**Why It Matters**\n\nProvides a clean, expressive way to extract, reverse, and copy sequences.\n**Mental Model / Mechanics**\n  `a[start:stop:step]` — start is inclusive, stop is exclusive, step controls direction/stride.\n**Example**\n  ```python\n  a = [0, 1, 2, 3, 4, 5]\n  a[1:4]    # [1, 2, 3]\n  a[:3]     # [0, 1, 2]       — first 3 elements\n  a[3:]     # [3, 4, 5]       — from index 3 onward\n  a[:]      # [0, 1, 2, 3, 4, 5]  — shallow copy\n  a[::2]    # [0, 2, 4]       — every second element\n  a[::-1]   # [5, 4, 3, 2, 1, 0]  — reversed\n  ```\n**Failure Modes / Tradeoffs**\n  - `a[:]` creates a **shallow copy**, not a deep copy\n  - Slicing creates a new list; it does not return a view (unlike NumPy)\n**Interview-Ready Explanation**\n  > Slicing uses `[start:stop:step]` to extract subsequences. The stop index is excluded. `a[:]` creates a shallow copy, `a[::-1]` reverses.\n\n---"
+    },
+    {
+      "id": "d01-enumerate",
+      "title": "enumerate()",
+      "priority": "should_know",
+      "category": "python",
+      "tags": [
+        "enumerate",
+        "iteration",
+        "indexing"
+      ],
+      "content_markdown": "**Core Concept**\n\n`enumerate()` yields `(index, value)` pairs from an iterable, replacing manual index management.\n**Why It Matters**\n\nEliminates the anti-pattern of `for i in range(len(items))`.\n**Example**\n  ```python\n  names = [\"A\", \"B\", \"C\"]\n  for i, name in enumerate(names):\n      print(i, name)\n  # 0 A\n  # 1 B\n  # 2 C\n  ```\n**Failure Modes / Tradeoffs**\n  - Accepts an optional `start` parameter: `enumerate(items, start=1)`\n**Interview-Ready Explanation**\n  > `enumerate()` produces `(index, value)` pairs, providing a clean alternative to manual index tracking.\n\n---",
+      "markdown": "### [CARD: enumerate()]\n<!-- id: d01-enumerate -->\n\n- **Priority:** should_know\n- **Category:** python\n- **Tags:** enumerate, iteration, indexing\n**Core Concept**\n\n`enumerate()` yields `(index, value)` pairs from an iterable, replacing manual index management.\n**Why It Matters**\n\nEliminates the anti-pattern of `for i in range(len(items))`.\n**Example**\n  ```python\n  names = [\"A\", \"B\", \"C\"]\n  for i, name in enumerate(names):\n      print(i, name)\n  # 0 A\n  # 1 B\n  # 2 C\n  ```\n**Failure Modes / Tradeoffs**\n  - Accepts an optional `start` parameter: `enumerate(items, start=1)`\n**Interview-Ready Explanation**\n  > `enumerate()` produces `(index, value)` pairs, providing a clean alternative to manual index tracking.\n\n---"
+    },
+    {
+      "id": "d01-zip",
+      "title": "zip()",
+      "priority": "should_know",
+      "category": "python",
+      "tags": [
+        "zip",
+        "iteration",
+        "iterables"
+      ],
+      "content_markdown": "**Core Concept**\n\n`zip()` combines corresponding elements from multiple iterables into tuples.\n**Why It Matters**\n\nPairs up related data from parallel sequences without manual indexing.\n**Example**\n  ```python\n  names = [\"A\", \"B\", \"C\"]\n  scores = [90, 80, 70]\n  for name, score in zip(names, scores):\n      print(name, score)\n  # A 90\n  # B 80\n  # C 70\n  ```\n**Failure Modes / Tradeoffs**\n  - Stops at the shortest iterable by default\n  - Use `itertools.zip_longest` to handle unequal lengths\n**Interview-Ready Explanation**\n  > `zip()` combines corresponding elements from multiple iterables. It stops at the shortest iterable.\n\n---",
+      "markdown": "### [CARD: zip()]\n<!-- id: d01-zip -->\n\n- **Priority:** should_know\n- **Category:** python\n- **Tags:** zip, iteration, iterables\n**Core Concept**\n\n`zip()` combines corresponding elements from multiple iterables into tuples.\n**Why It Matters**\n\nPairs up related data from parallel sequences without manual indexing.\n**Example**\n  ```python\n  names = [\"A\", \"B\", \"C\"]\n  scores = [90, 80, 70]\n  for name, score in zip(names, scores):\n      print(name, score)\n  # A 90\n  # B 80\n  # C 70\n  ```\n**Failure Modes / Tradeoffs**\n  - Stops at the shortest iterable by default\n  - Use `itertools.zip_longest` to handle unequal lengths\n**Interview-Ready Explanation**\n  > `zip()` combines corresponding elements from multiple iterables. It stops at the shortest iterable.\n\n---"
+    },
+    {
+      "id": "d01-map",
+      "title": "map()",
+      "priority": "should_know",
+      "category": "python",
+      "tags": [
+        "map",
+        "functional-programming",
+        "iterators"
+      ],
+      "content_markdown": "**Core Concept**\n\n`map(func, iterable)` applies a function to every element, returning an iterator (Python 3).\n**Why It Matters**\n\nFunctional-style element-wise transformation without explicit loops.\n**Example**\n  ```python\n  numbers = [1, 2, 3]\n  result = list(map(lambda x: x * 2, numbers))\n  # [2, 4, 6]\n  ```\n**Failure Modes / Tradeoffs**\n  - Returns an **iterator** in Python 3, not a list — wrap in `list()` to materialize\n  - List comprehensions are often preferred for readability\n**Interview-Ready Explanation**\n  > `map()` applies a function to every element of an iterable and returns an iterator in Python 3.\n\n---",
+      "markdown": "### [CARD: map()]\n<!-- id: d01-map -->\n\n- **Priority:** should_know\n- **Category:** python\n- **Tags:** map, functional-programming, iterators\n**Core Concept**\n\n`map(func, iterable)` applies a function to every element, returning an iterator (Python 3).\n**Why It Matters**\n\nFunctional-style element-wise transformation without explicit loops.\n**Example**\n  ```python\n  numbers = [1, 2, 3]\n  result = list(map(lambda x: x * 2, numbers))\n  # [2, 4, 6]\n  ```\n**Failure Modes / Tradeoffs**\n  - Returns an **iterator** in Python 3, not a list — wrap in `list()` to materialize\n  - List comprehensions are often preferred for readability\n**Interview-Ready Explanation**\n  > `map()` applies a function to every element of an iterable and returns an iterator in Python 3.\n\n---"
+    },
+    {
+      "id": "d01-filter",
+      "title": "filter()",
+      "priority": "should_know",
+      "category": "python",
+      "tags": [
+        "filter",
+        "functional-programming",
+        "iterators"
+      ],
+      "content_markdown": "**Core Concept**\n\n`filter(func, iterable)` keeps elements for which the function returns `True`, returning an iterator.\n**Why It Matters**\n\nFunctional-style selective filtering without explicit loops.\n**Example**\n  ```python\n  numbers = [1, 2, 3, 4, 5]\n  evens = list(filter(lambda x: x % 2 == 0, numbers))\n  # [2, 4]\n  ```\n**Failure Modes / Tradeoffs**\n  - Returns an iterator in Python 3\n  - List comprehensions with `if` are often more readable\n**Interview-Ready Explanation**\n  > `filter()` keeps elements for which a function evaluates to True and returns an iterator in Python 3.\n\n---",
+      "markdown": "### [CARD: filter()]\n<!-- id: d01-filter -->\n\n- **Priority:** should_know\n- **Category:** python\n- **Tags:** filter, functional-programming, iterators\n**Core Concept**\n\n`filter(func, iterable)` keeps elements for which the function returns `True`, returning an iterator.\n**Why It Matters**\n\nFunctional-style selective filtering without explicit loops.\n**Example**\n  ```python\n  numbers = [1, 2, 3, 4, 5]\n  evens = list(filter(lambda x: x % 2 == 0, numbers))\n  # [2, 4]\n  ```\n**Failure Modes / Tradeoffs**\n  - Returns an iterator in Python 3\n  - List comprehensions with `if` are often more readable\n**Interview-Ready Explanation**\n  > `filter()` keeps elements for which a function evaluates to True and returns an iterator in Python 3.\n\n---"
+    },
+    {
+      "id": "d01-lambda-functions",
+      "title": "Lambda Functions",
+      "priority": "should_know",
+      "category": "python",
+      "tags": [
+        "lambda",
+        "functions",
+        "functional-programming"
+      ],
+      "content_markdown": "**Core Concept**\n\nA `lambda` is an anonymous, single-expression function.\n**Why It Matters**\n\nProvides inline function definitions for short operations, commonly used with `sorted()`, `map()`, `filter()`.\n**Example**\n  ```python\n  square = lambda x: x * x  # Equivalent to def square(x): return x * x\n\n  # Common use: custom sort key\n  people = [(\"A\", 30), (\"B\", 20), (\"C\", 25)]\n  people.sort(key=lambda x: x[1])  # Sort by second element\n  ```\n**Failure Modes / Tradeoffs**\n  - Limited to a single expression — no statements, no multi-line logic\n  - Overuse reduces readability; prefer `def` for anything non-trivial\n**Interview-Ready Explanation**\n  > A lambda is an anonymous single-expression function, commonly used as a key function in `sorted()` or with `map()`/`filter()`.\n\n---",
+      "markdown": "### [CARD: Lambda Functions]\n<!-- id: d01-lambda-functions -->\n\n- **Priority:** should_know\n- **Category:** python\n- **Tags:** lambda, functions, functional-programming\n**Core Concept**\n\nA `lambda` is an anonymous, single-expression function.\n**Why It Matters**\n\nProvides inline function definitions for short operations, commonly used with `sorted()`, `map()`, `filter()`.\n**Example**\n  ```python\n  square = lambda x: x * x  # Equivalent to def square(x): return x * x\n\n  # Common use: custom sort key\n  people = [(\"A\", 30), (\"B\", 20), (\"C\", 25)]\n  people.sort(key=lambda x: x[1])  # Sort by second element\n  ```\n**Failure Modes / Tradeoffs**\n  - Limited to a single expression — no statements, no multi-line logic\n  - Overuse reduces readability; prefer `def` for anything non-trivial\n**Interview-Ready Explanation**\n  > A lambda is an anonymous single-expression function, commonly used as a key function in `sorted()` or with `map()`/`filter()`.\n\n---"
+    },
+    {
+      "id": "d01-args-and-kwargs",
+      "title": "*args and **kwargs",
+      "priority": "must_know",
+      "category": "python",
+      "tags": [
+        "args",
+        "kwargs",
+        "functions"
+      ],
+      "content_markdown": "**Core Concept**\n\n`*args` collects extra positional arguments into a **tuple**. `**kwargs` collects extra keyword arguments into a **dictionary**.\n**Why It Matters**\n\nEnables flexible function signatures. Appears extensively in ML frameworks (PyTorch, TensorFlow, HuggingFace) for configuration forwarding, decorator patterns, and API wrappers.\n**Mental Model / Mechanics**\n  ```\n  *args    → extra positional arguments → tuple\n  **kwargs → extra keyword arguments    → dictionary\n  ```\n**Example**\n  ```python\n  def add(*args):\n      return sum(args)\n\n  add(1, 2, 3, 4)  # args = (1, 2, 3, 4) → returns 10\n\n  def configure(**kwargs):\n      print(kwargs)\n\n  configure(model=\"bert\", batch_size=32)\n  # kwargs = {\"model\": \"bert\", \"batch_size\": 32}\n  ```\n**Failure Modes / Tradeoffs**\n  - `args` is always a tuple, `kwargs` is always a dict\n  - Order in signature: `def f(regular, *args, **kwargs)`\n  - Can be used for argument forwarding: `def wrapper(*args, **kwargs): return inner(*args, **kwargs)`\n**Interview-Ready Explanation**\n  > `*args` collects extra positional arguments into a tuple. `**kwargs` collects extra keyword arguments into a dictionary. They enable flexible function signatures used extensively in ML frameworks.\n\n---",
+      "markdown": "### [CARD: *args and **kwargs]\n<!-- id: d01-args-and-kwargs -->\n\n- **Priority:** must_know\n- **Category:** python\n- **Tags:** args, kwargs, functions\n**Core Concept**\n\n`*args` collects extra positional arguments into a **tuple**. `**kwargs` collects extra keyword arguments into a **dictionary**.\n**Why It Matters**\n\nEnables flexible function signatures. Appears extensively in ML frameworks (PyTorch, TensorFlow, HuggingFace) for configuration forwarding, decorator patterns, and API wrappers.\n**Mental Model / Mechanics**\n  ```\n  *args    → extra positional arguments → tuple\n  **kwargs → extra keyword arguments    → dictionary\n  ```\n**Example**\n  ```python\n  def add(*args):\n      return sum(args)\n\n  add(1, 2, 3, 4)  # args = (1, 2, 3, 4) → returns 10\n\n  def configure(**kwargs):\n      print(kwargs)\n\n  configure(model=\"bert\", batch_size=32)\n  # kwargs = {\"model\": \"bert\", \"batch_size\": 32}\n  ```\n**Failure Modes / Tradeoffs**\n  - `args` is always a tuple, `kwargs` is always a dict\n  - Order in signature: `def f(regular, *args, **kwargs)`\n  - Can be used for argument forwarding: `def wrapper(*args, **kwargs): return inner(*args, **kwargs)`\n**Interview-Ready Explanation**\n  > `*args` collects extra positional arguments into a tuple. `**kwargs` collects extra keyword arguments into a dictionary. They enable flexible function signatures used extensively in ML frameworks.\n\n---"
+    },
+    {
+      "id": "d01-shallow-vs-deep-copy",
+      "title": "Shallow vs Deep Copy",
+      "priority": "must_know",
+      "category": "python",
+      "tags": [
+        "copying",
+        "shallow-copy",
+        "deep-copy"
+      ],
+      "content_markdown": "**Core Concept**\n\nA **shallow copy** creates a new outer container but preserves references to nested objects. A **deep copy** recursively creates independent copies of all nested objects.\n**Why It Matters**\n\nCritical for safely duplicating nested ML data structures, avoiding unintended shared state.\n**Mental Model / Mechanics**\n  ```\n  Shallow copy:\n  a ──► outer list A ──► [1, 2]  ← SHARED\n  b ──► outer list B ──► [1, 2]  ← SAME OBJECT\n\n  Deep copy:\n  a ──► outer A ──► inner objects A  (independent)\n  b ──► outer B ──► inner objects B  (independent)\n  ```\n**Example**\n  ```python\n  import copy\n\n  a = [[1, 2], [3, 4]]\n\n  # Shallow copy — new outer list, shared inner lists\n  b = a.copy()\n  b[0].append(99)\n  print(a)  # [[1, 2, 99], [3, 4]] — a is affected!\n\n  # Deep copy — fully independent\n  a = [[1, 2], [3, 4]]\n  b = copy.deepcopy(a)\n  b[0].append(99)\n  print(a)  # [[1, 2], [3, 4]] — a is unaffected\n  ```\n**Failure Modes / Tradeoffs**\n  - `list.copy()`, `list(original)`, and `original[:]` all produce shallow copies\n  - Deep copy is more expensive and can be slow for large/complex structures\n  - Deep copy handles circular references; shallow copy does not need to\n**Interview-Ready Explanation**\n  > A shallow copy creates a new outer container but preserves references to nested objects. A deep copy recursively creates independent copies of nested objects. This matters critically with nested ML data structures.\n\n---\n\n**Machine Learning Foundations**\n\n---",
+      "markdown": "### [CARD: Shallow vs Deep Copy]\n<!-- id: d01-shallow-vs-deep-copy -->\n\n- **Priority:** must_know\n- **Category:** python\n- **Tags:** copying, shallow-copy, deep-copy\n**Core Concept**\n\nA **shallow copy** creates a new outer container but preserves references to nested objects. A **deep copy** recursively creates independent copies of all nested objects.\n**Why It Matters**\n\nCritical for safely duplicating nested ML data structures, avoiding unintended shared state.\n**Mental Model / Mechanics**\n  ```\n  Shallow copy:\n  a ──► outer list A ──► [1, 2]  ← SHARED\n  b ──► outer list B ──► [1, 2]  ← SAME OBJECT\n\n  Deep copy:\n  a ──► outer A ──► inner objects A  (independent)\n  b ──► outer B ──► inner objects B  (independent)\n  ```\n**Example**\n  ```python\n  import copy\n\n  a = [[1, 2], [3, 4]]\n\n  # Shallow copy — new outer list, shared inner lists\n  b = a.copy()\n  b[0].append(99)\n  print(a)  # [[1, 2, 99], [3, 4]] — a is affected!\n\n  # Deep copy — fully independent\n  a = [[1, 2], [3, 4]]\n  b = copy.deepcopy(a)\n  b[0].append(99)\n  print(a)  # [[1, 2], [3, 4]] — a is unaffected\n  ```\n**Failure Modes / Tradeoffs**\n  - `list.copy()`, `list(original)`, and `original[:]` all produce shallow copies\n  - Deep copy is more expensive and can be slow for large/complex structures\n  - Deep copy handles circular references; shallow copy does not need to\n**Interview-Ready Explanation**\n  > A shallow copy creates a new outer container but preserves references to nested objects. A deep copy recursively creates independent copies of nested objects. This matters critically with nested ML data structures.\n\n---\n\n**Machine Learning Foundations**\n\n---"
+    },
+    {
+      "id": "d01-what-is-machine-learning",
+      "title": "What Is Machine Learning",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "machine-learning",
+        "problem-framing"
+      ],
+      "content_markdown": "**Core Concept**\n\nMachine learning is a paradigm where models learn patterns from data rather than being explicitly programmed with rules.\n**Why It Matters**\n\nMany problems (image recognition, language understanding, fraud detection) are too complex to encode as explicit rules. ML learns the mapping from data.\n**Mental Model / Mechanics**\n  ```\n  Traditional programming:\n  Rules + Data → Output\n\n  Machine learning:\n  Data + Desired Outputs → Learning → Model\n  ```\n  The model learns a mapping: `features → prediction`\n**Failure Modes / Tradeoffs**\n  - ML is not magic — it requires quality data, proper evaluation, and domain understanding\n  - A model can only learn patterns that exist in the training data\n**Interview-Ready Explanation**\n  > Traditional programming encodes rules explicitly. Machine learning learns patterns from data to produce a model that maps inputs to outputs.\n\n---",
+      "markdown": "### [CARD: What Is Machine Learning]\n<!-- id: d01-what-is-machine-learning -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** machine-learning, problem-framing\n**Core Concept**\n\nMachine learning is a paradigm where models learn patterns from data rather than being explicitly programmed with rules.\n**Why It Matters**\n\nMany problems (image recognition, language understanding, fraud detection) are too complex to encode as explicit rules. ML learns the mapping from data.\n**Mental Model / Mechanics**\n  ```\n  Traditional programming:\n  Rules + Data → Output\n\n  Machine learning:\n  Data + Desired Outputs → Learning → Model\n  ```\n  The model learns a mapping: `features → prediction`\n**Failure Modes / Tradeoffs**\n  - ML is not magic — it requires quality data, proper evaluation, and domain understanding\n  - A model can only learn patterns that exist in the training data\n**Interview-Ready Explanation**\n  > Traditional programming encodes rules explicitly. Machine learning learns patterns from data to produce a model that maps inputs to outputs.\n\n---"
+    },
+    {
+      "id": "d01-features-vs-labels",
+      "title": "Features vs Labels",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "features",
+        "labels",
+        "supervised-learning"
+      ],
+      "content_markdown": "**Core Concept**\n\n**Features** (X) are input variables the model uses. **Labels** (y) are the target values the model tries to predict.\n**Why It Matters**\n\nFormalizes the input-output relationship in supervised learning.\n**Mental Model / Mechanics**\n  ```\n  X = features / inputs\n  y = label / target\n\n  Dataset: (X, y) pairs\n  Model learns: X → y\n  ```\n**Example**\n  ```\n  Features (X):          Label (y):\n  CPU util = 82%         failure = 1\n  Latency = 120ms\n  Packet loss = 3%\n  ```\n**Interview-Ready Explanation**\n  > Features are input variables used by the model. Labels are target values the model predicts. In supervised learning, the model learns a mapping from features X to labels y.\n\n---",
+      "markdown": "### [CARD: Features vs Labels]\n<!-- id: d01-features-vs-labels -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** features, labels, supervised-learning\n**Core Concept**\n\n**Features** (X) are input variables the model uses. **Labels** (y) are the target values the model tries to predict.\n**Why It Matters**\n\nFormalizes the input-output relationship in supervised learning.\n**Mental Model / Mechanics**\n  ```\n  X = features / inputs\n  y = label / target\n\n  Dataset: (X, y) pairs\n  Model learns: X → y\n  ```\n**Example**\n  ```\n  Features (X):          Label (y):\n  CPU util = 82%         failure = 1\n  Latency = 120ms\n  Packet loss = 3%\n  ```\n**Interview-Ready Explanation**\n  > Features are input variables used by the model. Labels are target values the model predicts. In supervised learning, the model learns a mapping from features X to labels y.\n\n---"
+    },
+    {
+      "id": "d01-supervised-vs-unsupervised-learning",
+      "title": "Supervised vs Unsupervised Learning",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "supervised-learning",
+        "unsupervised-learning",
+        "problem-framing"
+      ],
+      "content_markdown": "**Core Concept**\n\n**Supervised learning** uses labeled examples (X → y) to learn a mapping. **Unsupervised learning** discovers structure in data without explicit labels.\n**Why It Matters**\n\nDifferent problems have different data availability. Labeled data enables direct prediction; unlabeled data still contains useful structure.\n**Mental Model / Mechanics**\n  **Supervised** → two major forms:\n  - **Classification:** predict a category (spam/not spam, fraud/legitimate)\n  - **Regression:** predict a continuous value (price, temperature, demand)\n\n  **Unsupervised** → discover structure:\n  - Clustering (K-means, DBSCAN)\n  - Dimensionality reduction (PCA)\n  - Anomaly detection\n**Failure Modes / Tradeoffs**\n  - Supervised requires labeled data, which can be expensive to obtain\n  - Unsupervised has no direct ground truth for evaluation\n**Interview-Ready Explanation**\n  > Supervised learning uses labeled data to learn a mapping from inputs to known targets. Unsupervised learning discovers hidden structure without explicit labels. Classification predicts categories; regression predicts continuous values.\n\n---",
+      "markdown": "### [CARD: Supervised vs Unsupervised Learning]\n<!-- id: d01-supervised-vs-unsupervised-learning -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** supervised-learning, unsupervised-learning, problem-framing\n**Core Concept**\n\n**Supervised learning** uses labeled examples (X → y) to learn a mapping. **Unsupervised learning** discovers structure in data without explicit labels.\n**Why It Matters**\n\nDifferent problems have different data availability. Labeled data enables direct prediction; unlabeled data still contains useful structure.\n**Mental Model / Mechanics**\n  **Supervised** → two major forms:\n  - **Classification:** predict a category (spam/not spam, fraud/legitimate)\n  - **Regression:** predict a continuous value (price, temperature, demand)\n\n  **Unsupervised** → discover structure:\n  - Clustering (K-means, DBSCAN)\n  - Dimensionality reduction (PCA)\n  - Anomaly detection\n**Failure Modes / Tradeoffs**\n  - Supervised requires labeled data, which can be expensive to obtain\n  - Unsupervised has no direct ground truth for evaluation\n**Interview-Ready Explanation**\n  > Supervised learning uses labeled data to learn a mapping from inputs to known targets. Unsupervised learning discovers hidden structure without explicit labels. Classification predicts categories; regression predicts continuous values.\n\n---"
+    },
+    {
+      "id": "d01-parameters-vs-hyperparameters",
+      "title": "Parameters vs Hyperparameters",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "parameters",
+        "hyperparameters",
+        "optimization"
+      ],
+      "content_markdown": "**Core Concept**\n\n**Parameters** are learned from training data by the optimization algorithm. **Hyperparameters** control the model or training process and are set externally.\n**Why It Matters**\n\nSeparates what the model learns automatically from what a practitioner must configure.\n**Mental Model / Mechanics**\n  ```\n  Parameters (learned):          Hyperparameters (set externally):\n  weights w₁, w₂, ...           learning rate\n  bias b                         batch size\n                                  number of trees\n                                  max depth\n                                  regularization strength\n                                  number of epochs\n  ```\n**Example**\n  ```\n  Linear regression: ŷ = w₁x₁ + w₂x₂ + b\n  Parameters: w₁, w₂, b (learned via training)\n  Hyperparameters: learning_rate=0.001 (set by you)\n  ```\n**Interview-Ready Explanation**\n  > Parameters are learned from training data (e.g., weights in a neural network). Hyperparameters control the model or learning process and are selected externally (e.g., learning rate, batch size).\n\n---",
+      "markdown": "### [CARD: Parameters vs Hyperparameters]\n<!-- id: d01-parameters-vs-hyperparameters -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** parameters, hyperparameters, optimization\n**Core Concept**\n\n**Parameters** are learned from training data by the optimization algorithm. **Hyperparameters** control the model or training process and are set externally.\n**Why It Matters**\n\nSeparates what the model learns automatically from what a practitioner must configure.\n**Mental Model / Mechanics**\n  ```\n  Parameters (learned):          Hyperparameters (set externally):\n  weights w₁, w₂, ...           learning rate\n  bias b                         batch size\n                                  number of trees\n                                  max depth\n                                  regularization strength\n                                  number of epochs\n  ```\n**Example**\n  ```\n  Linear regression: ŷ = w₁x₁ + w₂x₂ + b\n  Parameters: w₁, w₂, b (learned via training)\n  Hyperparameters: learning_rate=0.001 (set by you)\n  ```\n**Interview-Ready Explanation**\n  > Parameters are learned from training data (e.g., weights in a neural network). Hyperparameters control the model or learning process and are selected externally (e.g., learning rate, batch size).\n\n---"
+    },
+    {
+      "id": "d01-training-validation-and-test-sets",
+      "title": "Training, Validation and Test Sets",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "data-splits",
+        "validation",
+        "test-set"
+      ],
+      "content_markdown": "**Core Concept**\n\nData is split into three sets: **training** (learn parameters), **validation** (tune hyperparameters/select models), **test** (final unbiased evaluation).\n**Why It Matters**\n\nPrevents overly optimistic evaluation. The test set must remain untouched during development to provide a genuinely unbiased estimate.\n**Mental Model / Mechanics**\n  ```\n  Training Set    → Learn model parameters\n  Validation Set  → Choose models / hyperparameters\n  Test Set        → Final evaluation (genuinely unseen)\n  ```\n  The test set should **not** influence model development. If you repeatedly tune based on test performance, it becomes another validation set.\n**Failure Modes / Tradeoffs**\n  - Repeatedly evaluating on the test set and adjusting the model leaks test information into development\n  - Small datasets may require cross-validation instead of a fixed validation split\n**Interview-Ready Explanation**\n  > Training data is used to learn parameters. Validation data guides model selection and hyperparameter tuning. The test set is reserved for final evaluation and should not influence development decisions.\n\n---",
+      "markdown": "### [CARD: Training, Validation and Test Sets]\n<!-- id: d01-training-validation-and-test-sets -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** data-splits, validation, test-set\n**Core Concept**\n\nData is split into three sets: **training** (learn parameters), **validation** (tune hyperparameters/select models), **test** (final unbiased evaluation).\n**Why It Matters**\n\nPrevents overly optimistic evaluation. The test set must remain untouched during development to provide a genuinely unbiased estimate.\n**Mental Model / Mechanics**\n  ```\n  Training Set    → Learn model parameters\n  Validation Set  → Choose models / hyperparameters\n  Test Set        → Final evaluation (genuinely unseen)\n  ```\n  The test set should **not** influence model development. If you repeatedly tune based on test performance, it becomes another validation set.\n**Failure Modes / Tradeoffs**\n  - Repeatedly evaluating on the test set and adjusting the model leaks test information into development\n  - Small datasets may require cross-validation instead of a fixed validation split\n**Interview-Ready Explanation**\n  > Training data is used to learn parameters. Validation data guides model selection and hyperparameter tuning. The test set is reserved for final evaluation and should not influence development decisions.\n\n---"
+    },
+    {
+      "id": "d01-generalization",
+      "title": "Generalization",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "generalization",
+        "unseen-data",
+        "evaluation"
+      ],
+      "content_markdown": "**Core Concept**\n\nGeneralization is the ability of a model to perform well on **unseen data** from the same underlying distribution, not just the training set.\n**Why It Matters**\n\nA model that memorizes training data is useless in production. The central goal of ML is to generalize.\n**Mental Model / Mechanics**\n  ```\n  Training accuracy: 99.9%  |  Test accuracy: 72%  → Poor generalization\n  Training accuracy: 94%    |  Test accuracy: 91%  → Good generalization\n  ```\n**Interview-Ready Explanation**\n  > Generalization is the ability to perform well on unseen data. The goal of ML is not to fit training data perfectly but to learn patterns that transfer to new examples.\n\n---",
+      "markdown": "### [CARD: Generalization]\n<!-- id: d01-generalization -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** generalization, unseen-data, evaluation\n**Core Concept**\n\nGeneralization is the ability of a model to perform well on **unseen data** from the same underlying distribution, not just the training set.\n**Why It Matters**\n\nA model that memorizes training data is useless in production. The central goal of ML is to generalize.\n**Mental Model / Mechanics**\n  ```\n  Training accuracy: 99.9%  |  Test accuracy: 72%  → Poor generalization\n  Training accuracy: 94%    |  Test accuracy: 91%  → Good generalization\n  ```\n**Interview-Ready Explanation**\n  > Generalization is the ability to perform well on unseen data. The goal of ML is not to fit training data perfectly but to learn patterns that transfer to new examples.\n\n---"
+    },
+    {
+      "id": "d01-overfitting-vs-underfitting",
+      "title": "Overfitting vs Underfitting",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "overfitting",
+        "underfitting",
+        "generalization"
+      ],
+      "content_markdown": "**Core Concept**\n\n**Overfitting:** the model learns training-specific patterns (including noise), performing well on training data but poorly on unseen data. **Underfitting:** the model is too simple to capture important patterns, performing poorly on both.\n**Why It Matters**\n\nDiagnosing whether a model is too complex or too simple is fundamental to improving it.\n**Mental Model / Mechanics**\n  ```\n  Underfitting:                    Overfitting:\n  Train perf → poor                Train perf → excellent\n  Val perf   → poor                Val perf   → poor\n  ```\n  **Underfitting fixes:** more expressive model, better features, reduce regularization, train longer\n  **Overfitting fixes:** more data, regularization, simpler model, early stopping, data augmentation, dropout\n**Failure Modes / Tradeoffs**\n  - High training accuracy does NOT mean the model is good — you must check validation/test\n**Interview-Ready Explanation**\n  > Overfitting: model learns noise/training-specific patterns → great training, poor generalization. Underfitting: model too simple → poor everywhere. The fix depends on diagnosing which problem you have.\n\n---",
+      "markdown": "### [CARD: Overfitting vs Underfitting]\n<!-- id: d01-overfitting-vs-underfitting -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** overfitting, underfitting, generalization\n**Core Concept**\n\n**Overfitting:** the model learns training-specific patterns (including noise), performing well on training data but poorly on unseen data. **Underfitting:** the model is too simple to capture important patterns, performing poorly on both.\n**Why It Matters**\n\nDiagnosing whether a model is too complex or too simple is fundamental to improving it.\n**Mental Model / Mechanics**\n  ```\n  Underfitting:                    Overfitting:\n  Train perf → poor                Train perf → excellent\n  Val perf   → poor                Val perf   → poor\n  ```\n  **Underfitting fixes:** more expressive model, better features, reduce regularization, train longer\n  **Overfitting fixes:** more data, regularization, simpler model, early stopping, data augmentation, dropout\n**Failure Modes / Tradeoffs**\n  - High training accuracy does NOT mean the model is good — you must check validation/test\n**Interview-Ready Explanation**\n  > Overfitting: model learns noise/training-specific patterns → great training, poor generalization. Underfitting: model too simple → poor everywhere. The fix depends on diagnosing which problem you have.\n\n---"
+    },
+    {
+      "id": "d01-bias-vs-variance",
+      "title": "Bias vs Variance",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "bias",
+        "variance",
+        "generalization"
+      ],
+      "content_markdown": "**Core Concept**\n\n**Bias** is systematic error from overly restrictive model assumptions (can't learn enough). **Variance** is sensitivity to the particular training dataset (learned too much about this specific data).\n**Why It Matters**\n\nProvides a framework for understanding *why* a model underfits or overfits, and what lever to pull.\n**Mental Model / Mechanics**\n  ```\n  High Bias → underfitting → train error high, val error high\n  \"The model can't learn enough.\"\n\n  High Variance → overfitting → train error low, val error high\n  \"The model learned too much about this particular training set.\"\n\n  Model complexity →  Bias ↓  Variance ↑\n  Regularization   →  Bias ↑  Variance ↓\n\n  The goal is not to minimize either independently.\n  The goal is good generalization.\n  ```\n**Failure Modes / Tradeoffs**\n  - \"More complex is always better\" is false — it reduces bias but increases variance\n  - The sweet spot depends on data size, noise, and problem complexity\n**Interview-Ready Explanation**\n  > Bias is error from restrictive assumptions (underfitting). Variance is sensitivity to the training set (overfitting). Increasing model complexity reduces bias but increases variance. The goal is to find the balance that maximizes generalization.\n\n---",
+      "markdown": "### [CARD: Bias vs Variance]\n<!-- id: d01-bias-vs-variance -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** bias, variance, generalization\n**Core Concept**\n\n**Bias** is systematic error from overly restrictive model assumptions (can't learn enough). **Variance** is sensitivity to the particular training dataset (learned too much about this specific data).\n**Why It Matters**\n\nProvides a framework for understanding *why* a model underfits or overfits, and what lever to pull.\n**Mental Model / Mechanics**\n  ```\n  High Bias → underfitting → train error high, val error high\n  \"The model can't learn enough.\"\n\n  High Variance → overfitting → train error low, val error high\n  \"The model learned too much about this particular training set.\"\n\n  Model complexity →  Bias ↓  Variance ↑\n  Regularization   →  Bias ↑  Variance ↓\n\n  The goal is not to minimize either independently.\n  The goal is good generalization.\n  ```\n**Failure Modes / Tradeoffs**\n  - \"More complex is always better\" is false — it reduces bias but increases variance\n  - The sweet spot depends on data size, noise, and problem complexity\n**Interview-Ready Explanation**\n  > Bias is error from restrictive assumptions (underfitting). Variance is sensitivity to the training set (overfitting). Increasing model complexity reduces bias but increases variance. The goal is to find the balance that maximizes generalization.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "**Python chain:**\n```\nObjects → References → Assignment → Mutation → Copying → Shallow vs Deep Copy\n```\nFoundation for: Iterators, Generators, Asyncio, Concurrency, PyTorch tensors, Data pipelines, Shared state\n\n**ML chain:**\n```\nData → Features + Labels → Model → Prediction → Loss / Evaluation → Optimization → Generalization\n```\nLater adds: Regularization, Cross-validation, Hyperparameter tuning, Deployment, Monitoring\n\n---",
+  "common_misconceptions_markdown": "- **Myth:** `b = a` copies the list.\n  **Reality:** It creates another reference to the same object.\n\n- **Myth:** Immutable means the variable cannot change.\n  **Reality:** The object is immutable; the name can be rebound. `x = 10; x = 20` is valid.\n\n- **Myth:** `==` and `is` are interchangeable.\n  **Reality:** `==` checks value equality; `is` checks object identity.\n\n- **Myth:** More complex models are always better.\n  **Reality:** Greater complexity can reduce bias but increase variance and overfitting.\n\n- **Myth:** High training accuracy means the model is good.\n  **Reality:** The important question is whether the model generalizes to unseen data.\n\n- **Myth:** Validation and test sets are the same.\n  **Reality:** Validation guides development decisions; the test set is for final, untouched evaluation.\n\n---",
+  "out_of_scope_markdown": "- Python bytecode internals\n- CPython's C implementation\n- Descriptor protocol / metaclasses\n- Advanced metaprogramming / obscure dunder methods\n- Exact dictionary implementation details\n- Rare edge cases of copying\n- Mathematical derivations of bias/variance\n\n---",
+  "qa_drill": [
+    {
+      "id": "d01-qa-001",
+      "question": "What exactly happens when I execute `b = a` where `a` is a list?",
+      "answer": "`b` becomes another reference to the same list object. No new list is created. Mutating through either name affects the same object.",
+      "tags": [
+        "assignment",
+        "references"
+      ],
+      "linked_card_ids": [
+        "d01-assignment-does-not-mean-copying"
+      ]
+    },
+    {
+      "id": "d01-qa-002",
+      "question": "What is the difference between `==` and `is`?",
+      "answer": "`==` checks value equality (do two objects have the same value). `is` checks object identity (are they the exact same object in memory).",
+      "tags": [
+        "equality",
+        "identity"
+      ],
+      "linked_card_ids": [
+        "d01-python-objects-and-references"
+      ]
+    },
+    {
+      "id": "d01-qa-003",
+      "question": "Why can modifying `b` modify `a` after `b = a`?",
+      "answer": "Because assignment creates a shared reference, not a copy. Both names point to the same mutable object.",
+      "tags": [
+        "assignment",
+        "shared-state"
+      ],
+      "linked_card_ids": [
+        "d01-assignment-does-not-mean-copying"
+      ]
+    },
+    {
+      "id": "d01-qa-004",
+      "question": "What makes an object mutable?",
+      "answer": "A mutable object can be changed in place after creation (e.g., lists, dicts, sets). An immutable object cannot (e.g., int, str, tuple).",
+      "tags": [
+        "mutability",
+        "immutability"
+      ],
+      "linked_card_ids": [
+        "d01-mutable-vs-immutable-objects"
+      ]
+    },
+    {
+      "id": "d01-qa-005",
+      "question": "Why can a tuple contain a mutable object even though the tuple itself is immutable?",
+      "answer": "The tuple's immutability means you cannot replace its elements. But the elements themselves are independent objects — if one is a mutable list, the list can still be modified in place.",
+      "tags": [
+        "tuples",
+        "mutability"
+      ],
+      "linked_card_ids": [
+        "d01-lists-vs-tuples"
+      ]
+    },
+    {
+      "id": "d01-qa-006",
+      "question": "What is the difference between a list and a tuple?",
+      "answer": "Lists are mutable ordered sequences (support append/remove/modify). Tuples are immutable ordered sequences (fixed structure, hashable if contents are hashable).",
+      "tags": [
+        "lists",
+        "tuples"
+      ],
+      "linked_card_ids": [
+        "d01-lists-vs-tuples"
+      ]
+    },
+    {
+      "id": "d01-qa-007",
+      "question": "Why do dictionary keys need to be hashable?",
+      "answer": "Dictionaries use hashing for O(1) average-case lookup. The hash of a key must remain stable — mutable objects can't guarantee this.",
+      "tags": [
+        "dictionaries",
+        "hashing"
+      ],
+      "linked_card_ids": [
+        "d01-dictionaries"
+      ]
+    },
+    {
+      "id": "d01-qa-008",
+      "question": "Why is set membership generally fast?",
+      "answer": "Sets use hashing internally, providing O(1) average-case membership testing.",
+      "tags": [
+        "sets",
+        "hashing"
+      ],
+      "linked_card_ids": [
+        "d01-sets"
+      ]
+    },
+    {
+      "id": "d01-qa-009",
+      "question": "What does `enumerate()` produce?",
+      "answer": "`(index, value)` pairs from an iterable, replacing manual index management.",
+      "tags": [
+        "enumerate",
+        "iteration"
+      ],
+      "linked_card_ids": [
+        "d01-enumerate"
+      ]
+    },
+    {
+      "id": "d01-qa-010",
+      "question": "What does `zip()` do?",
+      "answer": "Combines corresponding elements from multiple iterables into tuples, stopping at the shortest iterable.",
+      "tags": [
+        "zip",
+        "iterables"
+      ],
+      "linked_card_ids": [
+        "d01-zip"
+      ]
+    },
+    {
+      "id": "d01-qa-011",
+      "question": "What does `*args` contain?",
+      "answer": "A tuple of extra positional arguments passed to a function.",
+      "tags": [
+        "args",
+        "functions"
+      ],
+      "linked_card_ids": [
+        "d01-args-and-kwargs"
+      ]
+    },
+    {
+      "id": "d01-qa-012",
+      "question": "What does `**kwargs` contain?",
+      "answer": "A dictionary of extra keyword arguments passed to a function.",
+      "tags": [
+        "kwargs",
+        "functions"
+      ],
+      "linked_card_ids": [
+        "d01-args-and-kwargs"
+      ]
+    },
+    {
+      "id": "d01-qa-013",
+      "question": "Explain shallow vs deep copy using a nested list.",
+      "answer": "Given `a = [[1,2],[3,4]]`: a shallow copy (`a.copy()`) creates a new outer list but the inner lists are still shared — mutating an inner list affects both. A deep copy (`copy.deepcopy(a)`) recursively copies everything, making fully independent structures.",
+      "tags": [
+        "copying",
+        "nested-data"
+      ],
+      "linked_card_ids": [
+        "d01-shallow-vs-deep-copy"
+      ]
+    },
+    {
+      "id": "d01-qa-014",
+      "question": "What is the difference between a feature and a label?",
+      "answer": "Features (X) are input variables the model uses for prediction. Labels (y) are the target values the model tries to predict.",
+      "tags": [
+        "features",
+        "labels"
+      ],
+      "linked_card_ids": [
+        "d01-features-vs-labels"
+      ]
+    },
+    {
+      "id": "d01-qa-015",
+      "question": "What is the difference between classification and regression?",
+      "answer": "Classification predicts discrete categories (spam/not spam). Regression predicts continuous values (price, temperature).",
+      "tags": [
+        "classification",
+        "regression"
+      ],
+      "linked_card_ids": [
+        "d01-supervised-vs-unsupervised-learning"
+      ]
+    },
+    {
+      "id": "d01-qa-016",
+      "question": "What is the difference between supervised and unsupervised learning?",
+      "answer": "Supervised learning uses labeled data to learn input-output mappings. Unsupervised learning discovers structure in unlabeled data.",
+      "tags": [
+        "supervised-learning",
+        "unsupervised-learning"
+      ],
+      "linked_card_ids": [
+        "d01-supervised-vs-unsupervised-learning"
+      ]
+    },
+    {
+      "id": "d01-qa-017",
+      "question": "What is the difference between a parameter and a hyperparameter?",
+      "answer": "Parameters are learned from data during training (weights, biases). Hyperparameters control the training process and are set externally (learning rate, batch size).",
+      "tags": [
+        "parameters",
+        "hyperparameters"
+      ],
+      "linked_card_ids": [
+        "d01-parameters-vs-hyperparameters"
+      ]
+    },
+    {
+      "id": "d01-qa-018",
+      "question": "Why do we need training, validation and test sets?",
+      "answer": "Training: learn parameters. Validation: tune hyperparameters and select models. Test: final unbiased evaluation on genuinely unseen data.",
+      "tags": [
+        "data-splits",
+        "validation",
+        "test-set"
+      ],
+      "linked_card_ids": [
+        "d01-training-validation-and-test-sets"
+      ]
+    },
+    {
+      "id": "d01-qa-019",
+      "question": "What is generalization?",
+      "answer": "The ability of a model to perform well on unseen data from the same distribution, not just the training set.",
+      "tags": [
+        "generalization",
+        "evaluation"
+      ],
+      "linked_card_ids": [
+        "d01-generalization"
+      ]
+    },
+    {
+      "id": "d01-qa-020",
+      "question": "What is overfitting?",
+      "answer": "When a model learns training-specific patterns including noise, achieving excellent training performance but poor generalization.",
+      "tags": [
+        "overfitting",
+        "generalization"
+      ],
+      "linked_card_ids": [
+        "d01-overfitting-vs-underfitting"
+      ]
+    },
+    {
+      "id": "d01-qa-021",
+      "question": "What is underfitting?",
+      "answer": "When a model is too simple to capture important patterns, resulting in poor performance on both training and unseen data.",
+      "tags": [
+        "underfitting",
+        "generalization"
+      ],
+      "linked_card_ids": [
+        "d01-overfitting-vs-underfitting"
+      ]
+    },
+    {
+      "id": "d01-qa-022",
+      "question": "Explain bias vs variance in plain English.",
+      "answer": "Bias = model is too rigid, makes systematic errors (underfitting). Variance = model is too sensitive to the specific training data (overfitting). More complexity reduces bias but increases variance.",
+      "tags": [
+        "bias",
+        "variance"
+      ],
+      "linked_card_ids": [
+        "d01-bias-vs-variance"
+      ]
+    },
+    {
+      "id": "d01-qa-023",
+      "question": "Why can a model have 99% training accuracy and still be a bad model?",
+      "answer": "Because it may have memorized training data (overfitting) and fail to generalize. What matters is performance on unseen data.",
+      "tags": [
+        "overfitting",
+        "generalization"
+      ],
+      "linked_card_ids": [
+        "d01-overfitting-vs-underfitting",
+        "d01-generalization"
+      ]
+    }
+  ]
+}

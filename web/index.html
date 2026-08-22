@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f8f7f4" />
+    <meta name="description" content="A focused MLE interview study companion." />
+    <title>Switch — MLE Flashcards</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar" aria-label="Course navigation">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">S</div>
+          <div>
+            <p class="eyebrow">INTERVIEW PREP</p>
+            <h1>Switch</h1>
+          </div>
+          <button class="icon-button sidebar-close" id="close-sidebar" aria-label="Close course navigation">×</button>
+        </div>
+        <div class="course-summary" id="course-summary"></div>
+        <nav class="day-list" id="day-list" aria-label="Study days"></nav>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <button class="icon-button menu-button" id="open-sidebar" aria-label="Open course navigation">☰</button>
+          <div class="topbar-copy">
+            <p class="eyebrow" id="topbar-label">LOADING COURSE</p>
+            <p class="topbar-title" id="topbar-title">Preparing your study space…</p>
+          </div>
+          <button class="icon-button" id="theme-toggle" aria-label="Switch color theme" title="Switch color theme">◐</button>
+        </header>
+
+        <div class="workspace" id="workspace" aria-live="polite">
+          <div class="loading-state">
+            <div class="loader" aria-hidden="true"></div>
+            <p>Loading your study material…</p>
+          </div>
+        </div>
+      </main>
+    </div>
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+    <script src="app.js"></script>
+  </body>
+</html>

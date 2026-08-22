@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "day": 24,
+  "title": "Advanced LLM Topics: MoE, QLoRA, DPO & GRPO",
+  "topics": [
+    "advanced-llm",
+    "moe",
+    "qlora",
+    "dpo",
+    "grpo"
+  ],
+  "tags": [
+    "advanced-llm",
+    "moe",
+    "qlora",
+    "dpo",
+    "grpo"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 0,
+    "must_know": 4,
+    "should_know": 0
+  },
+  "daily_objective_markdown": "Understand advanced mechanisms and frontier research in LLMs, focusing on efficiency, fine-tuning, and alignment. This includes Mixture of Experts (MoE) for scaling, QLoRA for efficient tuning, Direct Preference Optimization (DPO) as an alternative to PPO, and Group Relative Policy Optimization (GRPO) for reasoning.\n\n---",
+  "syllabus_markdown": "- 🔴 **MUST KNOW:** Mixture of Experts (MoE) routing and parameter economics, QLoRA (NF4 + LoRA + Paged Optimizers), DPO mathematical shift from PPO, GRPO mechanics (group-based baselines, zero-shot reasoning connections).\n\n---",
+  "cards": [
+    {
+      "id": "d24-mixture-of-experts",
+      "title": "Mixture of Experts (MoE)",
+      "priority": "must_know",
+      "category": "advanced-llm",
+      "tags": [
+        "moe",
+        "efficiency",
+        "architecture"
+      ],
+      "content_markdown": "**Core Concept**\n\nMixture of Experts (MoE) is a neural network architecture that increases the total number of parameters (model capacity) without proportionately increasing the compute cost per token. A routing mechanism directs each input token to only a small subset of \"expert\" subnetworks.\n\n**Why It Matters**\n\nMoE allows building massive models (e.g., Mixtral 8x7B) that have high capacity and capabilities but run at the speed of much smaller models, dramatically balancing compute efficiency with memory costs.\n\n**Mental Model / Mechanics**\n\nInstead of a single dense feed-forward network (FFN) applied to every token, MoE has multiple FFNs (experts) and a router network.\n- **Router:** A small network (often a linear layer + softmax) that predicts which experts are best for a given token.\n- **Top-K Routing:** Only the top $K$ (e.g., 2) experts are activated for a token.\n- **Active vs Total Parameters:** While a model might have 47B total parameters, only 13B might be \"active\" for any single token during the forward pass.\n\n**Example**\n\nIn Mixtral 8x7B, there are 8 experts per layer. For each token, the router selects the top 2 experts. The output is a weighted sum of the outputs from these two experts. This means inference speed is similar to a 13B parameter model, even though the total parameter count is much higher.\n\n**Failure Modes / Tradeoffs**\n\n- **High VRAM Usage:** Even though compute is low (only active parameters run), all parameters must be loaded into memory, leading to high VRAM requirements.\n- **Expert Imbalance:** The router might favor a few experts and ignore others (load balancing issues), which requires auxiliary losses during training to encourage balanced routing.\n\n**Interview-Ready Explanation**\n\n> Mixture of Experts increases a model's total capacity without proportional compute costs. It uses a routing mechanism to send each token to only a few \"expert\" subnetworks. While it requires significant memory to store all experts, its active parameter count per token is small, enabling fast inference.\n\n---",
+      "markdown": "### [CARD: Mixture of Experts (MoE)]\n<!-- id: d24-mixture-of-experts -->\n\n- **Priority:** must_know\n- **Category:** advanced-llm\n- **Tags:** moe, efficiency, architecture\n**Core Concept**\n\nMixture of Experts (MoE) is a neural network architecture that increases the total number of parameters (model capacity) without proportionately increasing the compute cost per token. A routing mechanism directs each input token to only a small subset of \"expert\" subnetworks.\n\n**Why It Matters**\n\nMoE allows building massive models (e.g., Mixtral 8x7B) that have high capacity and capabilities but run at the speed of much smaller models, dramatically balancing compute efficiency with memory costs.\n\n**Mental Model / Mechanics**\n\nInstead of a single dense feed-forward network (FFN) applied to every token, MoE has multiple FFNs (experts) and a router network.\n- **Router:** A small network (often a linear layer + softmax) that predicts which experts are best for a given token.\n- **Top-K Routing:** Only the top $K$ (e.g., 2) experts are activated for a token.\n- **Active vs Total Parameters:** While a model might have 47B total parameters, only 13B might be \"active\" for any single token during the forward pass.\n\n**Example**\n\nIn Mixtral 8x7B, there are 8 experts per layer. For each token, the router selects the top 2 experts. The output is a weighted sum of the outputs from these two experts. This means inference speed is similar to a 13B parameter model, even though the total parameter count is much higher.\n\n**Failure Modes / Tradeoffs**\n\n- **High VRAM Usage:** Even though compute is low (only active parameters run), all parameters must be loaded into memory, leading to high VRAM requirements.\n- **Expert Imbalance:** The router might favor a few experts and ignore others (load balancing issues), which requires auxiliary losses during training to encourage balanced routing.\n\n**Interview-Ready Explanation**\n\n> Mixture of Experts increases a model's total capacity without proportional compute costs. It uses a routing mechanism to send each token to only a few \"expert\" subnetworks. While it requires significant memory to store all experts, its active parameter count per token is small, enabling fast inference.\n\n---"
+    },
+    {
+      "id": "d24-qlora",
+      "title": "QLoRA",
+      "priority": "must_know",
+      "category": "advanced-llm",
+      "tags": [
+        "qlora",
+        "fine-tuning",
+        "quantization"
+      ],
+      "content_markdown": "**Core Concept**\n\nQLoRA (Quantized Low-Rank Adaptation) is an highly efficient fine-tuning technique that combines 4-bit quantization of the base model with Low-Rank Adapters (LoRA) to train large models on consumer hardware without catastrophic degradation.\n\n**Why It Matters**\n\nIt drastically reduces memory requirements for fine-tuning LLMs, democratizing access to customizing large models. A 65B parameter model can be fine-tuned on a single 48GB GPU using QLoRA.\n\n**Mental Model / Mechanics**\n\n- **4-bit NormalFloat (NF4):** An information-theoretically optimal data type for normally distributed weights. The base model weights are frozen and quantized to NF4.\n- **Double Quantization:** Quantizing the quantization constants themselves to save even more memory.\n- **LoRA Adapters:** Small, trainable low-rank matrices are injected into the model. During the forward pass, the 4-bit base weights are dequantized to 16-bit (compute data type) to multiply with activations, and the LoRA gradients are updated in 16-bit.\n- **Paged Optimizers:** Uses NVIDIA unified memory features to page optimizer states to CPU RAM during VRAM spikes, preventing out-of-memory errors.\n\n**Example**\n\nYou want to fine-tune Llama-3-70B but only have limited VRAM. By applying QLoRA, the 70B parameters are frozen in 4-bit NF4, saving massive VRAM. You only train the LoRA adapters (e.g., 1-2% of total parameters). If a memory spike occurs, the Paged Optimizer temporarily offloads to CPU RAM.\n\n**Failure Modes / Tradeoffs**\n\n- Slightly slower training speed compared to standard LoRA because of the continuous dequantization overhead during the forward/backward pass.\n- Fine-tuning too aggressively can still lead to overfitting or forgetting, though QLoRA's base quantization itself avoids significant degradation compared to post-training quantization.\n\n**Interview-Ready Explanation**\n\n> QLoRA enables highly efficient fine-tuning by freezing the base model in a specialized 4-bit format (NF4) and training small Low-Rank Adapters (LoRA) on top. It uses double quantization and paged optimizers to dramatically reduce VRAM requirements while preserving model performance.\n\n---",
+      "markdown": "### [CARD: QLoRA]\n<!-- id: d24-qlora -->\n\n- **Priority:** must_know\n- **Category:** advanced-llm\n- **Tags:** qlora, fine-tuning, quantization\n**Core Concept**\n\nQLoRA (Quantized Low-Rank Adaptation) is an highly efficient fine-tuning technique that combines 4-bit quantization of the base model with Low-Rank Adapters (LoRA) to train large models on consumer hardware without catastrophic degradation.\n\n**Why It Matters**\n\nIt drastically reduces memory requirements for fine-tuning LLMs, democratizing access to customizing large models. A 65B parameter model can be fine-tuned on a single 48GB GPU using QLoRA.\n\n**Mental Model / Mechanics**\n\n- **4-bit NormalFloat (NF4):** An information-theoretically optimal data type for normally distributed weights. The base model weights are frozen and quantized to NF4.\n- **Double Quantization:** Quantizing the quantization constants themselves to save even more memory.\n- **LoRA Adapters:** Small, trainable low-rank matrices are injected into the model. During the forward pass, the 4-bit base weights are dequantized to 16-bit (compute data type) to multiply with activations, and the LoRA gradients are updated in 16-bit.\n- **Paged Optimizers:** Uses NVIDIA unified memory features to page optimizer states to CPU RAM during VRAM spikes, preventing out-of-memory errors.\n\n**Example**\n\nYou want to fine-tune Llama-3-70B but only have limited VRAM. By applying QLoRA, the 70B parameters are frozen in 4-bit NF4, saving massive VRAM. You only train the LoRA adapters (e.g., 1-2% of total parameters). If a memory spike occurs, the Paged Optimizer temporarily offloads to CPU RAM.\n\n**Failure Modes / Tradeoffs**\n\n- Slightly slower training speed compared to standard LoRA because of the continuous dequantization overhead during the forward/backward pass.\n- Fine-tuning too aggressively can still lead to overfitting or forgetting, though QLoRA's base quantization itself avoids significant degradation compared to post-training quantization.\n\n**Interview-Ready Explanation**\n\n> QLoRA enables highly efficient fine-tuning by freezing the base model in a specialized 4-bit format (NF4) and training small Low-Rank Adapters (LoRA) on top. It uses double quantization and paged optimizers to dramatically reduce VRAM requirements while preserving model performance.\n\n---"
+    },
+    {
+      "id": "d24-dpo",
+      "title": "DPO (Direct Preference Optimization)",
+      "priority": "must_know",
+      "category": "advanced-llm",
+      "tags": [
+        "dpo",
+        "alignment",
+        "rlhf"
+      ],
+      "content_markdown": "**Core Concept**\n\nDirect Preference Optimization (DPO) aligns LLMs with human preferences without explicitly training a separate Reward Model (RM) or using complex reinforcement learning algorithms like PPO.\n\n**Why It Matters**\n\nIt simplifies the RLHF (Reinforcement Learning from Human Feedback) pipeline, making model alignment much more stable, computationally cheaper, and easier to implement while achieving comparable or better performance.\n\n**Mental Model / Mechanics**\n\n- **The PPO Way:** 1) Train a reward model on preference data. 2) Use PPO to optimize the policy (LLM) to maximize the reward model's score, constrained by a reference model.\n- **The DPO Way:** Through a mathematical equivalency, DPO defines the reward function directly in terms of the optimal policy. It transforms the RL objective into a simple binary cross-entropy loss over preference pairs (chosen vs. rejected).\n- The language model itself acts as the reward model. We update the model to increase the probability of the chosen response and decrease the probability of the rejected response, scaled by the reference model's probabilities.\n\n**Example**\n\nGiven a prompt and two model outputs, human raters prefer Response A over Response B. Instead of training a reward model to score A higher than B, DPO directly updates the LLM: it increases the log-likelihood of A and decreases the log-likelihood of B, using a reference model to prevent the LLM from collapsing into degenerate text.\n\n**Failure Modes / Tradeoffs**\n\n- DPO heavily relies on the quality of the preference pairs. Noisy or contradictory preferences can degrade the model.\n- It can be prone to overfitting the specific preference dataset compared to a robust reward model.\n\n**Interview-Ready Explanation**\n\n> DPO simplifies LLM alignment by eliminating the separate reward model and PPO reinforcement learning loop. It uses a mathematical mapping to directly optimize the policy on human preference data via a cross-entropy loss, making alignment more stable and efficient.\n\n---",
+      "markdown": "### [CARD: DPO (Direct Preference Optimization)]\n<!-- id: d24-dpo -->\n\n- **Priority:** must_know\n- **Category:** advanced-llm\n- **Tags:** dpo, alignment, rlhf\n**Core Concept**\n\nDirect Preference Optimization (DPO) aligns LLMs with human preferences without explicitly training a separate Reward Model (RM) or using complex reinforcement learning algorithms like PPO.\n\n**Why It Matters**\n\nIt simplifies the RLHF (Reinforcement Learning from Human Feedback) pipeline, making model alignment much more stable, computationally cheaper, and easier to implement while achieving comparable or better performance.\n\n**Mental Model / Mechanics**\n\n- **The PPO Way:** 1) Train a reward model on preference data. 2) Use PPO to optimize the policy (LLM) to maximize the reward model's score, constrained by a reference model.\n- **The DPO Way:** Through a mathematical equivalency, DPO defines the reward function directly in terms of the optimal policy. It transforms the RL objective into a simple binary cross-entropy loss over preference pairs (chosen vs. rejected).\n- The language model itself acts as the reward model. We update the model to increase the probability of the chosen response and decrease the probability of the rejected response, scaled by the reference model's probabilities.\n\n**Example**\n\nGiven a prompt and two model outputs, human raters prefer Response A over Response B. Instead of training a reward model to score A higher than B, DPO directly updates the LLM: it increases the log-likelihood of A and decreases the log-likelihood of B, using a reference model to prevent the LLM from collapsing into degenerate text.\n\n**Failure Modes / Tradeoffs**\n\n- DPO heavily relies on the quality of the preference pairs. Noisy or contradictory preferences can degrade the model.\n- It can be prone to overfitting the specific preference dataset compared to a robust reward model.\n\n**Interview-Ready Explanation**\n\n> DPO simplifies LLM alignment by eliminating the separate reward model and PPO reinforcement learning loop. It uses a mathematical mapping to directly optimize the policy on human preference data via a cross-entropy loss, making alignment more stable and efficient.\n\n---"
+    },
+    {
+      "id": "d24-grpo",
+      "title": "GRPO (Group Relative Policy Optimization)",
+      "priority": "must_know",
+      "category": "advanced-llm",
+      "tags": [
+        "grpo",
+        "reinforcement-learning",
+        "reasoning"
+      ],
+      "content_markdown": "**Core Concept**\n\nGroup Relative Policy Optimization (GRPO) is a reinforcement learning algorithm that improves upon PPO by eliminating the need for a separate critic (value) network. It evaluates actions by comparing them against a group of outputs generated from the same prompt.\n\n**Why It Matters**\n\nGRPO significantly reduces the memory and compute overhead of RL training for LLMs. It is heavily associated with models like DeepSeek-R1, which use pure RL to develop complex zero-shot reasoning trajectories.\n\n**Mental Model / Mechanics**\n\n- **PPO:** Uses a critic network (same size as the policy network) to estimate the value (baseline) of a state to reduce variance in advantage estimation. This doubles the memory footprint.\n- **GRPO:** Instead of a critic network, GRPO samples a group of $N$ outputs (e.g., 4 or 8) for the same prompt. The baseline is calculated relatively—by taking the average reward of this specific group.\n- **Advantage:** An output's advantage is based on how much better its reward is compared to the group's average reward.\n\n**Example**\n\nIn training DeepSeekMath, the model generates 8 different reasoning paths for a math problem. The rewards (e.g., format correctness, final answer accuracy) for these 8 paths are calculated. The average reward of the 8 paths becomes the baseline. The paths that scored above the average receive a positive advantage (encouraged), and those below receive a negative advantage (discouraged), all without needing a value network.\n\n**Failure Modes / Tradeoffs**\n\n- Requires generating multiple outputs per prompt during training, which costs compute, though it saves massive VRAM by skipping the critic network.\n- The group size $N$ needs to be carefully chosen to balance variance reduction and computational cost.\n\n**Interview-Ready Explanation**\n\n> GRPO optimizes LLM policies without a critic network by sampling a group of responses for a prompt and using their average reward as the baseline. This drastically cuts VRAM usage and has been pivotal in training reasoning models like DeepSeek-R1 via pure reinforcement learning.\n\n---",
+      "markdown": "### [CARD: GRPO (Group Relative Policy Optimization)]\n<!-- id: d24-grpo -->\n\n- **Priority:** must_know\n- **Category:** advanced-llm\n- **Tags:** grpo, reinforcement-learning, reasoning\n**Core Concept**\n\nGroup Relative Policy Optimization (GRPO) is a reinforcement learning algorithm that improves upon PPO by eliminating the need for a separate critic (value) network. It evaluates actions by comparing them against a group of outputs generated from the same prompt.\n\n**Why It Matters**\n\nGRPO significantly reduces the memory and compute overhead of RL training for LLMs. It is heavily associated with models like DeepSeek-R1, which use pure RL to develop complex zero-shot reasoning trajectories.\n\n**Mental Model / Mechanics**\n\n- **PPO:** Uses a critic network (same size as the policy network) to estimate the value (baseline) of a state to reduce variance in advantage estimation. This doubles the memory footprint.\n- **GRPO:** Instead of a critic network, GRPO samples a group of $N$ outputs (e.g., 4 or 8) for the same prompt. The baseline is calculated relatively—by taking the average reward of this specific group.\n- **Advantage:** An output's advantage is based on how much better its reward is compared to the group's average reward.\n\n**Example**\n\nIn training DeepSeekMath, the model generates 8 different reasoning paths for a math problem. The rewards (e.g., format correctness, final answer accuracy) for these 8 paths are calculated. The average reward of the 8 paths becomes the baseline. The paths that scored above the average receive a positive advantage (encouraged), and those below receive a negative advantage (discouraged), all without needing a value network.\n\n**Failure Modes / Tradeoffs**\n\n- Requires generating multiple outputs per prompt during training, which costs compute, though it saves massive VRAM by skipping the critic network.\n- The group size $N$ needs to be carefully chosen to balance variance reduction and computational cost.\n\n**Interview-Ready Explanation**\n\n> GRPO optimizes LLM policies without a critic network by sampling a group of responses for a prompt and using their average reward as the baseline. This drastically cuts VRAM usage and has been pivotal in training reasoning models like DeepSeek-R1 via pure reinforcement learning.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "- **PPO vs DPO vs GRPO:** PPO requires a reward model and a critic network. DPO eliminates the reward model and critic by directly optimizing preferences. GRPO keeps the reward signal but eliminates the critic network by using a group-based baseline.\n- **MoE and VRAM:** MoE saves compute but costs VRAM. QLoRA saves VRAM. Combining them (quantizing an MoE model and fine-tuning with LoRA) is a common strategy for handling massive models on limited hardware.",
+  "common_misconceptions_markdown": "- **Misconception:** MoE models are smaller in memory because they only use a subset of parameters.\n  - **Correction:** The memory requirement corresponds to the *total* parameters because all experts must reside in VRAM, even if only a small fraction are active during a forward pass.\n- **Misconception:** DPO completely abandons reward modeling.\n  - **Correction:** DPO uses the policy model itself as an implicit reward model, meaning the reward function is still conceptually present, just mathematically integrated into the policy loss.",
+  "out_of_scope_markdown": "- Detailed derivation of the DPO loss function from the Bradley-Terry model.\n- Writing custom Triton kernels for QLoRA dequantization.\n- Advanced routing algorithms like Expert Choice Routing (ECR).",
+  "qa_drill": [
+    {
+      "id": "d24-qa-001",
+      "question": "Why does a Mixture of Experts (MoE) model with 47B parameters have faster inference than a dense 47B parameter model?",
+      "answer": "Because it uses a routing mechanism to activate only a small subset of the total parameters (e.g., 13B \"active parameters\") for any given token, saving massive compute despite the high total parameter count.",
+      "tags": [
+        "moe",
+        "efficiency"
+      ],
+      "linked_card_ids": [
+        "d24-mixture-of-experts"
+      ]
+    },
+    {
+      "id": "d24-qa-002",
+      "question": "What specific data type does QLoRA use for the frozen base model, and why?",
+      "answer": "It uses 4-bit NormalFloat (NF4), which is information-theoretically optimal for representing the normally distributed weights of deep neural networks.",
+      "tags": [
+        "qlora",
+        "quantization"
+      ],
+      "linked_card_ids": [
+        "d24-qlora"
+      ]
+    },
+    {
+      "id": "d24-qa-003",
+      "question": "How does Direct Preference Optimization (DPO) differ structurally from PPO for model alignment?",
+      "answer": "DPO eliminates the separate reward model and the critic network used in PPO. It directly optimizes the policy using a simple cross-entropy loss over preference pairs.",
+      "tags": [
+        "dpo",
+        "alignment"
+      ],
+      "linked_card_ids": [
+        "d24-dpo"
+      ]
+    },
+    {
+      "id": "d24-qa-004",
+      "question": "What major component of PPO does Group Relative Policy Optimization (GRPO) eliminate, and how does it compensate?",
+      "answer": "GRPO eliminates the value (critic) network. It compensates by generating a group of outputs for the same prompt and using their average reward as the baseline to calculate advantages.",
+      "tags": [
+        "grpo",
+        "reinforcement-learning"
+      ],
+      "linked_card_ids": [
+        "d24-grpo"
+      ]
+    }
+  ]
+}

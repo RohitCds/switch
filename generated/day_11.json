@@ -1,0 +1,261 @@
+{
+  "schema_version": 1,
+  "day": 11,
+  "title": "Attention Mechanisms",
+  "topics": [
+    "deep-learning",
+    "nlp",
+    "transformers"
+  ],
+  "tags": [
+    "attention",
+    "qkv",
+    "transformers"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 0,
+    "must_know": 6,
+    "should_know": 2
+  },
+  "daily_objective_markdown": "By the end of today you should be able to explain, from first principles, why attention exists, what Query/Key/Value actually represent and why that framing is genuinely useful, the full step-by-step computation of scaled dot-product attention, the difference between self-attention and cross-attention, and why multi-head attention is used instead of one large attention computation.\n\n---",
+  "syllabus_markdown": "- 🔴 **MUST KNOW:** why attention exists, Q/K/V intuition, the full attention computation (score → scale → softmax → weighted sum), self-attention vs. cross-attention, why multi-head attention.\n- 🟡 **SHOULD KNOW:** causal masking's purpose, attention's O(n²) cost and why it matters practically.\n- 🟢 **NICE TO KNOW:** flash attention / efficient-attention variants, the original paper's exact notation.\n\n---",
+  "cards": [
+    {
+      "id": "d11-why-attention-exists",
+      "title": "The Problem Attention Solves",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "attention",
+        "rnn-limitations"
+      ],
+      "content_markdown": "**Core Concept**\n\nAttention solves two core limitations of RNNs: processing sequentially (no parallelization) and information loss over long distances. It allows every position in a sequence to directly attend to every other position in a single, parallel computation.\n**Why It Matters**\n\nDistance between two tokens no longer limits how easily information flows between them. This parallelization enables modern large-scale training and long-context understanding.\n**Mental Model / Mechanics**\n\nInstead of information flowing step-by-step through a hidden state, every token looks directly at every other token simultaneously.\n**Interview-Ready Explanation**\n\n> Attention solves RNNs' sequential bottleneck and vanishing gradients over distance by letting every position in a sequence directly attend to every other position in a single, parallel computation, regardless of distance.\n\n---",
+      "markdown": "### [CARD: The Problem Attention Solves]\n<!-- id: d11-why-attention-exists -->\n\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** attention, rnn-limitations\n**Core Concept**\n\nAttention solves two core limitations of RNNs: processing sequentially (no parallelization) and information loss over long distances. It allows every position in a sequence to directly attend to every other position in a single, parallel computation.\n**Why It Matters**\n\nDistance between two tokens no longer limits how easily information flows between them. This parallelization enables modern large-scale training and long-context understanding.\n**Mental Model / Mechanics**\n\nInstead of information flowing step-by-step through a hidden state, every token looks directly at every other token simultaneously.\n**Interview-Ready Explanation**\n\n> Attention solves RNNs' sequential bottleneck and vanishing gradients over distance by letting every position in a sequence directly attend to every other position in a single, parallel computation, regardless of distance.\n\n---"
+    },
+    {
+      "id": "d11-attention-as-relevance-weighted-averaging",
+      "title": "Attention as Relevance-Weighted Averaging",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "attention",
+        "weighted-sum"
+      ],
+      "content_markdown": "**Core Concept**\n\nFor each token, attention computes an output that's a weighted combination of every other token's representation. The weights reflect how relevant each other token is to understanding the current one.\n**Example**\n\n\"The animal didn't cross the street because it was too tired.\" To correctly represent what \"it\" refers to, the model needs to attend strongly to \"animal\" specifically.\n**Interview-Ready Explanation**\n\n> Attention is essentially a relevance-weighted average. For a given token, it computes a new representation by taking a weighted sum of all other tokens, where the weights are based on relevance.\n\n---",
+      "markdown": "### [CARD: Attention as Relevance-Weighted Averaging]\n<!-- id: d11-attention-as-relevance-weighted-averaging -->\n\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** attention, weighted-sum\n**Core Concept**\n\nFor each token, attention computes an output that's a weighted combination of every other token's representation. The weights reflect how relevant each other token is to understanding the current one.\n**Example**\n\n\"The animal didn't cross the street because it was too tired.\" To correctly represent what \"it\" refers to, the model needs to attend strongly to \"animal\" specifically.\n**Interview-Ready Explanation**\n\n> Attention is essentially a relevance-weighted average. For a given token, it computes a new representation by taking a weighted sum of all other tokens, where the weights are based on relevance.\n\n---"
+    },
+    {
+      "id": "d11-query-key-value",
+      "title": "Query, Key, Value (Q/K/V)",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "qkv",
+        "attention"
+      ],
+      "content_markdown": "**Core Concept**\n\nEvery input token embedding gets projected via three separate learned weight matrices into three vectors: Query (Q), Key (K), and Value (V).\n**Why It Matters**\n\nThis search-like mechanism allows tokens to dynamically request context, advertise their content, and provide actual values based on relevance.\n**Mental Model / Mechanics**\n\n- **Query (Q):** \"what am I looking for?\" — the current token's request for relevant context.\n- **Key (K):** \"what do I contain?\" — what each token advertises about itself to be matched against queries.\n- **Value (V):** \"what do I actually give you if you attend to me?\" — the actual content aggregated once relevance is determined.\n\nThe search system analogy: Query is your search query. Keys are like index summaries. Values are the actual document content.\n**Failure Modes / Tradeoffs**\n\n- Important clarification: Q, K, and V are NOT three different pieces of the raw input text. They're all derived from the same input token embeddings via three different learned linear projections.\n**Interview-Ready Explanation**\n\n> In attention, each token produces a Query (what I'm looking for), a Key (what I contain), and a Value (what I provide). These are derived from the input embeddings via learned linear projections. Queries match with Keys to determine relevance weights, which are then used to sum the Values.\n\n---",
+      "markdown": "### [CARD: Query, Key, Value (Q/K/V)]\n<!-- id: d11-query-key-value -->\n\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** qkv, attention\n**Core Concept**\n\nEvery input token embedding gets projected via three separate learned weight matrices into three vectors: Query (Q), Key (K), and Value (V).\n**Why It Matters**\n\nThis search-like mechanism allows tokens to dynamically request context, advertise their content, and provide actual values based on relevance.\n**Mental Model / Mechanics**\n\n- **Query (Q):** \"what am I looking for?\" — the current token's request for relevant context.\n- **Key (K):** \"what do I contain?\" — what each token advertises about itself to be matched against queries.\n- **Value (V):** \"what do I actually give you if you attend to me?\" — the actual content aggregated once relevance is determined.\n\nThe search system analogy: Query is your search query. Keys are like index summaries. Values are the actual document content.\n**Failure Modes / Tradeoffs**\n\n- Important clarification: Q, K, and V are NOT three different pieces of the raw input text. They're all derived from the same input token embeddings via three different learned linear projections.\n**Interview-Ready Explanation**\n\n> In attention, each token produces a Query (what I'm looking for), a Key (what I contain), and a Value (what I provide). These are derived from the input embeddings via learned linear projections. Queries match with Keys to determine relevance weights, which are then used to sum the Values.\n\n---"
+    },
+    {
+      "id": "d11-scaled-dot-product-attention",
+      "title": "Scaled Dot-Product Attention",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "attention-computation",
+        "softmax",
+        "scaling"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe computation of attention involves finding relevance scores via dot products, scaling them, converting to probabilities via softmax, and computing a weighted sum.\n**Mental Model / Mechanics**\n\n```\nStep 1 — SCORE:   score = Q · K            (dot product: similarity)\nStep 2 — SCALE:   score = score / √d_k      (d_k = dimension of key vectors)\nStep 3 — SOFTMAX: weights = softmax(score)  (turns into probability distribution)\nStep 4 — WEIGHTED SUM:  output = Σ (weight_i × V_i)\n```\nCompactly: `Attention(Q, K, V) = softmax(QKᵀ / √d_k) · V`\n**Why It Matters**\n\nThe scaling step (`/√d_k`) is crucial. For higher-dimensional key vectors, raw dot products can grow very large. Large values pushed into softmax cause saturation — extremely peaked near-one-hot outputs with tiny gradients. Dividing by `√d_k` keeps scores in a well-behaved range.\n**Interview-Ready Explanation**\n\n> We compute attention by taking the dot product of Queries and Keys to get scores, scaling down by the square root of the key dimension to prevent softmax saturation, applying softmax to get weights, and taking a weighted sum of the Values.\n\n---",
+      "markdown": "### [CARD: Scaled Dot-Product Attention]\n<!-- id: d11-scaled-dot-product-attention -->\n\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** attention-computation, softmax, scaling\n**Core Concept**\n\nThe computation of attention involves finding relevance scores via dot products, scaling them, converting to probabilities via softmax, and computing a weighted sum.\n**Mental Model / Mechanics**\n\n```\nStep 1 — SCORE:   score = Q · K            (dot product: similarity)\nStep 2 — SCALE:   score = score / √d_k      (d_k = dimension of key vectors)\nStep 3 — SOFTMAX: weights = softmax(score)  (turns into probability distribution)\nStep 4 — WEIGHTED SUM:  output = Σ (weight_i × V_i)\n```\nCompactly: `Attention(Q, K, V) = softmax(QKᵀ / √d_k) · V`\n**Why It Matters**\n\nThe scaling step (`/√d_k`) is crucial. For higher-dimensional key vectors, raw dot products can grow very large. Large values pushed into softmax cause saturation — extremely peaked near-one-hot outputs with tiny gradients. Dividing by `√d_k` keeps scores in a well-behaved range.\n**Interview-Ready Explanation**\n\n> We compute attention by taking the dot product of Queries and Keys to get scores, scaling down by the square root of the key dimension to prevent softmax saturation, applying softmax to get weights, and taking a weighted sum of the Values.\n\n---"
+    },
+    {
+      "id": "d11-self-attention-vs-cross-attention",
+      "title": "Self-Attention vs. Cross-Attention",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "self-attention",
+        "cross-attention",
+        "architectures"
+      ],
+      "content_markdown": "**Core Concept**\n\nIn self-attention, tokens attend to other tokens within the same sequence. In cross-attention, tokens in one sequence attend to tokens in a different sequence.\n**Mental Model / Mechanics**\n\n| | Self-attention | Cross-attention |\n|---|---|---|\n| Q source | Same sequence | Decoder (or target) sequence |\n| K, V source | Same sequence | A different sequence (encoder output) |\n| Used in | Encoder-only, decoder-only models | Encoder-decoder models (e.g. Flan-T5) |\n**Interview-Ready Explanation**\n\n> Self-attention derives Q, K, and V from the same sequence. Cross-attention derives Queries from one sequence (e.g., a decoder) and Keys and Values from another (e.g., an encoder), linking different parts of a model.\n\n---",
+      "markdown": "### [CARD: Self-Attention vs. Cross-Attention]\n<!-- id: d11-self-attention-vs-cross-attention -->\n\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** self-attention, cross-attention, architectures\n**Core Concept**\n\nIn self-attention, tokens attend to other tokens within the same sequence. In cross-attention, tokens in one sequence attend to tokens in a different sequence.\n**Mental Model / Mechanics**\n\n| | Self-attention | Cross-attention |\n|---|---|---|\n| Q source | Same sequence | Decoder (or target) sequence |\n| K, V source | Same sequence | A different sequence (encoder output) |\n| Used in | Encoder-only, decoder-only models | Encoder-decoder models (e.g. Flan-T5) |\n**Interview-Ready Explanation**\n\n> Self-attention derives Q, K, and V from the same sequence. Cross-attention derives Queries from one sequence (e.g., a decoder) and Keys and Values from another (e.g., an encoder), linking different parts of a model.\n\n---"
+    },
+    {
+      "id": "d11-multi-head-attention",
+      "title": "Multi-Head Attention",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "multi-head",
+        "attention"
+      ],
+      "content_markdown": "**Core Concept**\n\nCompute attention multiple times in parallel, each with its own independently-learned Q/K/V projection matrices.\n**Why It Matters**\n\nA single attention computation would have to blend several genuinely different types of relevant relationships into one averaged representation.\n**Mental Model / Mechanics**\n\nMultiple heads let the model attend to several different kinds of relationships simultaneously (grammatical structure, coreference, local patterns). After all heads compute their outputs, they're concatenated and passed through one final learned linear projection.\n**Interview-Ready Explanation**\n\n> Multi-head attention runs multiple attention mechanisms in parallel with independent weights. This allows the model to simultaneously attend to different types of relationships (like syntax or coreference) rather than blending them into a single average.\n\n---",
+      "markdown": "### [CARD: Multi-Head Attention]\n<!-- id: d11-multi-head-attention -->\n\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** multi-head, attention\n**Core Concept**\n\nCompute attention multiple times in parallel, each with its own independently-learned Q/K/V projection matrices.\n**Why It Matters**\n\nA single attention computation would have to blend several genuinely different types of relevant relationships into one averaged representation.\n**Mental Model / Mechanics**\n\nMultiple heads let the model attend to several different kinds of relationships simultaneously (grammatical structure, coreference, local patterns). After all heads compute their outputs, they're concatenated and passed through one final learned linear projection.\n**Interview-Ready Explanation**\n\n> Multi-head attention runs multiple attention mechanisms in parallel with independent weights. This allows the model to simultaneously attend to different types of relationships (like syntax or coreference) rather than blending them into a single average.\n\n---"
+    },
+    {
+      "id": "d11-causal-masking",
+      "title": "Causal Masking",
+      "priority": "should_know",
+      "category": "deep-learning",
+      "tags": [
+        "masking",
+        "autoregressive",
+        "decoder"
+      ],
+      "content_markdown": "**Core Concept**\n\nA technique to prevent tokens from attending to future tokens during generation.\n**Mental Model / Mechanics**\n\nA mask is applied to attention scores, setting future-position scores to -∞ before softmax, so they collapse to zero weight. This enforces the left-to-right \"causal\" constraint for autoregressive generation.\n**Interview-Ready Explanation**\n\n> Causal masking sets attention scores for future positions to negative infinity before the softmax step. This ensures that during autoregressive generation, a token can only attend to past and current tokens, not future ones.\n\n---",
+      "markdown": "### [CARD: Causal Masking]\n<!-- id: d11-causal-masking -->\n\n- **Priority:** should_know\n- **Category:** deep-learning\n- **Tags:** masking, autoregressive, decoder\n**Core Concept**\n\nA technique to prevent tokens from attending to future tokens during generation.\n**Mental Model / Mechanics**\n\nA mask is applied to attention scores, setting future-position scores to -∞ before softmax, so they collapse to zero weight. This enforces the left-to-right \"causal\" constraint for autoregressive generation.\n**Interview-Ready Explanation**\n\n> Causal masking sets attention scores for future positions to negative infinity before the softmax step. This ensures that during autoregressive generation, a token can only attend to past and current tokens, not future ones.\n\n---"
+    },
+    {
+      "id": "d11-attention-computational-cost",
+      "title": "Attention's Computational Cost",
+      "priority": "should_know",
+      "category": "deep-learning",
+      "tags": [
+        "complexity",
+        "sequence-length"
+      ],
+      "content_markdown": "**Core Concept**\n\nBecause attention computes a relevance score between every pair of tokens, its cost scales quadratically with sequence length: O(n²).\n**Why It Matters**\n\nThis is why context window length is a real, hard engineering constraint for LLMs, and part of why RAG's retrieval step is a practical necessity.\n**Interview-Ready Explanation**\n\n> Standard attention requires computing pairwise scores between all tokens, leading to an O(n²) computational and memory complexity with respect to sequence length. This makes extremely long context windows computationally expensive.\n\n---",
+      "markdown": "### [CARD: Attention's Computational Cost]\n<!-- id: d11-attention-computational-cost -->\n\n- **Priority:** should_know\n- **Category:** deep-learning\n- **Tags:** complexity, sequence-length\n**Core Concept**\n\nBecause attention computes a relevance score between every pair of tokens, its cost scales quadratically with sequence length: O(n²).\n**Why It Matters**\n\nThis is why context window length is a real, hard engineering constraint for LLMs, and part of why RAG's retrieval step is a practical necessity.\n**Interview-Ready Explanation**\n\n> Standard attention requires computing pairwise scores between all tokens, leading to an O(n²) computational and memory complexity with respect to sequence length. This makes extremely long context windows computationally expensive.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "- Day 8 (softmax): reused directly and unchanged as the mechanism turning attention scores into weights.\n- Day 9 (gradient saturation): exact motivation for attention's √d_k scaling step.\n- Day 10 (RNN limitations): attention is the direct fix for both unsolved RNN problems.\n- Resume tie-in (Flan-T5): cross-attention is literally the mechanism connecting decoder back to input.\n- Forward: Day 12 (causal masking full treatment, complete Transformer block), Day 15 (RAG retrieval is Q/K/V pattern at query-to-document-corpus scale).\n\n---",
+  "common_misconceptions_markdown": "1. \"Attention only looks at nearby words, like a sliding window.\" — No, any two positions can attend to each other regardless of distance.\n2. \"Q, K, and V are three different parts of the input text.\" — No, they're all derived from the same token embeddings via three separate learned projection matrices.\n3. \"More attention heads always help.\" — Diminishing returns, and more compute.\n4. \"Self-attention and cross-attention are the same mechanism, just different names.\" — Same formula, but different source of K/V — architecturally significant.\n\n---",
+  "out_of_scope_markdown": "- Backpropagation through the attention mechanism in detail.\n- Positional encoding formulas (sinusoidal vs. learned) — Day 12.\n- Flash attention or other efficient-attention implementation variants.\n- The original \"Attention Is All You Need\" paper's exact notation or proofs.\n\n---",
+  "qa_drill": [
+    {
+      "id": "d11-qa-001",
+      "question": "What are the two core limitations of RNNs that attention solves?",
+      "answer": "RNNs process sequentially (which prevents parallelization) and suffer from information loss over long distances because data must flow through many sequential steps. Attention allows parallel processing and direct connections between all tokens regardless of distance.",
+      "tags": [
+        "rnn",
+        "attention"
+      ],
+      "linked_card_ids": [
+        "d11-why-attention-exists"
+      ]
+    },
+    {
+      "id": "d11-qa-002",
+      "question": "At a high level, what is attention doing for a given token?",
+      "answer": "It computes a new representation for the token by taking a relevance-weighted average of every other token's representation.",
+      "tags": [
+        "attention",
+        "weighted-average"
+      ],
+      "linked_card_ids": [
+        "d11-attention-as-relevance-weighted-averaging"
+      ]
+    },
+    {
+      "id": "d11-qa-003",
+      "question": "In the context of attention, what do Query, Key, and Value represent conceptually?",
+      "answer": "Query (Q) is \"what am I looking for?\". Key (K) is \"what do I contain?\" (advertisement). Value (V) is \"what do I actually give you?\" (content).",
+      "tags": [
+        "qkv",
+        "intuition"
+      ],
+      "linked_card_ids": [
+        "d11-query-key-value"
+      ]
+    },
+    {
+      "id": "d11-qa-004",
+      "question": "Are Q, K, and V derived from different parts of the input text?",
+      "answer": "No, they are all derived from the exact same input token embeddings via three separate learned projection matrices.",
+      "tags": [
+        "qkv",
+        "projection"
+      ],
+      "linked_card_ids": [
+        "d11-query-key-value"
+      ]
+    },
+    {
+      "id": "d11-qa-005",
+      "question": "What are the four main mathematical steps in computing scaled dot-product attention?",
+      "answer": "1) Score (Q · K), 2) Scale (divide by √d_k), 3) Softmax (convert to probabilities), 4) Weighted sum (multiply by V and sum).",
+      "tags": [
+        "formula",
+        "math"
+      ],
+      "linked_card_ids": [
+        "d11-scaled-dot-product-attention"
+      ]
+    },
+    {
+      "id": "d11-qa-006",
+      "question": "Why is the scaling step (dividing by √d_k) necessary in attention?",
+      "answer": "For higher-dimensional vectors, raw dot products grow very large. Large values pushed into softmax cause saturation (tiny gradients, near-one-hot outputs). Scaling keeps scores in a well-behaved range.",
+      "tags": [
+        "scaling",
+        "softmax",
+        "gradient-saturation"
+      ],
+      "linked_card_ids": [
+        "d11-scaled-dot-product-attention"
+      ]
+    },
+    {
+      "id": "d11-qa-007",
+      "question": "What is the difference between self-attention and cross-attention?",
+      "answer": "In self-attention, Q, K, and V all come from the same sequence. In cross-attention, Q comes from one sequence (e.g., decoder) while K and V come from a different sequence (e.g., encoder).",
+      "tags": [
+        "self-attention",
+        "cross-attention"
+      ],
+      "linked_card_ids": [
+        "d11-self-attention-vs-cross-attention"
+      ]
+    },
+    {
+      "id": "d11-qa-008",
+      "question": "Why do transformers use multi-head attention instead of one single attention computation?",
+      "answer": "A single attention head would have to blend many different types of relationships into one average. Multiple heads let the model attend to several different kinds of relationships (e.g., grammar, coreference) simultaneously.",
+      "tags": [
+        "multi-head",
+        "architecture"
+      ],
+      "linked_card_ids": [
+        "d11-multi-head-attention"
+      ]
+    },
+    {
+      "id": "d11-qa-009",
+      "question": "What is the purpose of causal masking in attention?",
+      "answer": "It prevents tokens from attending to future tokens during autoregressive generation by setting future-position scores to -∞ before the softmax step.",
+      "tags": [
+        "masking",
+        "autoregressive"
+      ],
+      "linked_card_ids": [
+        "d11-causal-masking"
+      ]
+    },
+    {
+      "id": "d11-qa-010",
+      "question": "What is the computational complexity of standard attention with respect to sequence length, and why?",
+      "answer": "O(n²), because it computes a relevance score between every possible pair of tokens in the sequence.",
+      "tags": [
+        "complexity",
+        "big-o"
+      ],
+      "linked_card_ids": [
+        "d11-attention-computational-cost"
+      ]
+    },
+    {
+      "id": "d11-qa-011",
+      "question": "How is cross-attention used in encoder-decoder models like Flan-T5?",
+      "answer": "The decoder generates Queries to attend to the Keys and Values produced by the encoder, effectively connecting the output generation process to the input context.",
+      "tags": [
+        "cross-attention",
+        "encoder-decoder"
+      ],
+      "linked_card_ids": [
+        "d11-self-attention-vs-cross-attention"
+      ]
+    }
+  ]
+}

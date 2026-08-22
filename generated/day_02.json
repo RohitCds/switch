@@ -1,0 +1,658 @@
+{
+  "schema_version": 1,
+  "day": 2,
+  "title": "Supervised Learning, Data Splits, Generalization & Regularization",
+  "topics": [
+    "supervised-learning",
+    "regularization",
+    "cross-validation",
+    "data-leakage",
+    "bias-variance",
+    "l1",
+    "l2",
+    "ridge",
+    "lasso"
+  ],
+  "tags": [
+    "supervised-learning",
+    "ml-theory"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 0,
+    "must_know": 24,
+    "should_know": 2
+  },
+  "daily_objective_markdown": "Explain supervised ML problem formulation, the relationship between features/labels/models/parameters/predictions/loss, training/validation/test sets, generalization from first principles, underfitting/overfitting, bias–variance tradeoff, model complexity effects, regularization (L1, L2, Ridge, Lasso, Elastic Net), data leakage and its forms, cross-validation, and stratified cross-validation.\n\n---",
+  "syllabus_markdown": "- 🔴 **MUST KNOW:** Supervised learning formulation, features vs labels, parameters vs hyperparameters, train/val/test sets, generalization, overfitting/underfitting, bias/variance, model complexity, regularization, L1 vs L2, data leakage (target, preprocessing, feature engineering, time-series), cross-validation, stratified cross-validation\n- 🟡 **SHOULD KNOW:** Ridge vs Lasso vs Elastic Net, validation curves, nested cross-validation conceptually, why regularization can increase bias while reducing variance\n- 🟢 **NICE TO KNOW:** Detailed statistical learning theory, VC dimension, formal proofs of generalization bounds, mathematical derivations of regularization penalties\n\n---",
+  "cards": [
+    {
+      "id": "d02-the-supervised-learning-problem",
+      "title": "The Supervised Learning Problem",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "the-supervised-learning-problem",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nGiven input features X and target labels y, supervised learning finds a function `f(X) ≈ y` that maps inputs to useful predictions.\n**Why It Matters**\n\nFormalizes the predictive modeling task — from raw data to a learned mapping.\n**Mental Model / Mechanics**\n```\n  X → input features (e.g., CPU util, packet loss, latency)\n  y → target label (e.g., 0=normal, 1=outage)\n\n  Learning process finds: f(X) → ŷ\n  where ŷ is the model's prediction\n  ```\n**Interview-Ready Explanation**\n> Supervised learning takes labeled examples (X, y) and learns a function that maps features to predictions. The quality of that mapping is measured by a loss function.\n\n---",
+      "markdown": "### [CARD: The Supervised Learning Problem]\n<!-- id: d02-the-supervised-learning-problem -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** the-supervised-learning-problem, ml-theory\n**Core Concept**\n\nGiven input features X and target labels y, supervised learning finds a function `f(X) ≈ y` that maps inputs to useful predictions.\n**Why It Matters**\n\nFormalizes the predictive modeling task — from raw data to a learned mapping.\n**Mental Model / Mechanics**\n```\n  X → input features (e.g., CPU util, packet loss, latency)\n  y → target label (e.g., 0=normal, 1=outage)\n\n  Learning process finds: f(X) → ŷ\n  where ŷ is the model's prediction\n  ```\n**Interview-Ready Explanation**\n> Supervised learning takes labeled examples (X, y) and learns a function that maps features to predictions. The quality of that mapping is measured by a loss function.\n\n---"
+    },
+    {
+      "id": "d02-the-training-loop",
+      "title": "The Training Loop",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "the-training-loop",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe iterative process of feeding data through a model, computing loss, and updating parameters to reduce that loss.\n**Why It Matters**\n\nThis is the fundamental mechanism by which all ML models learn.\n**Mental Model / Mechanics**\n```\n  Training data → Features X → Model → Prediction ŷ\n       ↓\n  Compare ŷ with y → Loss → Optimization → Update parameters → Repeat\n  ```\n  Example flow:\n  ```\n  X = network telemetry\n  Model predicts: ŷ = 0.83 (probability of failure)\n  Actual: y = 1\n  Calculate loss → Adjust parameters → Better predictions next iteration\n  ```\n**Interview-Ready Explanation**\n> During training, data flows through the model to produce predictions, which are compared with actual labels via a loss function. The optimizer adjusts parameters to reduce this loss, and the process repeats until convergence.\n\n---",
+      "markdown": "### [CARD: The Training Loop]\n<!-- id: d02-the-training-loop -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** the-training-loop, ml-theory\n**Core Concept**\n\nThe iterative process of feeding data through a model, computing loss, and updating parameters to reduce that loss.\n**Why It Matters**\n\nThis is the fundamental mechanism by which all ML models learn.\n**Mental Model / Mechanics**\n```\n  Training data → Features X → Model → Prediction ŷ\n       ↓\n  Compare ŷ with y → Loss → Optimization → Update parameters → Repeat\n  ```\n  Example flow:\n  ```\n  X = network telemetry\n  Model predicts: ŷ = 0.83 (probability of failure)\n  Actual: y = 1\n  Calculate loss → Adjust parameters → Better predictions next iteration\n  ```\n**Interview-Ready Explanation**\n> During training, data flows through the model to produce predictions, which are compared with actual labels via a loss function. The optimizer adjusts parameters to reduce this loss, and the process repeats until convergence.\n\n---"
+    },
+    {
+      "id": "d02-parameters-vs-hyperparameters",
+      "title": "Parameters vs Hyperparameters (Deep Dive)",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "parameters-vs-hyperparameters",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\n**Parameters** are adjusted by the optimizer during training. **Hyperparameters** are set before training and control the learning process itself.\n**Why It Matters**\n\nClarifies what the model learns vs. what the practitioner configures.\n**Mental Model / Mechanics**\n```\n  Parameters (learned by optimizer):\n    ŷ = w₁x₁ + w₂x₂ + b\n    → w₁, w₂, b change during training\n\n  Hyperparameters (set externally):\n    learning_rate = 0.001\n    → NOT changed by gradient descent\n    → You choose it and evaluate whether it works\n  ```\n**Interview-Ready Explanation**\n> Parameters are learned from data during training (weights, biases). Hyperparameters control the training process and are selected externally (learning rate, batch size, regularization strength).\n\n---",
+      "markdown": "### [CARD: Parameters vs Hyperparameters (Deep Dive)]\n<!-- id: d02-parameters-vs-hyperparameters -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** parameters-vs-hyperparameters, ml-theory\n**Core Concept**\n\n**Parameters** are adjusted by the optimizer during training. **Hyperparameters** are set before training and control the learning process itself.\n**Why It Matters**\n\nClarifies what the model learns vs. what the practitioner configures.\n**Mental Model / Mechanics**\n```\n  Parameters (learned by optimizer):\n    ŷ = w₁x₁ + w₂x₂ + b\n    → w₁, w₂, b change during training\n\n  Hyperparameters (set externally):\n    learning_rate = 0.001\n    → NOT changed by gradient descent\n    → You choose it and evaluate whether it works\n  ```\n**Interview-Ready Explanation**\n> Parameters are learned from data during training (weights, biases). Hyperparameters control the training process and are selected externally (learning rate, batch size, regularization strength).\n\n---"
+    },
+    {
+      "id": "d02-training-validation-and-test-sets",
+      "title": "Training, Validation and Test Sets (Deep Dive)",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "training-validation-and-test-sets",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nA three-way data split that separates learning, model selection, and final evaluation into independent stages.\n**Why It Matters**\n\nPrevents overly optimistic evaluation and ensures the final performance estimate is unbiased.\n**Mental Model / Mechanics**\n```\n              Dataset\n                 │\n     ┌───────────┼───────────┐\n     ↓           ↓           ↓\n  Training   Validation     Test\n     │           │           │\n     ↓           ↓           ↓\n  Learn      Tune/model    Final\n  parameters  selection    evaluation\n  ```\n  **Training set:** Learn model parameters (X_train, y_train)\n  **Validation set:** Make development decisions — which hyperparameters, which model, when to stop\n  **Test set:** Final estimate on genuinely unseen data. Should NOT influence model development.\n**Failure Modes / Tradeoffs**\n- Repeatedly inspecting test performance and changing the model turns the test set into a validation set\n  - The test set must remain untouched until final evaluation\n**Interview-Ready Explanation**\n> Training data learns parameters. Validation data guides model/hyperparameter selection during development. The test set is reserved for a single final evaluation and must not influence development decisions.\n\n---",
+      "markdown": "### [CARD: Training, Validation and Test Sets (Deep Dive)]\n<!-- id: d02-training-validation-and-test-sets -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** training-validation-and-test-sets, ml-theory\n**Core Concept**\n\nA three-way data split that separates learning, model selection, and final evaluation into independent stages.\n**Why It Matters**\n\nPrevents overly optimistic evaluation and ensures the final performance estimate is unbiased.\n**Mental Model / Mechanics**\n```\n              Dataset\n                 │\n     ┌───────────┼───────────┐\n     ↓           ↓           ↓\n  Training   Validation     Test\n     │           │           │\n     ↓           ↓           ↓\n  Learn      Tune/model    Final\n  parameters  selection    evaluation\n  ```\n  **Training set:** Learn model parameters (X_train, y_train)\n  **Validation set:** Make development decisions — which hyperparameters, which model, when to stop\n  **Test set:** Final estimate on genuinely unseen data. Should NOT influence model development.\n**Failure Modes / Tradeoffs**\n- Repeatedly inspecting test performance and changing the model turns the test set into a validation set\n  - The test set must remain untouched until final evaluation\n**Interview-Ready Explanation**\n> Training data learns parameters. Validation data guides model/hyperparameter selection during development. The test set is reserved for a single final evaluation and must not influence development decisions.\n\n---"
+    },
+    {
+      "id": "d02-why-we-need-a-test-set",
+      "title": "Why We Need a Test Set",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "why-we-need-a-test-set",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nAfter evaluating many models against validation data, the best-performing one may appear strong partly due to repeated optimization against that data. A held-out test set provides an independent final check.\n**Why It Matters**\n\nThe validation score becomes optimistically biased after repeated model selection. The test set corrects for this.\n**Mental Model / Mechanics**\n```\n  Build 100 models → Evaluate all on validation → Pick best\n  → Validation score is likely optimistic (selected for)\n  → Test set gives unbiased final performance estimate\n  ```\n**Interview-Ready Explanation**\n> After repeated optimization against validation data, the validation score becomes optimistic. A held-out test set provides a genuinely unbiased final performance estimate.\n\n---",
+      "markdown": "### [CARD: Why We Need a Test Set]\n<!-- id: d02-why-we-need-a-test-set -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** why-we-need-a-test-set, ml-theory\n**Core Concept**\n\nAfter evaluating many models against validation data, the best-performing one may appear strong partly due to repeated optimization against that data. A held-out test set provides an independent final check.\n**Why It Matters**\n\nThe validation score becomes optimistically biased after repeated model selection. The test set corrects for this.\n**Mental Model / Mechanics**\n```\n  Build 100 models → Evaluate all on validation → Pick best\n  → Validation score is likely optimistic (selected for)\n  → Test set gives unbiased final performance estimate\n  ```\n**Interview-Ready Explanation**\n> After repeated optimization against validation data, the validation score becomes optimistic. A held-out test set provides a genuinely unbiased final performance estimate.\n\n---"
+    },
+    {
+      "id": "d02-generalization",
+      "title": "Generalization (Deep Dive)",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "generalization",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe ability to perform well on unseen examples from the same underlying problem distribution, not just memorized training data.\n**Why It Matters**\n\nThis is arguably the central objective of supervised machine learning.\n**Mental Model / Mechanics**\n```\n  Model A: Train acc=99.8%, Val acc=72% → Poor generalization\n  Model B: Train acc=94%,  Val acc=91% → Good generalization\n\n  Model B is generally more desirable.\n  ```\n  The purpose of the model is not to perform well on examples it has already seen — it is to generalize.\n**Interview-Ready Explanation**\n> Generalization is the ability to perform well on unseen data. A model that memorizes training data is useless in production. We want the gap between training and validation/test performance to be reasonably small.\n\n---",
+      "markdown": "### [CARD: Generalization (Deep Dive)]\n<!-- id: d02-generalization -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** generalization, ml-theory\n**Core Concept**\n\nThe ability to perform well on unseen examples from the same underlying problem distribution, not just memorized training data.\n**Why It Matters**\n\nThis is arguably the central objective of supervised machine learning.\n**Mental Model / Mechanics**\n```\n  Model A: Train acc=99.8%, Val acc=72% → Poor generalization\n  Model B: Train acc=94%,  Val acc=91% → Good generalization\n\n  Model B is generally more desirable.\n  ```\n  The purpose of the model is not to perform well on examples it has already seen — it is to generalize.\n**Interview-Ready Explanation**\n> Generalization is the ability to perform well on unseen data. A model that memorizes training data is useless in production. We want the gap between training and validation/test performance to be reasonably small.\n\n---"
+    },
+    {
+      "id": "d02-overfitting",
+      "title": "Overfitting (Deep Dive)",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "overfitting",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe model learns training-specific patterns including noise, random fluctuations, and accidental correlations — performing excellently on training data but poorly on unseen data.\n**Why It Matters**\n\nUnderstanding overfitting is essential for diagnosing and fixing model performance.\n**Mental Model / Mechanics**\n```\n  Training error → very low\n  Validation error → high\n\n  Example: Model discovers \"whenever this exact machine ID appeared\n  in training, a failure occurred.\" Useless if IDs are arbitrary.\n  ```\n**Interview-Ready Explanation**\n> Overfitting occurs when a model learns training-specific patterns including noise, producing strong training performance but poor generalization. Solutions include more data, regularization, simpler models, early stopping, and dropout.\n\n---",
+      "markdown": "### [CARD: Overfitting (Deep Dive)]\n<!-- id: d02-overfitting -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** overfitting, ml-theory\n**Core Concept**\n\nThe model learns training-specific patterns including noise, random fluctuations, and accidental correlations — performing excellently on training data but poorly on unseen data.\n**Why It Matters**\n\nUnderstanding overfitting is essential for diagnosing and fixing model performance.\n**Mental Model / Mechanics**\n```\n  Training error → very low\n  Validation error → high\n\n  Example: Model discovers \"whenever this exact machine ID appeared\n  in training, a failure occurred.\" Useless if IDs are arbitrary.\n  ```\n**Interview-Ready Explanation**\n> Overfitting occurs when a model learns training-specific patterns including noise, producing strong training performance but poor generalization. Solutions include more data, regularization, simpler models, early stopping, and dropout.\n\n---"
+    },
+    {
+      "id": "d02-underfitting",
+      "title": "Underfitting (Deep Dive)",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "underfitting",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe model is too limited to capture important patterns, resulting in poor performance even on training data.\n**Why It Matters**\n\nRecognizing underfitting directs you to increase model capacity, improve features, or reduce over-regularization.\n**Mental Model / Mechanics**\n```\n  Training performance → poor\n  Validation performance → poor\n\n  Causes: model too simple, poor features, excessive regularization,\n          insufficient training, incorrect assumptions about data\n  ```\n**Interview-Ready Explanation**\n> Underfitting occurs when the model is too simple or constrained to capture the underlying patterns, so it performs poorly on both training and unseen data.\n\n---",
+      "markdown": "### [CARD: Underfitting (Deep Dive)]\n<!-- id: d02-underfitting -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** underfitting, ml-theory\n**Core Concept**\n\nThe model is too limited to capture important patterns, resulting in poor performance even on training data.\n**Why It Matters**\n\nRecognizing underfitting directs you to increase model capacity, improve features, or reduce over-regularization.\n**Mental Model / Mechanics**\n```\n  Training performance → poor\n  Validation performance → poor\n\n  Causes: model too simple, poor features, excessive regularization,\n          insufficient training, incorrect assumptions about data\n  ```\n**Interview-Ready Explanation**\n> Underfitting occurs when the model is too simple or constrained to capture the underlying patterns, so it performs poorly on both training and unseen data.\n\n---"
+    },
+    {
+      "id": "d02-model-complexity",
+      "title": "Model Complexity",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "model-complexity",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nModel complexity describes how flexible the model is in representing relationships in the data. Increasing complexity reduces bias but increases variance.\n**Why It Matters**\n\nProvides the lever for the bias–variance tradeoff.\n**Mental Model / Mechanics**\n```\n  Simple model → limited patterns → high bias, low variance\n  Complex model → many patterns → low bias, high variance\n\n  Increasing complexity: Bias ↓, Variance ↑\n  ```\n**Interview-Ready Explanation**\n> Model complexity determines how many patterns the model can represent. More complexity reduces bias but increases variance, creating the fundamental bias–variance tradeoff.\n\n---",
+      "markdown": "### [CARD: Model Complexity]\n<!-- id: d02-model-complexity -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** model-complexity, ml-theory\n**Core Concept**\n\nModel complexity describes how flexible the model is in representing relationships in the data. Increasing complexity reduces bias but increases variance.\n**Why It Matters**\n\nProvides the lever for the bias–variance tradeoff.\n**Mental Model / Mechanics**\n```\n  Simple model → limited patterns → high bias, low variance\n  Complex model → many patterns → low bias, high variance\n\n  Increasing complexity: Bias ↓, Variance ↑\n  ```\n**Interview-Ready Explanation**\n> Model complexity determines how many patterns the model can represent. More complexity reduces bias but increases variance, creating the fundamental bias–variance tradeoff.\n\n---"
+    },
+    {
+      "id": "d02-bias",
+      "title": "Bias (Deep Dive)",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "bias",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nSystematic error from overly restrictive model assumptions — the model isn't flexible enough to capture the true relationship.\n**Why It Matters**\n\nDiagnosing high bias tells you the model needs more capacity or better features.\n**Mental Model / Mechanics**\n```\n  True relationship:      Model fit:\n        *                 ────────────\n     *     *              (straight line)\n   *         *\n\n  The model is too simplistic → high bias → underfitting\n  Training error → high, Validation error → high\n  ```\n**Interview-Ready Explanation**\n> Bias is systematic error from overly restrictive model assumptions. \"The model can't learn enough.\" High bias is associated with underfitting — both training and validation errors are high.\n\n---",
+      "markdown": "### [CARD: Bias (Deep Dive)]\n<!-- id: d02-bias -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** bias, ml-theory\n**Core Concept**\n\nSystematic error from overly restrictive model assumptions — the model isn't flexible enough to capture the true relationship.\n**Why It Matters**\n\nDiagnosing high bias tells you the model needs more capacity or better features.\n**Mental Model / Mechanics**\n```\n  True relationship:      Model fit:\n        *                 ────────────\n     *     *              (straight line)\n   *         *\n\n  The model is too simplistic → high bias → underfitting\n  Training error → high, Validation error → high\n  ```\n**Interview-Ready Explanation**\n> Bias is systematic error from overly restrictive model assumptions. \"The model can't learn enough.\" High bias is associated with underfitting — both training and validation errors are high.\n\n---"
+    },
+    {
+      "id": "d02-variance",
+      "title": "Variance (Deep Dive)",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "variance",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nHow sensitive the learned model is to the particular training data. A high-variance model changes dramatically with slight data changes.\n**Why It Matters**\n\nDiagnosing high variance tells you the model needs regularization, more data, or reduced complexity.\n**Mental Model / Mechanics**\n```\n  \"If I slightly changed the training dataset, my model would change dramatically.\"\n\n  High variance → fits almost every fluctuation in training data\n  Training error → very low, Validation error → high → overfitting\n  ```\n**Interview-Ready Explanation**\n> Variance describes sensitivity to the training data. \"The model learned too much about this particular training set.\" High variance is associated with overfitting.\n\n---",
+      "markdown": "### [CARD: Variance (Deep Dive)]\n<!-- id: d02-variance -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** variance, ml-theory\n**Core Concept**\n\nHow sensitive the learned model is to the particular training data. A high-variance model changes dramatically with slight data changes.\n**Why It Matters**\n\nDiagnosing high variance tells you the model needs regularization, more data, or reduced complexity.\n**Mental Model / Mechanics**\n```\n  \"If I slightly changed the training dataset, my model would change dramatically.\"\n\n  High variance → fits almost every fluctuation in training data\n  Training error → very low, Validation error → high → overfitting\n  ```\n**Interview-Ready Explanation**\n> Variance describes sensitivity to the training data. \"The model learned too much about this particular training set.\" High variance is associated with overfitting.\n\n---"
+    },
+    {
+      "id": "d02-bias-variance-tradeoff",
+      "title": "Bias–Variance Tradeoff",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "bias-variance-tradeoff",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nAs model complexity increases, bias decreases but variance increases. The optimal model balances both to minimize total generalization error.\n**Why It Matters**\n\nProvides the theoretical framework for why there's no free lunch — you must balance flexibility vs. stability.\n**Mental Model / Mechanics**\n```\n  Error\n    │\n    │\\                /\n    │ \\              /\n    │  \\____    ____/\n    │       \\__/\n    │\n    └────────────────────\n          Complexity\n\n  Very simple → High bias, Low variance\n  Very complex → Low bias, High variance\n  Sweet spot → Between them\n  ```\n  Increasing flexibility reduces underfitting but eventually increases overfitting.\n**Interview-Ready Explanation**\n> As model complexity increases, bias decreases and variance increases. The goal is not to minimize either independently but to find the balance that maximizes generalization.\n\n---",
+      "markdown": "### [CARD: Bias–Variance Tradeoff]\n<!-- id: d02-bias-variance-tradeoff -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** bias-variance-tradeoff, ml-theory\n**Core Concept**\n\nAs model complexity increases, bias decreases but variance increases. The optimal model balances both to minimize total generalization error.\n**Why It Matters**\n\nProvides the theoretical framework for why there's no free lunch — you must balance flexibility vs. stability.\n**Mental Model / Mechanics**\n```\n  Error\n    │\n    │\\                /\n    │ \\              /\n    │  \\____    ____/\n    │       \\__/\n    │\n    └────────────────────\n          Complexity\n\n  Very simple → High bias, Low variance\n  Very complex → Low bias, High variance\n  Sweet spot → Between them\n  ```\n  Increasing flexibility reduces underfitting but eventually increases overfitting.\n**Interview-Ready Explanation**\n> As model complexity increases, bias decreases and variance increases. The goal is not to minimize either independently but to find the balance that maximizes generalization.\n\n---"
+    },
+    {
+      "id": "d02-regularization",
+      "title": "Regularization",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "regularization",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nA family of techniques that penalize model complexity during training to improve generalization. The training objective becomes: minimize loss + complexity penalty.\n**Why It Matters**\n\nPrevents the model from becoming overly complex and overfitting by adding a cost for large/complex parameters.\n**Mental Model / Mechanics**\n```\n  Original objective:     minimize(training loss)\n  Regularized objective:  minimize(training loss + λ × complexity penalty)\n\n  Two competing objectives:\n    1. Fit the data\n    2. Avoid unnecessarily complex parameters\n  ```\n**Interview-Ready Explanation**\n> Regularization modifies the training objective to penalize model complexity. This discourages excessively large or complex parameters and improves generalization.\n\n---",
+      "markdown": "### [CARD: Regularization]\n<!-- id: d02-regularization -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** regularization, ml-theory\n**Core Concept**\n\nA family of techniques that penalize model complexity during training to improve generalization. The training objective becomes: minimize loss + complexity penalty.\n**Why It Matters**\n\nPrevents the model from becoming overly complex and overfitting by adding a cost for large/complex parameters.\n**Mental Model / Mechanics**\n```\n  Original objective:     minimize(training loss)\n  Regularized objective:  minimize(training loss + λ × complexity penalty)\n\n  Two competing objectives:\n    1. Fit the data\n    2. Avoid unnecessarily complex parameters\n  ```\n**Interview-Ready Explanation**\n> Regularization modifies the training objective to penalize model complexity. This discourages excessively large or complex parameters and improves generalization.\n\n---"
+    },
+    {
+      "id": "d02-l2-regularization",
+      "title": "L2 Regularization",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "l2-regularization",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nPenalizes the squared magnitude of parameters: `Loss = training_loss + λ Σ w²`. Shrinks weights toward zero without forcing them to exactly zero.\n**Why It Matters**\n\nDiscourages any single parameter from becoming disproportionately large, producing smoother models.\n**Mental Model / Mechanics**\n```\n  λ small → weak penalty → more model freedom\n  λ large → strong penalty → more constrained model\n\n  Example: w₃ = 15.8 → heavily penalized → shrunk toward smaller value\n  L2 does NOT usually force weights exactly to zero\n  ```\n**Interview-Ready Explanation**\n> L2 regularization penalizes squared parameter values, shrinking large weights. It produces smoother models but does not force weights exactly to zero. The strength is controlled by λ.\n\n---",
+      "markdown": "### [CARD: L2 Regularization]\n<!-- id: d02-l2-regularization -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** l2-regularization, ml-theory\n**Core Concept**\n\nPenalizes the squared magnitude of parameters: `Loss = training_loss + λ Σ w²`. Shrinks weights toward zero without forcing them to exactly zero.\n**Why It Matters**\n\nDiscourages any single parameter from becoming disproportionately large, producing smoother models.\n**Mental Model / Mechanics**\n```\n  λ small → weak penalty → more model freedom\n  λ large → strong penalty → more constrained model\n\n  Example: w₃ = 15.8 → heavily penalized → shrunk toward smaller value\n  L2 does NOT usually force weights exactly to zero\n  ```\n**Interview-Ready Explanation**\n> L2 regularization penalizes squared parameter values, shrinking large weights. It produces smoother models but does not force weights exactly to zero. The strength is controlled by λ.\n\n---"
+    },
+    {
+      "id": "d02-ridge-regression",
+      "title": "Ridge Regression",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "ridge-regression",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nLinear regression + L2 regularization. Useful when features are correlated and you want to shrink coefficients without eliminating any.\n**Why It Matters**\n\nStandard linear regression can overfit or become unstable with correlated features. Ridge stabilizes the solution.\n**Mental Model / Mechanics**\n```\n  Ridge = Linear Regression + L2 Regularization\n  ```\n  Useful when: features are correlated, you want regularization without eliminating features.\n**Interview-Ready Explanation**\n> Ridge regression is linear regression with L2 regularization. It shrinks coefficients toward zero to reduce overfitting, especially useful with correlated features.\n\n---",
+      "markdown": "### [CARD: Ridge Regression]\n<!-- id: d02-ridge-regression -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** ridge-regression, ml-theory\n**Core Concept**\n\nLinear regression + L2 regularization. Useful when features are correlated and you want to shrink coefficients without eliminating any.\n**Why It Matters**\n\nStandard linear regression can overfit or become unstable with correlated features. Ridge stabilizes the solution.\n**Mental Model / Mechanics**\n```\n  Ridge = Linear Regression + L2 Regularization\n  ```\n  Useful when: features are correlated, you want regularization without eliminating features.\n**Interview-Ready Explanation**\n> Ridge regression is linear regression with L2 regularization. It shrinks coefficients toward zero to reduce overfitting, especially useful with correlated features.\n\n---"
+    },
+    {
+      "id": "d02-l1-regularization",
+      "title": "L1 Regularization",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "l1-regularization",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nPenalizes the absolute value of parameters: `Loss = training_loss + λ Σ |w|`. Can push some parameters **exactly to zero**, creating sparse models.\n**Why It Matters**\n\nPerforms implicit feature selection by zeroing out unimportant feature weights.\n**Mental Model / Mechanics**\n```\n  Before L1: w₁=2.1, w₂=0.7, w₃=0.05, w₄=1.8\n  After L1:  w₁=1.8, w₂=0.3, w₃=0,    w₄=1.5\n\n  L1 can create sparse parameter vectors (some weights = 0)\n  ```\n**Interview-Ready Explanation**\n> L1 regularization penalizes the absolute values of parameters and can push some exactly to zero, effectively performing feature selection and creating sparse models.\n\n---",
+      "markdown": "### [CARD: L1 Regularization]\n<!-- id: d02-l1-regularization -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** l1-regularization, ml-theory\n**Core Concept**\n\nPenalizes the absolute value of parameters: `Loss = training_loss + λ Σ |w|`. Can push some parameters **exactly to zero**, creating sparse models.\n**Why It Matters**\n\nPerforms implicit feature selection by zeroing out unimportant feature weights.\n**Mental Model / Mechanics**\n```\n  Before L1: w₁=2.1, w₂=0.7, w₃=0.05, w₄=1.8\n  After L1:  w₁=1.8, w₂=0.3, w₃=0,    w₄=1.5\n\n  L1 can create sparse parameter vectors (some weights = 0)\n  ```\n**Interview-Ready Explanation**\n> L1 regularization penalizes the absolute values of parameters and can push some exactly to zero, effectively performing feature selection and creating sparse models.\n\n---"
+    },
+    {
+      "id": "d02-lasso-regression",
+      "title": "Lasso Regression",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "lasso-regression",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nLinear regression + L1 regularization. Can drive coefficients to exactly zero, performing feature selection.\n**Why It Matters**\n\nUseful when you have many features and believe only a subset are meaningful.\n**Mental Model / Mechanics**\n```\n  Lasso = Linear Regression + L1 Regularization\n  Key consequence: can eliminate features by zeroing their coefficients\n  ```\n**Interview-Ready Explanation**\n> Lasso regression is linear regression with L1 regularization. It can drive some coefficients to exactly zero, effectively performing automatic feature selection.\n\n---",
+      "markdown": "### [CARD: Lasso Regression]\n<!-- id: d02-lasso-regression -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** lasso-regression, ml-theory\n**Core Concept**\n\nLinear regression + L1 regularization. Can drive coefficients to exactly zero, performing feature selection.\n**Why It Matters**\n\nUseful when you have many features and believe only a subset are meaningful.\n**Mental Model / Mechanics**\n```\n  Lasso = Linear Regression + L1 Regularization\n  Key consequence: can eliminate features by zeroing their coefficients\n  ```\n**Interview-Ready Explanation**\n> Lasso regression is linear regression with L1 regularization. It can drive some coefficients to exactly zero, effectively performing automatic feature selection.\n\n---"
+    },
+    {
+      "id": "d02-l1-vs-l2-comparison",
+      "title": "L1 vs L2 Comparison",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "l1-vs-l2-comparison",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nL1 penalizes |w| (can zero out weights, sparsity). L2 penalizes w² (shrinks weights, no exact zeros).\n**Why It Matters**\n\nChoosing between them depends on whether you want feature selection (L1) or smooth weight shrinkage (L2).\n**Mental Model / Mechanics**\n| Property              | L1 (Lasso)     | L2 (Ridge)      |\n  |-----------------------|----------------|-----------------|\n  | Penalty               | Σ\\|w\\|         | Σw²             |\n  | Exact zero weights?   | Yes            | Usually no       |\n  | Sparsity              | Encourages     | Less so          |\n  | Mental model          | \"Remove features\" | \"Shrink weights\" |\n**Interview-Ready Explanation**\n> L1 penalizes absolute values and can produce exact zero weights (sparsity/feature selection). L2 penalizes squared values and shrinks weights without forcing them to zero. L1 = Lasso, L2 = Ridge.\n\n---",
+      "markdown": "### [CARD: L1 vs L2 Comparison]\n<!-- id: d02-l1-vs-l2-comparison -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** l1-vs-l2-comparison, ml-theory\n**Core Concept**\n\nL1 penalizes |w| (can zero out weights, sparsity). L2 penalizes w² (shrinks weights, no exact zeros).\n**Why It Matters**\n\nChoosing between them depends on whether you want feature selection (L1) or smooth weight shrinkage (L2).\n**Mental Model / Mechanics**\n| Property              | L1 (Lasso)     | L2 (Ridge)      |\n  |-----------------------|----------------|-----------------|\n  | Penalty               | Σ\\|w\\|         | Σw²             |\n  | Exact zero weights?   | Yes            | Usually no       |\n  | Sparsity              | Encourages     | Less so          |\n  | Mental model          | \"Remove features\" | \"Shrink weights\" |\n**Interview-Ready Explanation**\n> L1 penalizes absolute values and can produce exact zero weights (sparsity/feature selection). L2 penalizes squared values and shrinks weights without forcing them to zero. L1 = Lasso, L2 = Ridge.\n\n---"
+    },
+    {
+      "id": "d02-elastic-net",
+      "title": "Elastic Net",
+      "priority": "should_know",
+      "category": "ml-theory",
+      "tags": [
+        "elastic-net",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nCombines L1 and L2 regularization penalties. Gets sparsity from L1 and stability from L2.\n**Why It Matters**\n\nLasso can behave unpredictably with highly correlated features (which to keep?). Elastic Net combines sparsity with stabilization.\n**Mental Model / Mechanics**\n```\n  Elastic Net = L1 penalty + L2 penalty\n  L1 → sparsity\n  L2 → shrinkage/stability\n  Elastic Net → both\n  ```\n**Interview-Ready Explanation**\n> Elastic Net combines L1's sparsity with L2's stability. Useful when features are correlated and Lasso alone behaves unpredictably.\n\n---",
+      "markdown": "### [CARD: Elastic Net]\n<!-- id: d02-elastic-net -->\n\n- **Priority:** should_know\n- **Category:** ml-theory\n- **Tags:** elastic-net, ml-theory\n**Core Concept**\n\nCombines L1 and L2 regularization penalties. Gets sparsity from L1 and stability from L2.\n**Why It Matters**\n\nLasso can behave unpredictably with highly correlated features (which to keep?). Elastic Net combines sparsity with stabilization.\n**Mental Model / Mechanics**\n```\n  Elastic Net = L1 penalty + L2 penalty\n  L1 → sparsity\n  L2 → shrinkage/stability\n  Elastic Net → both\n  ```\n**Interview-Ready Explanation**\n> Elastic Net combines L1's sparsity with L2's stability. Useful when features are correlated and Lasso alone behaves unpredictably.\n\n---"
+    },
+    {
+      "id": "d02-regularization-strength",
+      "title": "Regularization Strength",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "regularization-strength",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe coefficient λ controls how strongly complexity is penalized. Regularization itself has a bias–variance tradeoff.\n**Why It Matters**\n\nToo little regularization → overfitting. Too much → underfitting. λ must be tuned.\n**Mental Model / Mechanics**\n```\n  λ small → weak penalty → more freedom → potential overfitting\n  λ large → strong penalty → constrained → potential underfitting\n  ```\n**Interview-Ready Explanation**\n> The regularization coefficient λ controls the bias–variance tradeoff of regularization itself. Too weak allows overfitting; too strong causes underfitting. It must be tuned via validation.\n\n---",
+      "markdown": "### [CARD: Regularization Strength]\n<!-- id: d02-regularization-strength -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** regularization-strength, ml-theory\n**Core Concept**\n\nThe coefficient λ controls how strongly complexity is penalized. Regularization itself has a bias–variance tradeoff.\n**Why It Matters**\n\nToo little regularization → overfitting. Too much → underfitting. λ must be tuned.\n**Mental Model / Mechanics**\n```\n  λ small → weak penalty → more freedom → potential overfitting\n  λ large → strong penalty → constrained → potential underfitting\n  ```\n**Interview-Ready Explanation**\n> The regularization coefficient λ controls the bias–variance tradeoff of regularization itself. Too weak allows overfitting; too strong causes underfitting. It must be tuned via validation.\n\n---"
+    },
+    {
+      "id": "d02-cross-validation",
+      "title": "Cross-Validation",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "cross-validation",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nK-fold cross-validation splits training data into K folds, trains K times (each fold serves as validation once), and averages the scores for a robust performance estimate.\n**Why It Matters**\n\nA single validation split can be noisy, especially with small datasets. Cross-validation reduces dependence on any particular split.\n**Mental Model / Mechanics**\n```\n  K = 5:\n  ┌────┬────┬────┬────┬────┐\n  │ F1 │ F2 │ F3 │ F4 │ F5 │\n  └────┴────┴────┴────┴────┘\n\n  Run 1: Val=F1, Train=F2-F5\n  Run 2: Val=F2, Train=F1,F3-F5\n  Run 3: Val=F3, Train=F1-F2,F4-F5\n  Run 4: Val=F4, Train=F1-F3,F5\n  Run 5: Val=F5, Train=F1-F4\n\n  Final score = average of 5 validation scores\n  ```\n**Failure Modes / Tradeoffs**\n- Cross-validation does NOT eliminate the need for a test set\n  - Cross-validation helps estimate performance; it does NOT prevent overfitting\n  - Computationally K× more expensive than a single split\n**Interview-Ready Explanation**\n> K-fold cross-validation trains K models, each using a different fold as validation and the rest as training. Averaging the K scores provides a more robust performance estimate than a single split, especially with limited data.\n\n---",
+      "markdown": "### [CARD: Cross-Validation]\n<!-- id: d02-cross-validation -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** cross-validation, ml-theory\n**Core Concept**\n\nK-fold cross-validation splits training data into K folds, trains K times (each fold serves as validation once), and averages the scores for a robust performance estimate.\n**Why It Matters**\n\nA single validation split can be noisy, especially with small datasets. Cross-validation reduces dependence on any particular split.\n**Mental Model / Mechanics**\n```\n  K = 5:\n  ┌────┬────┬────┬────┬────┐\n  │ F1 │ F2 │ F3 │ F4 │ F5 │\n  └────┴────┴────┴────┴────┘\n\n  Run 1: Val=F1, Train=F2-F5\n  Run 2: Val=F2, Train=F1,F3-F5\n  Run 3: Val=F3, Train=F1-F2,F4-F5\n  Run 4: Val=F4, Train=F1-F3,F5\n  Run 5: Val=F5, Train=F1-F4\n\n  Final score = average of 5 validation scores\n  ```\n**Failure Modes / Tradeoffs**\n- Cross-validation does NOT eliminate the need for a test set\n  - Cross-validation helps estimate performance; it does NOT prevent overfitting\n  - Computationally K× more expensive than a single split\n**Interview-Ready Explanation**\n> K-fold cross-validation trains K models, each using a different fold as validation and the rest as training. Averaging the K scores provides a more robust performance estimate than a single split, especially with limited data.\n\n---"
+    },
+    {
+      "id": "d02-cross-validation-and-the-test-set",
+      "title": "Cross-Validation and the Test Set",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "cross-validation-and-the-test-set",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nCross-validation is used during development. The test set remains separate for final evaluation.\n**Why It Matters**\n\nCommon misconception: \"cross-validation replaces the test set.\" It doesn't.\n**Mental Model / Mechanics**\n```\n  Full dataset → Hold out test set → Remaining data\n       ↓\n  K-fold cross-validation on remaining data\n       ↓\n  Select hyperparameters/model → Train final model → Evaluate ONCE on test\n  ```\n**Interview-Ready Explanation**\n> Cross-validation is used during development for model selection. The test set remains held out for a single final evaluation. Cross-validation does not replace the test set.\n\n---",
+      "markdown": "### [CARD: Cross-Validation and the Test Set]\n<!-- id: d02-cross-validation-and-the-test-set -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** cross-validation-and-the-test-set, ml-theory\n**Core Concept**\n\nCross-validation is used during development. The test set remains separate for final evaluation.\n**Why It Matters**\n\nCommon misconception: \"cross-validation replaces the test set.\" It doesn't.\n**Mental Model / Mechanics**\n```\n  Full dataset → Hold out test set → Remaining data\n       ↓\n  K-fold cross-validation on remaining data\n       ↓\n  Select hyperparameters/model → Train final model → Evaluate ONCE on test\n  ```\n**Interview-Ready Explanation**\n> Cross-validation is used during development for model selection. The test set remains held out for a single final evaluation. Cross-validation does not replace the test set.\n\n---"
+    },
+    {
+      "id": "d02-stratified-cross-validation",
+      "title": "Stratified Cross-Validation",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "stratified-cross-validation",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nPreserves class proportions across folds during cross-validation. Critical for imbalanced classification problems.\n**Why It Matters**\n\nRandom splits can accidentally create folds with very different class distributions, making evaluation unreliable.\n**Mental Model / Mechanics**\n```\n  Original: 95% normal, 5% fraud\n  Each fold: ≈95% normal, ≈5% fraud  (proportions preserved)\n\n  Without stratification, one fold might have 0% fraud → useless evaluation\n  ```\n**Interview-Ready Explanation**\n> Stratified cross-validation preserves class proportions across folds, ensuring each fold is representative. Critical for imbalanced classification where random splits can create unrepresentative folds.\n\n---",
+      "markdown": "### [CARD: Stratified Cross-Validation]\n<!-- id: d02-stratified-cross-validation -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** stratified-cross-validation, ml-theory\n**Core Concept**\n\nPreserves class proportions across folds during cross-validation. Critical for imbalanced classification problems.\n**Why It Matters**\n\nRandom splits can accidentally create folds with very different class distributions, making evaluation unreliable.\n**Mental Model / Mechanics**\n```\n  Original: 95% normal, 5% fraud\n  Each fold: ≈95% normal, ≈5% fraud  (proportions preserved)\n\n  Without stratification, one fold might have 0% fraud → useless evaluation\n  ```\n**Interview-Ready Explanation**\n> Stratified cross-validation preserves class proportions across folds, ensuring each fold is representative. Critical for imbalanced classification where random splits can create unrepresentative folds.\n\n---"
+    },
+    {
+      "id": "d02-data-leakage",
+      "title": "Data Leakage",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "data-leakage",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nWhen information that would not legitimately be available at prediction time influences training or evaluation, producing artificially strong results that don't reflect real-world performance.\n**Why It Matters**\n\nOne of the most important practical ML concepts. Leakage can make a terrible model appear excellent.\n**Mental Model / Mechanics**\nThe model effectively \"peeks at the answer.\" Four major forms:\n\n  **1. Target leakage:** Using a feature that is a consequence of the target.\n  ```\n  Predicting customer default\n  Feature: \"collection_agency_contacted\" → only happens AFTER default\n  → Would not exist at prediction time → leakage\n  ```\n\n  **2. Train/test contamination (preprocessing leakage):**\n  ```\n  WRONG: Full dataset → normalize(mean, std) → split\n  RIGHT: Split first → fit scaler on train only → transform val/test with train stats\n  ```\n\n  **3. Feature engineering leakage (future information):**\n  ```\n  Predicting fraud at transaction time\n  Feature: \"avg transactions in next 24 hours\"\n  → Uses future information → leakage\n  Key question: \"Would this info be available at prediction time?\"\n  ```\n\n  **4. Time-series leakage:**\n  ```\n  WRONG: Random train/test split across time\n  RIGHT: Chronological split (train: Jan-Apr, val: May, test: Jun)\n  ```\n**Failure Modes / Tradeoffs**\n- Leakage produces the appearance of success during development\n  - A model with 99% accuracy from leakage is far worse than a legitimate 85% model\n  - Regularization cannot fix a fundamentally leaked dataset\n**Interview-Ready Explanation**\n> Data leakage occurs when information unavailable at prediction time influences training or evaluation. It produces artificially strong results that don't transfer to real-world deployment. Forms include target leakage, preprocessing contamination, future-information features, and temporal leakage.\n\n---",
+      "markdown": "### [CARD: Data Leakage]\n<!-- id: d02-data-leakage -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** data-leakage, ml-theory\n**Core Concept**\n\nWhen information that would not legitimately be available at prediction time influences training or evaluation, producing artificially strong results that don't reflect real-world performance.\n**Why It Matters**\n\nOne of the most important practical ML concepts. Leakage can make a terrible model appear excellent.\n**Mental Model / Mechanics**\nThe model effectively \"peeks at the answer.\" Four major forms:\n\n  **1. Target leakage:** Using a feature that is a consequence of the target.\n  ```\n  Predicting customer default\n  Feature: \"collection_agency_contacted\" → only happens AFTER default\n  → Would not exist at prediction time → leakage\n  ```\n\n  **2. Train/test contamination (preprocessing leakage):**\n  ```\n  WRONG: Full dataset → normalize(mean, std) → split\n  RIGHT: Split first → fit scaler on train only → transform val/test with train stats\n  ```\n\n  **3. Feature engineering leakage (future information):**\n  ```\n  Predicting fraud at transaction time\n  Feature: \"avg transactions in next 24 hours\"\n  → Uses future information → leakage\n  Key question: \"Would this info be available at prediction time?\"\n  ```\n\n  **4. Time-series leakage:**\n  ```\n  WRONG: Random train/test split across time\n  RIGHT: Chronological split (train: Jan-Apr, val: May, test: Jun)\n  ```\n**Failure Modes / Tradeoffs**\n- Leakage produces the appearance of success during development\n  - A model with 99% accuracy from leakage is far worse than a legitimate 85% model\n  - Regularization cannot fix a fundamentally leaked dataset\n**Interview-Ready Explanation**\n> Data leakage occurs when information unavailable at prediction time influences training or evaluation. It produces artificially strong results that don't transfer to real-world deployment. Forms include target leakage, preprocessing contamination, future-information features, and temporal leakage.\n\n---"
+    },
+    {
+      "id": "d02-regularization-vs-data-leakage",
+      "title": "Regularization vs Data Leakage",
+      "priority": "should_know",
+      "category": "ml-theory",
+      "tags": [
+        "regularization-vs-data-leakage",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nThese solve completely different problems. Regularization constrains model complexity. Data leakage is an invalid data problem.\n**Why It Matters**\n\nPrevents confusing two fundamentally different failure modes.\n**Mental Model / Mechanics**\n```\n  Regularization:\n    Problem: Model too flexible → overfitting\n    Fix: Penalize complexity / constrain learning\n\n  Data Leakage:\n    Problem: Model has access to invalid information\n    Fix: Fix data collection, splitting, preprocessing, or feature engineering\n\n  Regularization CANNOT rescue a fundamentally leaked dataset.\n  ```\n**Interview-Ready Explanation**\n> Regularization addresses overfitting by constraining model complexity. Data leakage is a data validity problem — the model has access to information it shouldn't. Regularization cannot fix leakage.\n\n---",
+      "markdown": "### [CARD: Regularization vs Data Leakage]\n<!-- id: d02-regularization-vs-data-leakage -->\n\n- **Priority:** should_know\n- **Category:** ml-theory\n- **Tags:** regularization-vs-data-leakage, ml-theory\n**Core Concept**\n\nThese solve completely different problems. Regularization constrains model complexity. Data leakage is an invalid data problem.\n**Why It Matters**\n\nPrevents confusing two fundamentally different failure modes.\n**Mental Model / Mechanics**\n```\n  Regularization:\n    Problem: Model too flexible → overfitting\n    Fix: Penalize complexity / constrain learning\n\n  Data Leakage:\n    Problem: Model has access to invalid information\n    Fix: Fix data collection, splitting, preprocessing, or feature engineering\n\n  Regularization CANNOT rescue a fundamentally leaked dataset.\n  ```\n**Interview-Ready Explanation**\n> Regularization addresses overfitting by constraining model complexity. Data leakage is a data validity problem — the model has access to information it shouldn't. Regularization cannot fix leakage.\n\n---"
+    },
+    {
+      "id": "d02-model-selection-vs-final-evaluation",
+      "title": "Model Selection vs Final Evaluation",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "model-selection-vs-final-evaluation",
+        "ml-theory"
+      ],
+      "content_markdown": "**Core Concept**\n\nModel selection happens during development using validation/cross-validation. Final evaluation happens once on the held-out test set.\n**Why It Matters**\n\nSeparating these stages ensures trustworthy ML evaluation.\n**Mental Model / Mechanics**\n```\n               DATA\n                 │\n           ┌─────┴─────┐\n           ↓           ↓\n     Development      Test\n           │\n           ↓\n    Cross-validation\n           │\n           ↓\n    Model/hyperparameter selection\n           │\n           ↓\n     Final training\n           │\n           ↓\n   Evaluate on test (ONCE)\n  ```\n**Interview-Ready Explanation**\n> Model selection uses validation data or cross-validation during development. The test set is reserved for a single final evaluation after all decisions are made. This separation is fundamental to trustworthy ML.\n\n---",
+      "markdown": "### [CARD: Model Selection vs Final Evaluation]\n<!-- id: d02-model-selection-vs-final-evaluation -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** model-selection-vs-final-evaluation, ml-theory\n**Core Concept**\n\nModel selection happens during development using validation/cross-validation. Final evaluation happens once on the held-out test set.\n**Why It Matters**\n\nSeparating these stages ensures trustworthy ML evaluation.\n**Mental Model / Mechanics**\n```\n               DATA\n                 │\n           ┌─────┴─────┐\n           ↓           ↓\n     Development      Test\n           │\n           ↓\n    Cross-validation\n           │\n           ↓\n    Model/hyperparameter selection\n           │\n           ↓\n     Final training\n           │\n           ↓\n   Evaluate on test (ONCE)\n  ```\n**Interview-Ready Explanation**\n> Model selection uses validation data or cross-validation during development. The test set is reserved for a single final evaluation after all decisions are made. This separation is fundamental to trustworthy ML.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "```\nDATA → Features + Labels → Train/Val/Test → Model Choice → Training\n  → Parameters → Predictions → Loss → Optimization → Generalization\n     → Underfitting (High Bias) ←→ Overfitting (High Variance)\n        → Regularization → Better Generalization\n\nTHREAT: Data Leakage → Artificially good results → Poor real-world performance\nTOOL:   Cross-Validation → More robust development evaluation\nFINAL:  Untouched Test Set → Final performance estimate\n```\n\nGood ML isn't merely \"choose a good algorithm.\" It is: **design a valid learning and evaluation process.**\n\n---",
+  "common_misconceptions_markdown": "- **Myth:** Overfitting means the model has too many parameters.\n  **Reality:** Model complexity is one factor, but dataset size, noise, regularization, feature quality, and training procedure also matter.\n\n- **Myth:** Regularization always improves performance.\n  **Reality:** Too little allows overfitting. Too much causes underfitting. It must be tuned.\n\n- **Myth:** L1 is always better because it does feature selection.\n  **Reality:** L2 is preferable when many features contribute meaningfully or when features are correlated.\n\n- **Myth:** The validation set is completely unseen.\n  **Reality:** Repeated optimization against validation data indirectly overfits to it.\n\n- **Myth:** The test set is just another validation set.\n  **Reality:** The test set should be used only after all development decisions are finalized.\n\n- **Myth:** Cross-validation eliminates overfitting.\n  **Reality:** It provides a more robust performance estimate. It does not prevent overfitting.\n\n- **Myth:** Leakage just means accidentally including the label.\n  **Reality:** Leakage includes future information, preprocessing contamination, feature engineering errors, duplicates, and incorrect splitting.\n\n---",
+  "out_of_scope_markdown": "- Formal bias–variance decomposition equations\n- VC dimension / PAC learning\n- Statistical learning theory proofs\n- Convex optimization proofs\n- Exact geometric derivations of L1/L2 penalty shapes\n- Mathematical proofs of why Lasso produces sparsity\n- Advanced cross-validation variants (nested CV details)\n\n---",
+  "qa_drill": [
+    {
+      "id": "d02-qa-001",
+      "question": "What is the basic objective of supervised learning?",
+      "answer": "Learn a function f(X) ≈ y that maps input features to target predictions, such that it generalizes to unseen data.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-002",
+      "question": "What are X, y, and ŷ?",
+      "answer": "X = input features, y = actual target/label, ŷ = model's prediction.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-003",
+      "question": "What is the difference between parameters and hyperparameters?",
+      "answer": "Parameters are learned by the optimizer during training (weights, biases). Hyperparameters control the learning process and are set externally (learning rate, batch size, regularization strength).",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-004",
+      "question": "What happens to model parameters during training?",
+      "answer": "They are iteratively adjusted by the optimizer to reduce the loss function on training data.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-005",
+      "question": "What does generalization mean?",
+      "answer": "The ability of a model to perform well on unseen data from the same distribution, not just memorized training examples.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-generalization"
+      ]
+    },
+    {
+      "id": "d02-qa-006",
+      "question": "What does an overfitted model look like on training vs validation data?",
+      "answer": "Training performance is excellent, validation performance is poor. The model learned noise/training-specific patterns.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-007",
+      "question": "What does an underfitted model look like?",
+      "answer": "Both training and validation performance are poor. The model is too simple to capture the underlying patterns.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-008",
+      "question": "Why does increasing model complexity tend to reduce bias?",
+      "answer": "A more flexible model can represent more patterns, making fewer restrictive assumptions about the data.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-model-complexity"
+      ]
+    },
+    {
+      "id": "d02-qa-009",
+      "question": "Why can increasing model complexity increase variance?",
+      "answer": "More flexibility means more opportunity to fit noise and random fluctuations specific to the training set.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-model-complexity"
+      ]
+    },
+    {
+      "id": "d02-qa-010",
+      "question": "What problem is regularization trying to solve?",
+      "answer": "Overfitting — it penalizes model complexity to discourage learning noise and improve generalization.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-regularization"
+      ]
+    },
+    {
+      "id": "d02-qa-011",
+      "question": "What does L1 regularization penalize?",
+      "answer": "The absolute values of parameters: Σ|w|. Can drive some weights to exactly zero (sparsity).",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-regularization"
+      ]
+    },
+    {
+      "id": "d02-qa-012",
+      "question": "What does L2 regularization penalize?",
+      "answer": "The squared values of parameters: Σw². Shrinks weights toward zero without forcing exact zeros.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-regularization"
+      ]
+    },
+    {
+      "id": "d02-qa-013",
+      "question": "Why can L1 produce sparse models?",
+      "answer": "The L1 penalty geometry causes the optimization path to hit exact zero values, effectively eliminating features.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-014",
+      "question": "What's the difference between Ridge and Lasso?",
+      "answer": "Ridge = Linear Regression + L2 (shrinks weights). Lasso = Linear Regression + L1 (can zero out weights, feature selection).",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-015",
+      "question": "Why might Elastic Net be useful?",
+      "answer": "Combines L1 sparsity with L2 stability. Useful when features are correlated and Lasso alone is unstable.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-elastic-net"
+      ]
+    },
+    {
+      "id": "d02-qa-016",
+      "question": "Why can't we simply train on all our data and evaluate on the same data?",
+      "answer": "Training performance is an optimistically biased estimate. The model has already seen these examples and may have memorized them. It doesn't measure generalization.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-017",
+      "question": "What is the purpose of the validation set?",
+      "answer": "Guide model selection and hyperparameter tuning during development without contaminating the final test evaluation.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-018",
+      "question": "What is the purpose of the test set?",
+      "answer": "Provide a single final, unbiased estimate of how the chosen model performs on genuinely unseen data.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-019",
+      "question": "Explain K-fold cross-validation.",
+      "answer": "Split training data into K folds. Train K times, each time using a different fold as validation and the rest as training. Average the K scores for a more robust performance estimate.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-020",
+      "question": "Why is stratification useful for imbalanced classification?",
+      "answer": "It preserves class proportions across folds, preventing folds with unrepresentative class distributions that would make evaluation unreliable.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-021",
+      "question": "What is data leakage?",
+      "answer": "When information unavailable at prediction time influences training or evaluation, producing artificially strong results that don't reflect real-world performance.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-data-leakage"
+      ]
+    },
+    {
+      "id": "d02-qa-022",
+      "question": "Give an example of target leakage.",
+      "answer": "Predicting loan default using \"collection_agency_contacted\" as a feature — this event only occurs after default, so it wouldn't be available at prediction time.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-023",
+      "question": "Give an example of future-information leakage.",
+      "answer": "Using \"average transactions in next 24 hours\" to predict fraud at transaction time. The future hasn't happened yet when the prediction must be made.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-024",
+      "question": "Why must preprocessing generally be fitted only on training data?",
+      "answer": "Fitting on the full dataset (including test/val) leaks test information into the preprocessing statistics, contaminating the evaluation.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    },
+    {
+      "id": "d02-qa-025",
+      "question": "Why is leakage potentially worse than ordinary overfitting?",
+      "answer": "Overfitting produces a gap between train and val performance (detectable). Leakage can produce high val performance that looks like success but completely fails in production.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-overfitting"
+      ]
+    },
+    {
+      "id": "d02-qa-026",
+      "question": "Walk through building a binary classifier from raw data to final test evaluation.",
+      "answer": "Understand problem → Define target → Identify valid features → Check for leakage → Split data → Preprocess using training stats → Choose baseline → Train → Validate/cross-validate → Tune hyperparameters → Select final model → Retrain on development data → Evaluate ONCE on test → Analyze errors.",
+      "tags": [
+        "ml-theory",
+        "drill"
+      ],
+      "linked_card_ids": [
+        "d02-the-supervised-learning-problem"
+      ]
+    }
+  ]
+}

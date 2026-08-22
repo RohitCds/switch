@@ -1,0 +1,348 @@
+{
+  "schema_version": 1,
+  "day": 7,
+  "title": "Unsupervised Learning + ML Pipeline Fundamentals",
+  "topics": [
+    "unsupervised-learning",
+    "k-means",
+    "dbscan",
+    "anomaly-detection",
+    "ml-pipelines",
+    "mlops",
+    "drift-monitoring"
+  ],
+  "tags": [
+    "unsupervised-learning",
+    "mlops"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 0,
+    "must_know": 12,
+    "should_know": 3
+  },
+  "daily_objective_markdown": "By the end of today you should be able to explain how k-means and DBSCAN work and when you'd reach for each, how unsupervised anomaly detection works when you don't have labeled anomalies, and the full lifecycle of getting a model from raw data into production: pipeline stages, training-serving skew, model versioning, batch vs online inference, and drift monitoring.\n\n---",
+  "syllabus_markdown": "- 🔴 **MUST KNOW:** k-means, DBSCAN, why/when you'd use unsupervised anomaly detection, the full pipeline stages, training-serving skew, model registry/versioning, batch vs online inference, the drift taxonomy (data/concept/prediction).\n- 🟡 **SHOULD KNOW:** silhouette score, Isolation Forest intuition, experiment tracking, feature stores, CI/CD for ML basics.\n- 🟢 **NICE TO KNOW:** one-class SVM, specific MLOps tool internals (MLflow/DVC/Kubernetes-level autoscaling mechanics).\n\n---",
+  "cards": [
+    {
+      "id": "d07-k-means",
+      "title": "K-Means Clustering",
+      "priority": "must_know",
+      "category": "algorithms",
+      "tags": [
+        "clustering",
+        "k-means",
+        "unsupervised-learning"
+      ],
+      "content_markdown": "**Core Concept**\n\nK-Means is an unsupervised clustering algorithm that partitions data into K distinct clusters by minimizing within-cluster variance (inertia, the sum of squared distances from each point to its assigned cluster's centroid).\n\n**Why It Matters**\n\nIt is a simple, fast, and foundational algorithm for segmenting data when true labels are unknown.\n\n**Mental Model / Mechanics**\n\nLloyd's algorithm:\n1. Choose K, randomly initialize K centroids.\n2. Assign each point to its nearest centroid.\n3. Recompute each centroid as the mean of the points assigned to it.\n4. Repeat steps 2 and 3 until centroids stop moving.\n\nk-means++ initialization spreads the initial centroids apart deliberately to reduce sensitivity to random initialization.\n\n**Failure Modes / Tradeoffs**\n\n- Assumes roughly spherical and similarly-sized clusters.\n- Sensitive to outliers because centroids are means.\n- Requires choosing K upfront.\n- Requires feature scaling because it relies on distance computations.\n\n**Interview-Ready Explanation**\n\n> K-Means groups data into K clusters by repeatedly assigning points to the nearest centroid and recomputing centroids as the mean of assigned points, aiming to minimize within-cluster variance. It requires K upfront and assumes spherical clusters.\n\n---",
+      "markdown": "### [CARD: K-Means Clustering]\n<!-- id: d07-k-means -->\n\n- **Priority:** must_know\n- **Category:** algorithms\n- **Tags:** clustering, k-means, unsupervised-learning\n**Core Concept**\n\nK-Means is an unsupervised clustering algorithm that partitions data into K distinct clusters by minimizing within-cluster variance (inertia, the sum of squared distances from each point to its assigned cluster's centroid).\n\n**Why It Matters**\n\nIt is a simple, fast, and foundational algorithm for segmenting data when true labels are unknown.\n\n**Mental Model / Mechanics**\n\nLloyd's algorithm:\n1. Choose K, randomly initialize K centroids.\n2. Assign each point to its nearest centroid.\n3. Recompute each centroid as the mean of the points assigned to it.\n4. Repeat steps 2 and 3 until centroids stop moving.\n\nk-means++ initialization spreads the initial centroids apart deliberately to reduce sensitivity to random initialization.\n\n**Failure Modes / Tradeoffs**\n\n- Assumes roughly spherical and similarly-sized clusters.\n- Sensitive to outliers because centroids are means.\n- Requires choosing K upfront.\n- Requires feature scaling because it relies on distance computations.\n\n**Interview-Ready Explanation**\n\n> K-Means groups data into K clusters by repeatedly assigning points to the nearest centroid and recomputing centroids as the mean of assigned points, aiming to minimize within-cluster variance. It requires K upfront and assumes spherical clusters.\n\n---"
+    },
+    {
+      "id": "d07-k-means-choosing-k",
+      "title": "Choosing K in K-Means",
+      "priority": "must_know",
+      "category": "algorithms",
+      "tags": [
+        "clustering",
+        "k-means",
+        "hyperparameters"
+      ],
+      "content_markdown": "**Core Concept**\n\nSelecting the optimal number of clusters (K) requires heuristics since K-Means needs it upfront. Common methods are the Elbow Method and Silhouette Score.\n\n**Why It Matters**\n\nAn incorrect K leads to under-segmentation (mixing distinct groups) or over-segmentation (artificially splitting unified groups).\n\n**Mental Model / Mechanics**\n\n- **Elbow method**: Plot inertia (within-cluster sum of squares) vs. K. Look for the \"elbow\" where adding more clusters stops giving significant improvement.\n- **Silhouette score**: For each point, compares its average distance to points in its own cluster (cohesion) against its average distance to points in the nearest other cluster (separation). The score ranges from -1 to 1; higher means better-defined clusters.\n\n**Failure Modes / Tradeoffs**\n\n- The elbow method can be subjective when there is no clear \"elbow\".\n- Mechanically, inertia always decreases as K increases, so you cannot simply minimize it.\n\n**Interview-Ready Explanation**\n\n> You typically choose K using the Elbow method—looking for the point of diminishing returns on an inertia vs K plot—or by maximizing the Silhouette score, which measures cohesion vs separation.\n\n---",
+      "markdown": "### [CARD: Choosing K in K-Means]\n<!-- id: d07-k-means-choosing-k -->\n\n- **Priority:** must_know\n- **Category:** algorithms\n- **Tags:** clustering, k-means, hyperparameters\n**Core Concept**\n\nSelecting the optimal number of clusters (K) requires heuristics since K-Means needs it upfront. Common methods are the Elbow Method and Silhouette Score.\n\n**Why It Matters**\n\nAn incorrect K leads to under-segmentation (mixing distinct groups) or over-segmentation (artificially splitting unified groups).\n\n**Mental Model / Mechanics**\n\n- **Elbow method**: Plot inertia (within-cluster sum of squares) vs. K. Look for the \"elbow\" where adding more clusters stops giving significant improvement.\n- **Silhouette score**: For each point, compares its average distance to points in its own cluster (cohesion) against its average distance to points in the nearest other cluster (separation). The score ranges from -1 to 1; higher means better-defined clusters.\n\n**Failure Modes / Tradeoffs**\n\n- The elbow method can be subjective when there is no clear \"elbow\".\n- Mechanically, inertia always decreases as K increases, so you cannot simply minimize it.\n\n**Interview-Ready Explanation**\n\n> You typically choose K using the Elbow method—looking for the point of diminishing returns on an inertia vs K plot—or by maximizing the Silhouette score, which measures cohesion vs separation.\n\n---"
+    },
+    {
+      "id": "d07-dbscan",
+      "title": "DBSCAN",
+      "priority": "must_know",
+      "category": "algorithms",
+      "tags": [
+        "clustering",
+        "dbscan",
+        "unsupervised-learning"
+      ],
+      "content_markdown": "**Core Concept**\n\nDensity-Based Spatial Clustering of Applications with Noise (DBSCAN) groups densely packed points together and explicitly labels points in sparse regions as noise/outliers.\n\n**Why It Matters**\n\nUnlike K-Means, it doesn't require K upfront, can find arbitrarily shaped clusters, and naturally identifies outliers.\n\n**Mental Model / Mechanics**\n\nDefined by two key parameters:\n- `eps`: radius defining the \"neighborhood\" of a point.\n- `min_samples`: minimum number of points within `eps` required to form a dense region.\n\nPoint classifications:\n- **Core point**: Has at least `min_samples` points within its `eps` radius.\n- **Border point**: Within `eps` of a core point but does not meet `min_samples` itself.\n- **Noise point**: Neither a core nor a border point; left unassigned to any cluster.\n\n**Failure Modes / Tradeoffs**\n\n- Highly sensitive to the choice of `eps` and `min_samples`.\n- Struggles when different clusters have significantly different densities.\n- Does not scale well to very high dimensions due to the curse of dimensionality.\n\n**Interview-Ready Explanation**\n\n> DBSCAN defines clusters as continuous regions of high density. It works by expanding clusters from core points (dense regions) and labels isolated points as noise. It can find arbitrarily shaped clusters without needing K upfront.\n\n---",
+      "markdown": "### [CARD: DBSCAN]\n<!-- id: d07-dbscan -->\n\n- **Priority:** must_know\n- **Category:** algorithms\n- **Tags:** clustering, dbscan, unsupervised-learning\n**Core Concept**\n\nDensity-Based Spatial Clustering of Applications with Noise (DBSCAN) groups densely packed points together and explicitly labels points in sparse regions as noise/outliers.\n\n**Why It Matters**\n\nUnlike K-Means, it doesn't require K upfront, can find arbitrarily shaped clusters, and naturally identifies outliers.\n\n**Mental Model / Mechanics**\n\nDefined by two key parameters:\n- `eps`: radius defining the \"neighborhood\" of a point.\n- `min_samples`: minimum number of points within `eps` required to form a dense region.\n\nPoint classifications:\n- **Core point**: Has at least `min_samples` points within its `eps` radius.\n- **Border point**: Within `eps` of a core point but does not meet `min_samples` itself.\n- **Noise point**: Neither a core nor a border point; left unassigned to any cluster.\n\n**Failure Modes / Tradeoffs**\n\n- Highly sensitive to the choice of `eps` and `min_samples`.\n- Struggles when different clusters have significantly different densities.\n- Does not scale well to very high dimensions due to the curse of dimensionality.\n\n**Interview-Ready Explanation**\n\n> DBSCAN defines clusters as continuous regions of high density. It works by expanding clusters from core points (dense regions) and labels isolated points as noise. It can find arbitrarily shaped clusters without needing K upfront.\n\n---"
+    },
+    {
+      "id": "d07-k-means-vs-dbscan",
+      "title": "K-Means vs DBSCAN",
+      "priority": "must_know",
+      "category": "algorithms",
+      "tags": [
+        "clustering",
+        "k-means",
+        "dbscan"
+      ],
+      "content_markdown": "**Core Concept**\n\nK-Means and DBSCAN are fundamentally different clustering approaches: K-Means partitions based on distance to centroids, while DBSCAN groups based on continuous density.\n\n**Why It Matters**\n\nKnowing the trade-offs is crucial for choosing the right algorithm for a given dataset's shape and characteristics.\n\n**Mental Model / Mechanics**\n\n- **Needs K upfront**: K-Means yes; DBSCAN no.\n- **Cluster shape**: K-Means assumes roughly spherical; DBSCAN can handle arbitrary shapes.\n- **Handles outliers**: K-Means does not (outliers skew centroids); DBSCAN natively labels them as noise.\n- **Sensitivity**: K-Means is sensitive to initialization and the choice of K. DBSCAN is sensitive to `eps`, `min_samples`, and density variations.\n\n**Interview-Ready Explanation**\n\n> K-Means is distance-based, needs K upfront, and works well for spherical clusters. DBSCAN is density-based, handles arbitrary shapes and outliers, but struggles with varying densities across clusters.\n\n---",
+      "markdown": "### [CARD: K-Means vs DBSCAN]\n<!-- id: d07-k-means-vs-dbscan -->\n\n- **Priority:** must_know\n- **Category:** algorithms\n- **Tags:** clustering, k-means, dbscan\n**Core Concept**\n\nK-Means and DBSCAN are fundamentally different clustering approaches: K-Means partitions based on distance to centroids, while DBSCAN groups based on continuous density.\n\n**Why It Matters**\n\nKnowing the trade-offs is crucial for choosing the right algorithm for a given dataset's shape and characteristics.\n\n**Mental Model / Mechanics**\n\n- **Needs K upfront**: K-Means yes; DBSCAN no.\n- **Cluster shape**: K-Means assumes roughly spherical; DBSCAN can handle arbitrary shapes.\n- **Handles outliers**: K-Means does not (outliers skew centroids); DBSCAN natively labels them as noise.\n- **Sensitivity**: K-Means is sensitive to initialization and the choice of K. DBSCAN is sensitive to `eps`, `min_samples`, and density variations.\n\n**Interview-Ready Explanation**\n\n> K-Means is distance-based, needs K upfront, and works well for spherical clusters. DBSCAN is density-based, handles arbitrary shapes and outliers, but struggles with varying densities across clusters.\n\n---"
+    },
+    {
+      "id": "d07-unsupervised-anomaly-detection",
+      "title": "Unsupervised Anomaly Detection",
+      "priority": "must_know",
+      "category": "algorithms",
+      "tags": [
+        "anomaly-detection",
+        "unsupervised-learning"
+      ],
+      "content_markdown": "**Core Concept**\n\nUnsupervised anomaly detection identifies rare items, events, or observations that raise suspicions by differing significantly from the majority of the data, without needing labeled examples.\n\n**Why It Matters**\n\nLabels for anomalies (e.g., fraud, hardware failure) are often non-existent or too rare to train a robust supervised classifier.\n\n**Mental Model / Mechanics**\n\n- **Density-based**: DBSCAN identifies anomalies natively as \"noise points\".\n- **Statistical methods**: Using z-score or IQR to flag points far from the mean/median. (Assumes simple normal distributions and fails in high dimensions).\n- **Isolation-based**: Isolation Forest isolates anomalies using random splits.\n\n**Interview-Ready Explanation**\n\n> When labeled anomalies are too rare or non-existent, unsupervised anomaly detection methods like DBSCAN's noise labeling or Isolation Forests identify points that deviate significantly from the normal data distribution.\n\n---",
+      "markdown": "### [CARD: Unsupervised Anomaly Detection]\n<!-- id: d07-unsupervised-anomaly-detection -->\n\n- **Priority:** must_know\n- **Category:** algorithms\n- **Tags:** anomaly-detection, unsupervised-learning\n**Core Concept**\n\nUnsupervised anomaly detection identifies rare items, events, or observations that raise suspicions by differing significantly from the majority of the data, without needing labeled examples.\n\n**Why It Matters**\n\nLabels for anomalies (e.g., fraud, hardware failure) are often non-existent or too rare to train a robust supervised classifier.\n\n**Mental Model / Mechanics**\n\n- **Density-based**: DBSCAN identifies anomalies natively as \"noise points\".\n- **Statistical methods**: Using z-score or IQR to flag points far from the mean/median. (Assumes simple normal distributions and fails in high dimensions).\n- **Isolation-based**: Isolation Forest isolates anomalies using random splits.\n\n**Interview-Ready Explanation**\n\n> When labeled anomalies are too rare or non-existent, unsupervised anomaly detection methods like DBSCAN's noise labeling or Isolation Forests identify points that deviate significantly from the normal data distribution.\n\n---"
+    },
+    {
+      "id": "d07-isolation-forest",
+      "title": "Isolation Forest",
+      "priority": "should_know",
+      "category": "algorithms",
+      "tags": [
+        "anomaly-detection",
+        "isolation-forest"
+      ],
+      "content_markdown": "**Core Concept**\n\nIsolation Forest is an anomaly detection algorithm that isolates anomalies based on the premise that they are \"few and different\".\n\n**Why It Matters**\n\nIt is highly scalable, requires no distance computation, and works well in high-dimensional datasets.\n\n**Mental Model / Mechanics**\n\nIt builds many random trees by repeatedly splitting on random features at random thresholds.\nBecause anomalies are different from normal points, they get isolated into their own leaf node in far fewer splits than normal points.\nThe **anomaly score** is based on the average path length across all trees: a short path length indicates an anomaly.\n\n**Failure Modes / Tradeoffs**\n\n- Random splits can be less effective on very complex underlying distributions if not given enough trees.\n\n**Interview-Ready Explanation**\n\n> Isolation Forest flags anomalies based on how easily they can be separated from the rest of the data. By randomly splitting features, anomalies get isolated in fewer steps than normal points.\n\n---",
+      "markdown": "### [CARD: Isolation Forest]\n<!-- id: d07-isolation-forest -->\n\n- **Priority:** should_know\n- **Category:** algorithms\n- **Tags:** anomaly-detection, isolation-forest\n**Core Concept**\n\nIsolation Forest is an anomaly detection algorithm that isolates anomalies based on the premise that they are \"few and different\".\n\n**Why It Matters**\n\nIt is highly scalable, requires no distance computation, and works well in high-dimensional datasets.\n\n**Mental Model / Mechanics**\n\nIt builds many random trees by repeatedly splitting on random features at random thresholds.\nBecause anomalies are different from normal points, they get isolated into their own leaf node in far fewer splits than normal points.\nThe **anomaly score** is based on the average path length across all trees: a short path length indicates an anomaly.\n\n**Failure Modes / Tradeoffs**\n\n- Random splits can be less effective on very complex underlying distributions if not given enough trees.\n\n**Interview-Ready Explanation**\n\n> Isolation Forest flags anomalies based on how easily they can be separated from the rest of the data. By randomly splitting features, anomalies get isolated in fewer steps than normal points.\n\n---"
+    },
+    {
+      "id": "d07-clustering-evaluation",
+      "title": "Clustering Evaluation",
+      "priority": "should_know",
+      "category": "algorithms",
+      "tags": [
+        "clustering",
+        "evaluation",
+        "metrics"
+      ],
+      "content_markdown": "**Core Concept**\n\nEvaluating clusters is challenging because there is usually no ground truth. Evaluation relies on intrinsic properties like cohesion (tightness) and separation.\n\n**Why It Matters**\n\nYou need metrics to compare different clusterings and tune hyperparameters like K or eps.\n\n**Mental Model / Mechanics**\n\n- **Without ground truth**:\n  - **Inertia** (within-cluster sum of squares): Lower is better (tighter clusters), but mechanically decreases as K increases, so you can't just minimize it.\n  - **Silhouette score**: Combines cohesion and separation into a score from -1 to 1. Higher is better.\n- **With ground truth**:\n  - Adjusted Rand Index (ARI), Normalized Mutual Information (NMI).\n\n**Interview-Ready Explanation**\n\n> Without ground truth labels, clustering is evaluated using metrics like the Silhouette score, which measures how similar an object is to its own cluster compared to other clusters, or by looking for the elbow in an inertia plot.\n\n---",
+      "markdown": "### [CARD: Clustering Evaluation]\n<!-- id: d07-clustering-evaluation -->\n\n- **Priority:** should_know\n- **Category:** algorithms\n- **Tags:** clustering, evaluation, metrics\n**Core Concept**\n\nEvaluating clusters is challenging because there is usually no ground truth. Evaluation relies on intrinsic properties like cohesion (tightness) and separation.\n\n**Why It Matters**\n\nYou need metrics to compare different clusterings and tune hyperparameters like K or eps.\n\n**Mental Model / Mechanics**\n\n- **Without ground truth**:\n  - **Inertia** (within-cluster sum of squares): Lower is better (tighter clusters), but mechanically decreases as K increases, so you can't just minimize it.\n  - **Silhouette score**: Combines cohesion and separation into a score from -1 to 1. Higher is better.\n- **With ground truth**:\n  - Adjusted Rand Index (ARI), Normalized Mutual Information (NMI).\n\n**Interview-Ready Explanation**\n\n> Without ground truth labels, clustering is evaluated using metrics like the Silhouette score, which measures how similar an object is to its own cluster compared to other clusters, or by looking for the elbow in an inertia plot.\n\n---"
+    },
+    {
+      "id": "d07-ml-pipeline-stages",
+      "title": "ML Pipeline Stages",
+      "priority": "must_know",
+      "category": "mlops",
+      "tags": [
+        "ml-pipeline",
+        "lifecycle"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe ML lifecycle is the end-to-end process of bringing a model from raw data into production and maintaining it.\n\n**Why It Matters**\n\nTraining the model is only a small fraction of real-world ML. Engineering robust pipelines is where the actual value is delivered.\n\n**Mental Model / Mechanics**\n\nPipeline stages:\n1. Data collection\n2. Data cleaning\n3. Feature engineering\n4. Train / val / test split\n5. Training\n6. Evaluation\n7. Hyperparameter tuning\n8. Deployment\n9. Inference (Batch or Online)\n10. Monitoring\n11. Feedback loop / retraining\n\n**Interview-Ready Explanation**\n\n> The ML pipeline spans from data collection and feature engineering to training, evaluation, and deployment, ending with monitoring and a feedback loop for retraining as real-world data distributions change.\n\n---",
+      "markdown": "### [CARD: ML Pipeline Stages]\n<!-- id: d07-ml-pipeline-stages -->\n\n- **Priority:** must_know\n- **Category:** mlops\n- **Tags:** ml-pipeline, lifecycle\n**Core Concept**\n\nThe ML lifecycle is the end-to-end process of bringing a model from raw data into production and maintaining it.\n\n**Why It Matters**\n\nTraining the model is only a small fraction of real-world ML. Engineering robust pipelines is where the actual value is delivered.\n\n**Mental Model / Mechanics**\n\nPipeline stages:\n1. Data collection\n2. Data cleaning\n3. Feature engineering\n4. Train / val / test split\n5. Training\n6. Evaluation\n7. Hyperparameter tuning\n8. Deployment\n9. Inference (Batch or Online)\n10. Monitoring\n11. Feedback loop / retraining\n\n**Interview-Ready Explanation**\n\n> The ML pipeline spans from data collection and feature engineering to training, evaluation, and deployment, ending with monitoring and a feedback loop for retraining as real-world data distributions change.\n\n---"
+    },
+    {
+      "id": "d07-training-serving-skew",
+      "title": "Training-Serving Skew",
+      "priority": "must_know",
+      "category": "mlops",
+      "tags": [
+        "data-leakage",
+        "training-serving-skew"
+      ],
+      "content_markdown": "**Core Concept**\n\nTraining-serving skew occurs when the features a model sees in production differ from what it saw during training, leading to degraded performance.\n\n**Why It Matters**\n\nIt is essentially data leakage discovered in production instead of during evaluation. It is one of the most common causes of silent model failure.\n\n**Mental Model / Mechanics**\n\nCommon causes:\n- Feature logic implemented differently in the offline training pipeline vs. the online serving pipeline (e.g., Python vs. Java).\n- Library version mismatches.\n- A training-time feature uses information that is not actually available at serving time.\n\n**Failure Modes / Tradeoffs**\n\n- Hard to detect without robust monitoring of input distributions in production.\n\n**Interview-Ready Explanation**\n\n> Training-serving skew happens when production inputs don't match training inputs, often due to mismatched offline and online feature engineering logic. It's essentially data leakage that surfaces as a live bug in production.\n\n---",
+      "markdown": "### [CARD: Training-Serving Skew]\n<!-- id: d07-training-serving-skew -->\n\n- **Priority:** must_know\n- **Category:** mlops\n- **Tags:** data-leakage, training-serving-skew\n**Core Concept**\n\nTraining-serving skew occurs when the features a model sees in production differ from what it saw during training, leading to degraded performance.\n\n**Why It Matters**\n\nIt is essentially data leakage discovered in production instead of during evaluation. It is one of the most common causes of silent model failure.\n\n**Mental Model / Mechanics**\n\nCommon causes:\n- Feature logic implemented differently in the offline training pipeline vs. the online serving pipeline (e.g., Python vs. Java).\n- Library version mismatches.\n- A training-time feature uses information that is not actually available at serving time.\n\n**Failure Modes / Tradeoffs**\n\n- Hard to detect without robust monitoring of input distributions in production.\n\n**Interview-Ready Explanation**\n\n> Training-serving skew happens when production inputs don't match training inputs, often due to mismatched offline and online feature engineering logic. It's essentially data leakage that surfaces as a live bug in production.\n\n---"
+    },
+    {
+      "id": "d07-reproducibility-and-experiment-tracking",
+      "title": "Reproducibility & Experiment Tracking",
+      "priority": "must_know",
+      "category": "mlops",
+      "tags": [
+        "reproducibility",
+        "experiment-tracking",
+        "mlops"
+      ],
+      "content_markdown": "**Core Concept**\n\nReproducibility is the ability to exactly recreate a model training run. Experiment tracking is logging the exact configuration of every run.\n\n**Why It Matters**\n\nWithout reproducibility, debugging models, auditing decisions, or rolling back to a previous known state is impossible.\n\n**Mental Model / Mechanics**\n\nTo be reproducible, you need:\n- The exact same data snapshot (Data Versioning)\n- The exact same code version (Git commit)\n- The exact same hyperparameters\n- The exact same random seeds\n\nTools like MLflow and Weights & Biases (W&B) automate the tracking of these inputs alongside the output metrics and artifacts.\n\n**Interview-Ready Explanation**\n\n> Reproducibility means you can exactly recreate a training run. This requires experiment tracking to log the dataset version, code version, hyperparameters, and random seeds used for every run.\n\n---",
+      "markdown": "### [CARD: Reproducibility & Experiment Tracking]\n<!-- id: d07-reproducibility-and-experiment-tracking -->\n\n- **Priority:** must_know\n- **Category:** mlops\n- **Tags:** reproducibility, experiment-tracking, mlops\n**Core Concept**\n\nReproducibility is the ability to exactly recreate a model training run. Experiment tracking is logging the exact configuration of every run.\n\n**Why It Matters**\n\nWithout reproducibility, debugging models, auditing decisions, or rolling back to a previous known state is impossible.\n\n**Mental Model / Mechanics**\n\nTo be reproducible, you need:\n- The exact same data snapshot (Data Versioning)\n- The exact same code version (Git commit)\n- The exact same hyperparameters\n- The exact same random seeds\n\nTools like MLflow and Weights & Biases (W&B) automate the tracking of these inputs alongside the output metrics and artifacts.\n\n**Interview-Ready Explanation**\n\n> Reproducibility means you can exactly recreate a training run. This requires experiment tracking to log the dataset version, code version, hyperparameters, and random seeds used for every run.\n\n---"
+    },
+    {
+      "id": "d07-model-registry-and-versioning",
+      "title": "Model Registry and Versioning",
+      "priority": "must_know",
+      "category": "mlops",
+      "tags": [
+        "model-registry",
+        "versioning",
+        "mlops"
+      ],
+      "content_markdown": "**Core Concept**\n\nA model registry is a centralized store that treats trained models as versioned, tracked artifacts, managing their lifecycle states.\n\n**Why It Matters**\n\nIt bridges the gap between data science experimentation and software engineering deployment, enabling safe rollouts and rollbacks.\n\n**Mental Model / Mechanics**\n\nTracks which model version is in Staging vs. Production. If a deployed model degrades, the registry allows the engineering system to instantly roll back to the previously stable version.\n\n**Interview-Ready Explanation**\n\n> A model registry treats trained models as versioned artifacts. It tracks metadata about how a model was trained and manages its lifecycle state, making deployments and rollbacks reliable.\n\n---",
+      "markdown": "### [CARD: Model Registry and Versioning]\n<!-- id: d07-model-registry-and-versioning -->\n\n- **Priority:** must_know\n- **Category:** mlops\n- **Tags:** model-registry, versioning, mlops\n**Core Concept**\n\nA model registry is a centralized store that treats trained models as versioned, tracked artifacts, managing their lifecycle states.\n\n**Why It Matters**\n\nIt bridges the gap between data science experimentation and software engineering deployment, enabling safe rollouts and rollbacks.\n\n**Mental Model / Mechanics**\n\nTracks which model version is in Staging vs. Production. If a deployed model degrades, the registry allows the engineering system to instantly roll back to the previously stable version.\n\n**Interview-Ready Explanation**\n\n> A model registry treats trained models as versioned artifacts. It tracks metadata about how a model was trained and manages its lifecycle state, making deployments and rollbacks reliable.\n\n---"
+    },
+    {
+      "id": "d07-feature-stores",
+      "title": "Feature Stores",
+      "priority": "should_know",
+      "category": "mlops",
+      "tags": [
+        "feature-store",
+        "infrastructure"
+      ],
+      "content_markdown": "**Core Concept**\n\nA feature store is a centralized system for computing, storing, and serving features consistently across both training and inference.\n\n**Why It Matters**\n\nIt is the direct engineering fix for training-serving skew.\n\n**Mental Model / Mechanics**\n\nInstead of writing data extraction scripts for training and separate API logic for online serving, both systems pull from one shared source of truth. The feature store handles point-in-time correctness for offline training and low-latency access for online serving.\n\n**Interview-Ready Explanation**\n\n> A feature store centralizes feature engineering so that offline training pipelines and online serving systems use the exact same feature definitions and data, eliminating training-serving skew.\n\n---",
+      "markdown": "### [CARD: Feature Stores]\n<!-- id: d07-feature-stores -->\n\n- **Priority:** should_know\n- **Category:** mlops\n- **Tags:** feature-store, infrastructure\n**Core Concept**\n\nA feature store is a centralized system for computing, storing, and serving features consistently across both training and inference.\n\n**Why It Matters**\n\nIt is the direct engineering fix for training-serving skew.\n\n**Mental Model / Mechanics**\n\nInstead of writing data extraction scripts for training and separate API logic for online serving, both systems pull from one shared source of truth. The feature store handles point-in-time correctness for offline training and low-latency access for online serving.\n\n**Interview-Ready Explanation**\n\n> A feature store centralizes feature engineering so that offline training pipelines and online serving systems use the exact same feature definitions and data, eliminating training-serving skew.\n\n---"
+    },
+    {
+      "id": "d07-batch-vs-online-inference",
+      "title": "Batch vs Online Inference",
+      "priority": "must_know",
+      "category": "mlops",
+      "tags": [
+        "inference",
+        "deployment",
+        "architecture"
+      ],
+      "content_markdown": "**Core Concept**\n\nBatch inference computes predictions periodically on large datasets and stores them. Online inference computes predictions on-demand as live requests arrive.\n\n**Why It Matters**\n\nDictates the architecture, cost, and complexity of the deployment.\n\n**Mental Model / Mechanics**\n\n- **Batch**: High throughput, latency doesn't matter. Predictions are precomputed and served from a fast database. Cheaper and simpler, but predictions can be stale.\n- **Online**: Real-time traffic. Must be low-latency. Requires more complex, expensive infrastructure (e.g., auto-scaling APIs, real-time feature computation).\n\n**Interview-Ready Explanation**\n\n> Batch inference periodically pre-computes predictions in bulk, which is cheap and simple but allows staleness. Online inference computes predictions on-demand for live traffic, requiring low-latency and more complex infrastructure.\n\n---",
+      "markdown": "### [CARD: Batch vs Online Inference]\n<!-- id: d07-batch-vs-online-inference -->\n\n- **Priority:** must_know\n- **Category:** mlops\n- **Tags:** inference, deployment, architecture\n**Core Concept**\n\nBatch inference computes predictions periodically on large datasets and stores them. Online inference computes predictions on-demand as live requests arrive.\n\n**Why It Matters**\n\nDictates the architecture, cost, and complexity of the deployment.\n\n**Mental Model / Mechanics**\n\n- **Batch**: High throughput, latency doesn't matter. Predictions are precomputed and served from a fast database. Cheaper and simpler, but predictions can be stale.\n- **Online**: Real-time traffic. Must be low-latency. Requires more complex, expensive infrastructure (e.g., auto-scaling APIs, real-time feature computation).\n\n**Interview-Ready Explanation**\n\n> Batch inference periodically pre-computes predictions in bulk, which is cheap and simple but allows staleness. Online inference computes predictions on-demand for live traffic, requiring low-latency and more complex infrastructure.\n\n---"
+    },
+    {
+      "id": "d07-drift-taxonomy",
+      "title": "Drift Taxonomy",
+      "priority": "must_know",
+      "category": "mlops",
+      "tags": [
+        "monitoring",
+        "drift",
+        "data-drift",
+        "concept-drift"
+      ],
+      "content_markdown": "**Core Concept**\n\nModels degrade over time as the real world changes. Drift describes the different ways distributions can shift.\n\n**Why It Matters**\n\nUnderstanding the type of drift tells you how to fix it (e.g., retraining vs changing features).\n\n**Mental Model / Mechanics**\n\n- **Data drift (or Feature drift)**: The distribution of the input features (X) shifts over time.\n- **Concept drift**: The actual relationship between the features and the target (X → y) changes. This is more dangerous—model performance drops even if the input distribution looks statistically normal.\n- **Prediction drift**: The distribution of the model's output predictions (y-hat) shifts. Often used as an early proxy signal for data or concept drift before true labels are available.\n\n**Failure Modes / Tradeoffs**\n\n- Concept drift is much harder to detect without true ground-truth labels.\n\n**Interview-Ready Explanation**\n\n> Data drift is when the distribution of input features changes. Concept drift is when the relationship between inputs and the target variable changes, which is more dangerous. Prediction drift is a shift in model outputs, often used as an early warning proxy.\n\n---",
+      "markdown": "### [CARD: Drift Taxonomy]\n<!-- id: d07-drift-taxonomy -->\n\n- **Priority:** must_know\n- **Category:** mlops\n- **Tags:** monitoring, drift, data-drift, concept-drift\n**Core Concept**\n\nModels degrade over time as the real world changes. Drift describes the different ways distributions can shift.\n\n**Why It Matters**\n\nUnderstanding the type of drift tells you how to fix it (e.g., retraining vs changing features).\n\n**Mental Model / Mechanics**\n\n- **Data drift (or Feature drift)**: The distribution of the input features (X) shifts over time.\n- **Concept drift**: The actual relationship between the features and the target (X → y) changes. This is more dangerous—model performance drops even if the input distribution looks statistically normal.\n- **Prediction drift**: The distribution of the model's output predictions (y-hat) shifts. Often used as an early proxy signal for data or concept drift before true labels are available.\n\n**Failure Modes / Tradeoffs**\n\n- Concept drift is much harder to detect without true ground-truth labels.\n\n**Interview-Ready Explanation**\n\n> Data drift is when the distribution of input features changes. Concept drift is when the relationship between inputs and the target variable changes, which is more dangerous. Prediction drift is a shift in model outputs, often used as an early warning proxy.\n\n---"
+    },
+    {
+      "id": "d07-model-monitoring",
+      "title": "Model Monitoring",
+      "priority": "must_know",
+      "category": "mlops",
+      "tags": [
+        "monitoring",
+        "mlops",
+        "lifecycle"
+      ],
+      "content_markdown": "**Core Concept**\n\nModel monitoring involves observing a deployed model to detect drift, performance degradation, and system-level issues.\n\n**Why It Matters**\n\nA model that passes offline evaluation is not safe indefinitely; the real world constantly changes.\n\n**Mental Model / Mechanics**\n\nMonitoring covers multiple layers:\n1. **System Health**: Latency, error rates, CPU/memory usage.\n2. **Data/Prediction Drift**: Monitoring input and output distributions relative to a training-time baseline.\n3. **Model Performance Monitoring**: Once true labels arrive (which may take time), you re-evaluate the model on live data using standard evaluation metrics. This forms the real feedback loop for retraining.\n\n**Failure Modes / Tradeoffs**\n\n- You must establish a baseline distribution during training to have something to monitor against in production.\n\n**Interview-Ready Explanation**\n\n> Model monitoring tracks system health, detects data and prediction drift, and eventually re-evaluates actual performance once ground-truth labels become available, triggering retraining when the model degrades.\n\n---",
+      "markdown": "### [CARD: Model Monitoring]\n<!-- id: d07-model-monitoring -->\n\n- **Priority:** must_know\n- **Category:** mlops\n- **Tags:** monitoring, mlops, lifecycle\n**Core Concept**\n\nModel monitoring involves observing a deployed model to detect drift, performance degradation, and system-level issues.\n\n**Why It Matters**\n\nA model that passes offline evaluation is not safe indefinitely; the real world constantly changes.\n\n**Mental Model / Mechanics**\n\nMonitoring covers multiple layers:\n1. **System Health**: Latency, error rates, CPU/memory usage.\n2. **Data/Prediction Drift**: Monitoring input and output distributions relative to a training-time baseline.\n3. **Model Performance Monitoring**: Once true labels arrive (which may take time), you re-evaluate the model on live data using standard evaluation metrics. This forms the real feedback loop for retraining.\n\n**Failure Modes / Tradeoffs**\n\n- You must establish a baseline distribution during training to have something to monitor against in production.\n\n**Interview-Ready Explanation**\n\n> Model monitoring tracks system health, detects data and prediction drift, and eventually re-evaluates actual performance once ground-truth labels become available, triggering retraining when the model degrades.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "- **Day 2 (data leakage):** Training-serving skew IS data leakage, discovered in production.\n- **Day 4 (evaluation metrics):** Model performance monitoring = re-applying Day 4's metrics over time on live data.\n- **Day 5 (scaling, dimensionality):** K-Means and DBSCAN need scaling and degrade in high dimensions — PCA is often used as preprocessing.\n- **Day 6 (ensembles):** A model that looks better on offline metrics can have hidden skew issues that only surface through monitoring.\n\n---",
+  "common_misconceptions_markdown": "1. **\"K-means finds the 'true' clusters.\"** — It finds a locally optimal partition under its spherical-cluster assumption; the underlying structure might not be spherical.\n2. **\"Monitoring starts once the model deploys.\"** — You need a baseline from training-time distributions before deployment.\n3. **\"Data drift and concept drift are the same thing.\"** — Data drift is input shift; concept drift is input-to-target relationship shift, which is the more dangerous of the two.\n4. **\"A model that passes offline evaluation is safe indefinitely.\"** — Offline eval is a point-in-time snapshot; the real world keeps changing.\n5. **\"Batch inference is just a worse version of online inference.\"** — It's a legitimate architecture choice when staleness is acceptable, and it's far cheaper and simpler.\n\n---",
+  "out_of_scope_markdown": "- Exact silhouette-score or Isolation Forest path-length formula derivations.\n- Specific tool APIs (MLflow, DVC, Kubernetes autoscaling internals).\n- Formal Adjusted Rand Index / Normalized Mutual Information computation.\n\n---",
+  "qa_drill": [
+    {
+      "id": "d07-qa-001",
+      "question": "How does K-Means group data, and what does it attempt to minimize?",
+      "answer": "K-Means groups data by assigning points to the nearest centroid and recomputing centroids as the mean of the assigned points. It attempts to minimize inertia (within-cluster variance / sum of squared distances).",
+      "tags": [
+        "clustering",
+        "k-means"
+      ],
+      "linked_card_ids": [
+        "d07-k-means"
+      ]
+    },
+    {
+      "id": "d07-qa-002",
+      "question": "What are two common ways to determine the optimal number of clusters (K) for K-Means?",
+      "answer": "The Elbow method (plotting inertia vs K and looking for the point of diminishing returns) and the Silhouette score (measuring cohesion vs separation).",
+      "tags": [
+        "clustering",
+        "k-means",
+        "hyperparameters"
+      ],
+      "linked_card_ids": [
+        "d07-k-means-choosing-k"
+      ]
+    },
+    {
+      "id": "d07-qa-003",
+      "question": "How does DBSCAN define clusters, and what are its two key parameters?",
+      "answer": "DBSCAN defines clusters as continuous regions of high density. Its two key parameters are `eps` (radius) and `min_samples` (minimum points in the radius to be considered dense).",
+      "tags": [
+        "clustering",
+        "dbscan"
+      ],
+      "linked_card_ids": [
+        "d07-dbscan"
+      ]
+    },
+    {
+      "id": "d07-qa-004",
+      "question": "Name three key differences between K-Means and DBSCAN.",
+      "answer": "1. K-Means requires K upfront; DBSCAN does not. 2. K-Means assumes spherical clusters; DBSCAN handles arbitrary shapes. 3. K-Means forces all points into clusters (sensitive to outliers); DBSCAN explicitly labels sparse points as noise/outliers.",
+      "tags": [
+        "clustering",
+        "k-means",
+        "dbscan"
+      ],
+      "linked_card_ids": [
+        "d07-k-means-vs-dbscan"
+      ]
+    },
+    {
+      "id": "d07-qa-005",
+      "question": "When should you reach for unsupervised anomaly detection instead of a supervised classifier?",
+      "answer": "When labeled anomalies do not exist, or are too rare to effectively train a robust supervised classifier.",
+      "tags": [
+        "anomaly-detection",
+        "unsupervised-learning"
+      ],
+      "linked_card_ids": [
+        "d07-unsupervised-anomaly-detection"
+      ]
+    },
+    {
+      "id": "d07-qa-006",
+      "question": "What is the core intuition behind how an Isolation Forest flags an anomaly?",
+      "answer": "Anomalies are \"few and different,\" so if you randomly split features, anomalies get isolated into their own leaf nodes in far fewer splits than normal points. A shorter average path length across random trees indicates an anomaly.",
+      "tags": [
+        "anomaly-detection",
+        "isolation-forest"
+      ],
+      "linked_card_ids": [
+        "d07-isolation-forest"
+      ]
+    },
+    {
+      "id": "d07-qa-007",
+      "question": "What is training-serving skew, and what is its most common cause?",
+      "answer": "It is when the features a model sees in production differ from what it saw during training. It is often caused by feature engineering logic being implemented differently in offline training pipelines vs online serving APIs.",
+      "tags": [
+        "mlops",
+        "data-leakage",
+        "training-serving-skew"
+      ],
+      "linked_card_ids": [
+        "d07-training-serving-skew"
+      ]
+    },
+    {
+      "id": "d07-qa-008",
+      "question": "What infrastructure component is designed specifically to eliminate training-serving skew?",
+      "answer": "A Feature Store. It centralizes feature computation so both offline training and online serving pull the exact same feature definitions.",
+      "tags": [
+        "mlops",
+        "feature-store"
+      ],
+      "linked_card_ids": [
+        "d07-feature-stores"
+      ]
+    },
+    {
+      "id": "d07-qa-009",
+      "question": "What is the difference between batch and online inference?",
+      "answer": "Batch inference computes predictions periodically on large datasets and serves them from storage. Online inference computes predictions on-demand in real-time as live requests arrive.",
+      "tags": [
+        "mlops",
+        "inference",
+        "deployment"
+      ],
+      "linked_card_ids": [
+        "d07-batch-vs-online-inference"
+      ]
+    },
+    {
+      "id": "d07-qa-010",
+      "question": "What is the difference between data drift and concept drift?",
+      "answer": "Data drift is a shift in the distribution of the input features. Concept drift is a shift in the underlying relationship between the input features and the target variable (a change in the mapping itself).",
+      "tags": [
+        "mlops",
+        "monitoring",
+        "drift"
+      ],
+      "linked_card_ids": [
+        "d07-drift-taxonomy"
+      ]
+    }
+  ]
+}

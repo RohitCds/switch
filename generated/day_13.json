@@ -1,0 +1,356 @@
+{
+  "schema_version": 1,
+  "day": 13,
+  "title": "FINE-TUNING: SFT, PEFT/LoRA, RLHF/PPO",
+  "topics": [
+    "fine-tuning",
+    "peft",
+    "lora",
+    "rlhf",
+    "ppo"
+  ],
+  "tags": [
+    "fine-tuning",
+    "llm"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 1,
+    "must_know": 11,
+    "should_know": 0
+  },
+  "daily_objective_markdown": "This is the single highest-stakes day in the sprint so far. PEFT/LoRA and RLHF/PPO are literally on the user's resume — the Flan-T5 project fine-tuned with LoRA and used PPO for toxicity reduction. By the end of today you should be able to explain why full fine-tuning is expensive, how LoRA's low-rank decomposition actually works (with real numbers), the full RLHF pipeline, what PPO is doing and why it's \"proximal.\"\n\n---",
+  "syllabus_markdown": "- 🔴 **MUST KNOW:** From Base Model to Deployable Assistant, Supervised Fine-Tuning (SFT) / Instruction Tuning, Why Full Fine-Tuning Is Expensive, PEFT, LoRA mechanism, LoRA parameter count math, LoRA benefits and limitations, RLHF pipeline, PPO, KL-divergence penalty, Project mapping\n- 🟢 **NICE TO KNOW:** Preference Optimization Beyond PPO (DPO)\n\n---",
+  "cards": [
+    {
+      "id": "d13-base-model-to-assistant-landscape",
+      "title": "From Base Model to Deployable Assistant Landscape",
+      "priority": "must_know",
+      "category": "fine-tuning",
+      "tags": [
+        "base-model",
+        "sft",
+        "rlhf"
+      ],
+      "content_markdown": "**Core Concept**\n\nA raw pretrained model is good at plausible text continuation, not at following instructions. The gap is bridged via SFT (learning format/style) and RLHF (aligning behavior).\n\n**Why It Matters**\n\nPretraining gives broad language competence, but fine-tuning (SFT + RLHF) transforms it into an interactive assistant.\n\n**Mental Model / Mechanics**\n```text\nPretraining              SFT / Instruction Tuning         RLHF / Preference Optimization\n(next-token prediction,  (smaller curated dataset of      (further aligns behavior using\n massive unlabeled        instruction→good-response        human/proxy preference signals,\n corpus)                  pairs, same next-token            e.g. PPO)\n                           objective, now on\n                           targeted data)\n       │                          │                                  │\n       ▼                          ▼                                  ▼\nBroad language           Learns the FORMAT/STYLE of         Refines behavior along dimensions\ncompetence                the target behavior                hard to specify with fixed\n                                                               labeled examples alone\n```\n\n**Interview-Ready Explanation**\n> A base model learns broad language competence from pretraining. SFT uses targeted data to teach it the format and style of the target behavior. RLHF refines its behavior further using preference signals to align it with human values along hard-to-specify dimensions.\n\n---",
+      "markdown": "### [CARD: From Base Model to Deployable Assistant Landscape]\n<!-- id: d13-base-model-to-assistant-landscape -->\n\n- **Priority:** must_know\n- **Category:** fine-tuning\n- **Tags:** base-model, sft, rlhf\n**Core Concept**\n\nA raw pretrained model is good at plausible text continuation, not at following instructions. The gap is bridged via SFT (learning format/style) and RLHF (aligning behavior).\n\n**Why It Matters**\n\nPretraining gives broad language competence, but fine-tuning (SFT + RLHF) transforms it into an interactive assistant.\n\n**Mental Model / Mechanics**\n```text\nPretraining              SFT / Instruction Tuning         RLHF / Preference Optimization\n(next-token prediction,  (smaller curated dataset of      (further aligns behavior using\n massive unlabeled        instruction→good-response        human/proxy preference signals,\n corpus)                  pairs, same next-token            e.g. PPO)\n                           objective, now on\n                           targeted data)\n       │                          │                                  │\n       ▼                          ▼                                  ▼\nBroad language           Learns the FORMAT/STYLE of         Refines behavior along dimensions\ncompetence                the target behavior                hard to specify with fixed\n                                                               labeled examples alone\n```\n\n**Interview-Ready Explanation**\n> A base model learns broad language competence from pretraining. SFT uses targeted data to teach it the format and style of the target behavior. RLHF refines its behavior further using preference signals to align it with human values along hard-to-specify dimensions.\n\n---"
+    },
+    {
+      "id": "d13-supervised-fine-tuning",
+      "title": "Supervised Fine-Tuning",
+      "priority": "must_know",
+      "category": "fine-tuning",
+      "tags": [
+        "sft",
+        "instruction-tuning"
+      ],
+      "content_markdown": "**Core Concept**\n\nSupervised Fine-Tuning (SFT) continues training the pretrained model on a smaller, curated dataset of (instruction, good response) pairs, using the same next-token prediction objective.\n\n**Why It Matters**\n\nSFT teaches the model the format and style of the target behavior rather than building new capability from scratch. It adapts the broad language competence to follow instructions.\n\n**Interview-Ready Explanation**\n> SFT or Instruction Tuning adapts a pretrained model to follow instructions. It uses a curated dataset of instruction-response pairs and the exact same next-token prediction objective. It's adaptation, not capability creation.\n\n---",
+      "markdown": "### [CARD: Supervised Fine-Tuning]\n<!-- id: d13-supervised-fine-tuning -->\n\n- **Priority:** must_know\n- **Category:** fine-tuning\n- **Tags:** sft, instruction-tuning\n**Core Concept**\n\nSupervised Fine-Tuning (SFT) continues training the pretrained model on a smaller, curated dataset of (instruction, good response) pairs, using the same next-token prediction objective.\n\n**Why It Matters**\n\nSFT teaches the model the format and style of the target behavior rather than building new capability from scratch. It adapts the broad language competence to follow instructions.\n\n**Interview-Ready Explanation**\n> SFT or Instruction Tuning adapts a pretrained model to follow instructions. It uses a curated dataset of instruction-response pairs and the exact same next-token prediction objective. It's adaptation, not capability creation.\n\n---"
+    },
+    {
+      "id": "d13-why-full-fine-tuning-is-expensive",
+      "title": "Why Full Fine-Tuning Is Expensive",
+      "priority": "must_know",
+      "category": "fine-tuning",
+      "tags": [
+        "full-fine-tuning",
+        "cost",
+        "memory"
+      ],
+      "content_markdown": "**Core Concept**\n\nFull fine-tuning updates every parameter in the model, incurring huge memory, storage, and catastrophic forgetting costs.\n\n**Mental Model / Mechanics**\n- **Memory:** Gradients AND optimizer state for every parameter are required. Adam needs 2–3× the model's parameter memory just for optimizer state.\n- **Storage:** A complete separate copy per fine-tuned variant is needed.\n- **Catastrophic forgetting:** Aggressive updating of all parameters on narrow data degrades broader pretrained capabilities.\n\n**Interview-Ready Explanation**\n> Full fine-tuning is extremely expensive. It requires 2-3x memory for Adam optimizer states, massive storage for full separate model copies, and risks catastrophic forgetting of the model's broader pretrained capabilities.\n\n---",
+      "markdown": "### [CARD: Why Full Fine-Tuning Is Expensive]\n<!-- id: d13-why-full-fine-tuning-is-expensive -->\n\n- **Priority:** must_know\n- **Category:** fine-tuning\n- **Tags:** full-fine-tuning, cost, memory\n**Core Concept**\n\nFull fine-tuning updates every parameter in the model, incurring huge memory, storage, and catastrophic forgetting costs.\n\n**Mental Model / Mechanics**\n- **Memory:** Gradients AND optimizer state for every parameter are required. Adam needs 2–3× the model's parameter memory just for optimizer state.\n- **Storage:** A complete separate copy per fine-tuned variant is needed.\n- **Catastrophic forgetting:** Aggressive updating of all parameters on narrow data degrades broader pretrained capabilities.\n\n**Interview-Ready Explanation**\n> Full fine-tuning is extremely expensive. It requires 2-3x memory for Adam optimizer states, massive storage for full separate model copies, and risks catastrophic forgetting of the model's broader pretrained capabilities.\n\n---"
+    },
+    {
+      "id": "d13-peft-overview",
+      "title": "PEFT Overview",
+      "priority": "must_know",
+      "category": "fine-tuning",
+      "tags": [
+        "peft",
+        "efficiency"
+      ],
+      "content_markdown": "**Core Concept**\n\nParameter-Efficient Fine-Tuning (PEFT) freezes the vast majority of pretrained parameters and trains only a small number of additional or selected parameters instead.\n\n**Why It Matters**\n\nIt addresses the memory, storage, and catastrophic forgetting issues of full fine-tuning.\n\n**Mental Model / Mechanics**\nLoRA is the most prominent PEFT technique, but others like adapters and prefix tuning exist.\n\n**Interview-Ready Explanation**\n> PEFT drastically reduces costs by freezing the vast majority of pretrained weights and only training a tiny fraction of parameters. This cuts memory usage, storage needs, and catastrophic forgetting.\n\n---",
+      "markdown": "### [CARD: PEFT Overview]\n<!-- id: d13-peft-overview -->\n\n- **Priority:** must_know\n- **Category:** fine-tuning\n- **Tags:** peft, efficiency\n**Core Concept**\n\nParameter-Efficient Fine-Tuning (PEFT) freezes the vast majority of pretrained parameters and trains only a small number of additional or selected parameters instead.\n\n**Why It Matters**\n\nIt addresses the memory, storage, and catastrophic forgetting issues of full fine-tuning.\n\n**Mental Model / Mechanics**\nLoRA is the most prominent PEFT technique, but others like adapters and prefix tuning exist.\n\n**Interview-Ready Explanation**\n> PEFT drastically reduces costs by freezing the vast majority of pretrained weights and only training a tiny fraction of parameters. This cuts memory usage, storage needs, and catastrophic forgetting.\n\n---"
+    },
+    {
+      "id": "d13-lora-mechanism",
+      "title": "LoRA Mechanism",
+      "priority": "must_know",
+      "category": "fine-tuning",
+      "tags": [
+        "lora",
+        "low-rank"
+      ],
+      "content_markdown": "**Core Concept**\n\nLow-Rank Adaptation (LoRA) decomposes the weight update matrix (ΔW) into the product of two much smaller matrices, A and B.\n\n**Mental Model / Mechanics**\nEmpirically, the change a weight matrix needs has a much lower \"effective rank\" than the full matrix.\n`ΔW ≈ B · A`\nFor a d × d weight matrix, A is r × d and B is d × r, with a small rank r (e.g., 4, 8, 16).\nOriginal W is frozen. Only A and B are trained. The effective forward computation is:\n`output = W·x + (B·A)·x = (W + BA)·x`\n\n**Failure Modes / Tradeoffs**\n- LoRA's capacity is bounded by the low-rank assumption.\n\n**Interview-Ready Explanation**\n> Instead of learning a full weight update matrix ΔW, LoRA decomposes it into two much smaller low-rank matrices, A and B. The original weights are frozen, and only A and B are trained, dramatically reducing trainable parameters.\n\n---",
+      "markdown": "### [CARD: LoRA Mechanism]\n<!-- id: d13-lora-mechanism -->\n\n- **Priority:** must_know\n- **Category:** fine-tuning\n- **Tags:** lora, low-rank\n**Core Concept**\n\nLow-Rank Adaptation (LoRA) decomposes the weight update matrix (ΔW) into the product of two much smaller matrices, A and B.\n\n**Mental Model / Mechanics**\nEmpirically, the change a weight matrix needs has a much lower \"effective rank\" than the full matrix.\n`ΔW ≈ B · A`\nFor a d × d weight matrix, A is r × d and B is d × r, with a small rank r (e.g., 4, 8, 16).\nOriginal W is frozen. Only A and B are trained. The effective forward computation is:\n`output = W·x + (B·A)·x = (W + BA)·x`\n\n**Failure Modes / Tradeoffs**\n- LoRA's capacity is bounded by the low-rank assumption.\n\n**Interview-Ready Explanation**\n> Instead of learning a full weight update matrix ΔW, LoRA decomposes it into two much smaller low-rank matrices, A and B. The original weights are frozen, and only A and B are trained, dramatically reducing trainable parameters.\n\n---"
+    },
+    {
+      "id": "d13-lora-parameter-count",
+      "title": "LoRA Parameter Count",
+      "priority": "must_know",
+      "category": "fine-tuning",
+      "tags": [
+        "lora",
+        "parameter-math"
+      ],
+      "content_markdown": "**Core Concept**\n\nLoRA drastically reduces trainable parameters.\n\n**Example**\n```text\nIf d = 4096:\n  Full ΔW:        4096 × 4096        ≈ 16,800,000 parameters\n  LoRA, r = 8:     A (8×4096) + B (4096×8)\n                 = 32,768 + 32,768   ≈    65,500 parameters\n                 → roughly 250× fewer trainable parameters\n```\n\n**Interview-Ready Explanation**\n> With a dimension of 4096, a full weight update needs about 16.8 million parameters. With LoRA rank 8, you only train two matrices of size 8x4096 and 4096x8, totaling around 65,000 parameters. That is roughly 250 times fewer trainable parameters.\n\n---",
+      "markdown": "### [CARD: LoRA Parameter Count]\n<!-- id: d13-lora-parameter-count -->\n\n- **Priority:** must_know\n- **Category:** fine-tuning\n- **Tags:** lora, parameter-math\n**Core Concept**\n\nLoRA drastically reduces trainable parameters.\n\n**Example**\n```text\nIf d = 4096:\n  Full ΔW:        4096 × 4096        ≈ 16,800,000 parameters\n  LoRA, r = 8:     A (8×4096) + B (4096×8)\n                 = 32,768 + 32,768   ≈    65,500 parameters\n                 → roughly 250× fewer trainable parameters\n```\n\n**Interview-Ready Explanation**\n> With a dimension of 4096, a full weight update needs about 16.8 million parameters. With LoRA rank 8, you only train two matrices of size 8x4096 and 4096x8, totaling around 65,000 parameters. That is roughly 250 times fewer trainable parameters.\n\n---"
+    },
+    {
+      "id": "d13-lora-benefits-and-limitations",
+      "title": "LoRA Benefits and Limitations",
+      "priority": "must_know",
+      "category": "fine-tuning",
+      "tags": [
+        "lora",
+        "tradeoffs"
+      ],
+      "content_markdown": "**Core Concept**\n\nLoRA is highly efficient but bounded by its low-rank assumption.\n\n**Mental Model / Mechanics**\n- **Benefits:** Dramatically fewer trainable parameters, small storage footprint per task (save only A/B matrices), no inference latency cost (B·A can be merged directly into W after training). Catastrophic forgetting drops because W is structurally preserved.\n- **Limitations:** Rank r is a hyperparameter tradeoff. Capacity is bounded.\n\n**Interview-Ready Explanation**\n> LoRA offers a massive reduction in trainable parameters and storage, with no inference latency if weights are merged. However, its capacity to learn is bounded by the low-rank assumption, making full fine-tuning preferable if ample compute and data are available.\n\n---",
+      "markdown": "### [CARD: LoRA Benefits and Limitations]\n<!-- id: d13-lora-benefits-and-limitations -->\n\n- **Priority:** must_know\n- **Category:** fine-tuning\n- **Tags:** lora, tradeoffs\n**Core Concept**\n\nLoRA is highly efficient but bounded by its low-rank assumption.\n\n**Mental Model / Mechanics**\n- **Benefits:** Dramatically fewer trainable parameters, small storage footprint per task (save only A/B matrices), no inference latency cost (B·A can be merged directly into W after training). Catastrophic forgetting drops because W is structurally preserved.\n- **Limitations:** Rank r is a hyperparameter tradeoff. Capacity is bounded.\n\n**Interview-Ready Explanation**\n> LoRA offers a massive reduction in trainable parameters and storage, with no inference latency if weights are merged. However, its capacity to learn is bounded by the low-rank assumption, making full fine-tuning preferable if ample compute and data are available.\n\n---"
+    },
+    {
+      "id": "d13-rlhf-pipeline",
+      "title": "RLHF Pipeline",
+      "priority": "must_know",
+      "category": "fine-tuning",
+      "tags": [
+        "rlhf",
+        "pipeline"
+      ],
+      "content_markdown": "**Core Concept**\n\nReinforcement Learning from Human Feedback (RLHF) optimizes for human preference over output quality using a three-stage pipeline.\n\n**Mental Model / Mechanics**\n```text\n1. SFT model (starting point)\n2. Train a REWARD MODEL: collect human preference data (given a prompt, show 2+ candidate responses, human picks better one), train a separate model to predict a scalar reward\n3. Use REINFORCEMENT LEARNING (commonly PPO) to further fine-tune the SFT model, using the reward model's scores as the training signal\n```\nText generation is treated as a sequence of actions, optimizing for an overall output reward instead of token-level cross-entropy.\n\n**Interview-Ready Explanation**\n> The RLHF pipeline starts with an SFT model. Next, it trains a separate reward model on human preference data. Finally, it uses reinforcement learning to fine-tune the SFT model against the reward model's scalar scores.\n\n---",
+      "markdown": "### [CARD: RLHF Pipeline]\n<!-- id: d13-rlhf-pipeline -->\n\n- **Priority:** must_know\n- **Category:** fine-tuning\n- **Tags:** rlhf, pipeline\n**Core Concept**\n\nReinforcement Learning from Human Feedback (RLHF) optimizes for human preference over output quality using a three-stage pipeline.\n\n**Mental Model / Mechanics**\n```text\n1. SFT model (starting point)\n2. Train a REWARD MODEL: collect human preference data (given a prompt, show 2+ candidate responses, human picks better one), train a separate model to predict a scalar reward\n3. Use REINFORCEMENT LEARNING (commonly PPO) to further fine-tune the SFT model, using the reward model's scores as the training signal\n```\nText generation is treated as a sequence of actions, optimizing for an overall output reward instead of token-level cross-entropy.\n\n**Interview-Ready Explanation**\n> The RLHF pipeline starts with an SFT model. Next, it trains a separate reward model on human preference data. Finally, it uses reinforcement learning to fine-tune the SFT model against the reward model's scalar scores.\n\n---"
+    },
+    {
+      "id": "d13-ppo",
+      "title": "PPO",
+      "priority": "must_know",
+      "category": "fine-tuning",
+      "tags": [
+        "ppo",
+        "reinforcement-learning"
+      ],
+      "content_markdown": "**Core Concept**\n\nProximal Policy Optimization (PPO) is an RL algorithm that updates the model's parameters to increase expected reward without drastic changes in a single update.\n\n**Why It Matters**\n\nUpdating too aggressively risks destabilizing training or reward hacking (degenerate ways to score well). PPO's clipped objective limits the policy change per update, keeping it \"proximal\".\n\n**Interview-Ready Explanation**\n> PPO is a reinforcement learning algorithm used in RLHF. It updates the model to maximize reward but restricts the size of each update to stay \"proximal\" to the previous policy. This prevents training instability and reward hacking.\n\n---",
+      "markdown": "### [CARD: PPO]\n<!-- id: d13-ppo -->\n\n- **Priority:** must_know\n- **Category:** fine-tuning\n- **Tags:** ppo, reinforcement-learning\n**Core Concept**\n\nProximal Policy Optimization (PPO) is an RL algorithm that updates the model's parameters to increase expected reward without drastic changes in a single update.\n\n**Why It Matters**\n\nUpdating too aggressively risks destabilizing training or reward hacking (degenerate ways to score well). PPO's clipped objective limits the policy change per update, keeping it \"proximal\".\n\n**Interview-Ready Explanation**\n> PPO is a reinforcement learning algorithm used in RLHF. It updates the model to maximize reward but restricts the size of each update to stay \"proximal\" to the previous policy. This prevents training instability and reward hacking.\n\n---"
+    },
+    {
+      "id": "d13-kl-divergence-penalty",
+      "title": "KL-Divergence Penalty",
+      "priority": "must_know",
+      "category": "fine-tuning",
+      "tags": [
+        "kl-divergence",
+        "regularization"
+      ],
+      "content_markdown": "**Core Concept**\n\nAn additional penalty in PPO based on how much the fine-tuned model's output distribution diverges from the original SFT model.\n\n**Why It Matters**\n\nIt discourages the model from drifting too far from its original behavior (similar to regularization), ensuring the model remains fluent and helpful while optimizing for the reward.\n\n**Interview-Ready Explanation**\n> During PPO, a KL-divergence penalty is used to ensure the RL-tuned model doesn't drift too far from the original SFT model's distribution. This prevents degenerate behaviors and preserves language fluency.\n\n---",
+      "markdown": "### [CARD: KL-Divergence Penalty]\n<!-- id: d13-kl-divergence-penalty -->\n\n- **Priority:** must_know\n- **Category:** fine-tuning\n- **Tags:** kl-divergence, regularization\n**Core Concept**\n\nAn additional penalty in PPO based on how much the fine-tuned model's output distribution diverges from the original SFT model.\n\n**Why It Matters**\n\nIt discourages the model from drifting too far from its original behavior (similar to regularization), ensuring the model remains fluent and helpful while optimizing for the reward.\n\n**Interview-Ready Explanation**\n> During PPO, a KL-divergence penalty is used to ensure the RL-tuned model doesn't drift too far from the original SFT model's distribution. This prevents degenerate behaviors and preserves language fluency.\n\n---"
+    },
+    {
+      "id": "d13-toxicity-reduction-project-mapping",
+      "title": "Toxicity Reduction Project Mapping",
+      "priority": "must_know",
+      "category": "fine-tuning",
+      "tags": [
+        "project",
+        "toxicity",
+        "flan-t5"
+      ],
+      "content_markdown": "**Core Concept**\n\nApplying PEFT/LoRA and PPO to Flan-T5 to reduce toxicity.\n\n**Mental Model / Mechanics**\n- **Reward signal:** A toxicity classifier serves as the reward source (lower toxicity = higher reward).\n- **PPO's job:** Adjust the LoRA-adapted model to produce lower-toxicity outputs without losing fluency.\n- **PPO on top of LoRA:** PPO's updates flow exclusively into the LoRA adapter parameters (A/B), not the full frozen base model.\n\n**Interview-Ready Explanation**\n> In my project, I fine-tuned Flan-T5 with LoRA and then used PPO for toxicity reduction. The reward signal came from a toxicity classifier. Crucially, the PPO updates only affected the LoRA adapter parameters, allowing the model to generate less toxic text while preserving the frozen base model's capabilities.\n\n---",
+      "markdown": "### [CARD: Toxicity Reduction Project Mapping]\n<!-- id: d13-toxicity-reduction-project-mapping -->\n\n- **Priority:** must_know\n- **Category:** fine-tuning\n- **Tags:** project, toxicity, flan-t5\n**Core Concept**\n\nApplying PEFT/LoRA and PPO to Flan-T5 to reduce toxicity.\n\n**Mental Model / Mechanics**\n- **Reward signal:** A toxicity classifier serves as the reward source (lower toxicity = higher reward).\n- **PPO's job:** Adjust the LoRA-adapted model to produce lower-toxicity outputs without losing fluency.\n- **PPO on top of LoRA:** PPO's updates flow exclusively into the LoRA adapter parameters (A/B), not the full frozen base model.\n\n**Interview-Ready Explanation**\n> In my project, I fine-tuned Flan-T5 with LoRA and then used PPO for toxicity reduction. The reward signal came from a toxicity classifier. Crucially, the PPO updates only affected the LoRA adapter parameters, allowing the model to generate less toxic text while preserving the frozen base model's capabilities.\n\n---"
+    },
+    {
+      "id": "d13-dpo",
+      "title": "Preference Optimization Beyond PPO",
+      "priority": "nice_to_know",
+      "category": "fine-tuning",
+      "tags": [
+        "dpo",
+        "preference-optimization"
+      ],
+      "content_markdown": "**Core Concept**\n\nDirect Preference Optimization (DPO) skips the separate reward model and PPO's RL machinery.\n\n**Mental Model / Mechanics**\nIt directly optimizes on preference pairs using a derived loss function, vastly simplifying the RLHF process.\n\n**Interview-Ready Explanation**\n> DPO directly optimizes on preference pairs without needing a separate reward model or complex PPO training, simplifying the preference alignment process.\n\n---",
+      "markdown": "### [CARD: Preference Optimization Beyond PPO]\n<!-- id: d13-dpo -->\n\n- **Priority:** nice_to_know\n- **Category:** fine-tuning\n- **Tags:** dpo, preference-optimization\n**Core Concept**\n\nDirect Preference Optimization (DPO) skips the separate reward model and PPO's RL machinery.\n\n**Mental Model / Mechanics**\nIt directly optimizes on preference pairs using a derived loss function, vastly simplifying the RLHF process.\n\n**Interview-Ready Explanation**\n> DPO directly optimizes on preference pairs without needing a separate reward model or complex PPO training, simplifying the preference alignment process.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "- **Day 2 (regularization, catastrophic forgetting):** LoRA's parameter efficiency and the KL penalty are both \"don't let this change too much\" — same instinct as L1/L2.\n- **Day 3 (cross-entropy):** SFT reuses this directly; RLHF genuinely departs from it.\n- **Day 9 (frozen weights, no gradient flow):** literally what LoRA relies on.\n- **Day 11 (Q/K/V matrices):** LoRA is typically applied exactly to these projection matrices.\n- **Day 12 (next-token prediction, base model gap):** SFT continues the same objective on curated data; RLHF closes the remaining gap.",
+  "common_misconceptions_markdown": "1. \"LoRA fine-tunes the whole model, just more efficiently.\" — No, it freezes the base model completely.\n2. \"PEFT and LoRA are the same thing.\" — LoRA is one specific PEFT technique among several.\n3. \"RLHF replaces SFT.\" — It comes after and on top of SFT.\n4. \"PPO directly uses human labels as the reward at every step.\" — No, a learned reward model or classifier provides the reward.\n5. \"Merging LoRA weights permanently alters the base model.\" — The original frozen base file isn't altered.",
+  "out_of_scope_markdown": "- The exact PPO clipped surrogate objective formula.\n- Generalized Advantage Estimation (GAE) mechanics.\n- DPO's mathematical derivation.\n- Exact reward model architecture/training loss specifics.\n\n---",
+  "qa_drill": [
+    {
+      "id": "d13-qa-001",
+      "question": "What are the three stages of the RLHF pipeline?",
+      "answer": "1. Supervised Fine-Tuning (SFT) of the base model. 2. Training a Reward Model on human preference data. 3. Reinforcement Learning (commonly PPO) to fine-tune the SFT model using the reward model's signal.",
+      "tags": [
+        "rlhf",
+        "pipeline"
+      ],
+      "linked_card_ids": [
+        "d13-rlhf-pipeline"
+      ]
+    },
+    {
+      "id": "d13-qa-002",
+      "question": "How does Supervised Fine-Tuning differ from pretraining in its objective?",
+      "answer": "It doesn't differ in its objective; both use next-token prediction via cross-entropy loss. SFT just applies it to a smaller, curated dataset of instruction-response pairs to teach format and style.",
+      "tags": [
+        "sft",
+        "pretraining"
+      ],
+      "linked_card_ids": [
+        "d13-supervised-fine-tuning"
+      ]
+    },
+    {
+      "id": "d13-qa-003",
+      "question": "What are three main reasons full fine-tuning is extremely expensive?",
+      "answer": "1. Memory cost (optimizer states like Adam take 2-3x parameter memory). 2. Storage footprint (storing full copies per task). 3. Catastrophic forgetting of pretrained capabilities.",
+      "tags": [
+        "fine-tuning",
+        "memory"
+      ],
+      "linked_card_ids": [
+        "d13-why-full-fine-tuning-is-expensive"
+      ]
+    },
+    {
+      "id": "d13-qa-004",
+      "question": "What does PEFT stand for and what is its core idea?",
+      "answer": "Parameter-Efficient Fine-Tuning. Its core idea is freezing the vast majority of pretrained parameters and training only a small number of additional/selected parameters.",
+      "tags": [
+        "peft"
+      ],
+      "linked_card_ids": [
+        "d13-peft-overview"
+      ]
+    },
+    {
+      "id": "d13-qa-005",
+      "question": "How does LoRA decompose the weight update matrix $\\Delta W$?",
+      "answer": "LoRA decomposes $\\Delta W$ into the product of two much smaller matrices, $B$ and $A$, such that $\\Delta W \\approx B \\cdot A$, where $A$ and $B$ have a small rank $r$.",
+      "tags": [
+        "lora",
+        "math"
+      ],
+      "linked_card_ids": [
+        "d13-lora-mechanism"
+      ]
+    },
+    {
+      "id": "d13-qa-006",
+      "question": "During LoRA fine-tuning, which weights receive gradients?",
+      "answer": "Only the newly added low-rank matrices $A$ and $B$. The original model weights $W$ are completely frozen.",
+      "tags": [
+        "lora",
+        "gradients"
+      ],
+      "linked_card_ids": [
+        "d13-lora-mechanism"
+      ]
+    },
+    {
+      "id": "d13-qa-007",
+      "question": "What is the formula for the effective forward computation in LoRA?",
+      "answer": "$output = W \\cdot x + (B \\cdot A) \\cdot x = (W + BA) \\cdot x$",
+      "tags": [
+        "lora",
+        "forward-pass"
+      ],
+      "linked_card_ids": [
+        "d13-lora-mechanism"
+      ]
+    },
+    {
+      "id": "d13-qa-008",
+      "question": "What is the main advantage of merging LoRA weights back into the base model after training?",
+      "answer": "It eliminates any inference latency cost because $B \\cdot A$ is added directly into $W$.",
+      "tags": [
+        "lora",
+        "inference"
+      ],
+      "linked_card_ids": [
+        "d13-lora-benefits-and-limitations"
+      ]
+    },
+    {
+      "id": "d13-qa-009",
+      "question": "Where in the transformer architecture is LoRA most commonly applied?",
+      "answer": "It is most commonly applied to the attention mechanism's Q, K, and V projection matrices.",
+      "tags": [
+        "lora",
+        "architecture"
+      ],
+      "linked_card_ids": [
+        "d13-lora-mechanism"
+      ]
+    },
+    {
+      "id": "d13-qa-010",
+      "question": "What specific problem does RLHF solve that SFT alone does not?",
+      "answer": "SFT only teaches the model to imitate good examples, bounded by the dataset. RLHF optimizes directly for human preferences and overall output quality dimensions that are hard to capture via static labels.",
+      "tags": [
+        "rlhf",
+        "sft"
+      ],
+      "linked_card_ids": [
+        "d13-rlhf-pipeline"
+      ]
+    },
+    {
+      "id": "d13-qa-011",
+      "question": "Why is PPO called \"proximal\"?",
+      "answer": "Because it restricts the policy (model) from changing too drastically in any single update (staying \"proximal\" to the previous version) to avoid training instability and reward hacking.",
+      "tags": [
+        "ppo"
+      ],
+      "linked_card_ids": [
+        "d13-ppo"
+      ]
+    },
+    {
+      "id": "d13-qa-012",
+      "question": "What is reward hacking?",
+      "answer": "When the reinforcement learning model finds degenerate or unintended ways to score highly on the reward model without actually producing a genuinely good output.",
+      "tags": [
+        "rlhf",
+        "ppo"
+      ],
+      "linked_card_ids": [
+        "d13-ppo"
+      ]
+    },
+    {
+      "id": "d13-qa-013",
+      "question": "What is the purpose of the KL-divergence penalty in RLHF/PPO?",
+      "answer": "It penalizes the model for diverging too far from the original SFT model's probability distribution, preventing degenerate behavior and preserving language fluency.",
+      "tags": [
+        "kl-divergence",
+        "ppo"
+      ],
+      "linked_card_ids": [
+        "d13-kl-divergence-penalty"
+      ]
+    },
+    {
+      "id": "d13-qa-014",
+      "question": "In the toxicity reduction project, where did PPO's updates flow?",
+      "answer": "They flowed exclusively into the LoRA adapter parameters (A and B), while the full base model remained frozen.",
+      "tags": [
+        "project",
+        "ppo",
+        "lora"
+      ],
+      "linked_card_ids": [
+        "d13-toxicity-reduction-project-mapping"
+      ]
+    },
+    {
+      "id": "d13-qa-015",
+      "question": "How does DPO differ from PPO in the preference optimization pipeline?",
+      "answer": "Direct Preference Optimization (DPO) skips training a separate reward model and skips PPO entirely, optimizing directly on preference pairs using a derived loss function.",
+      "tags": [
+        "dpo",
+        "rlhf"
+      ],
+      "linked_card_ids": [
+        "d13-dpo"
+      ]
+    }
+  ]
+}

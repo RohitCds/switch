@@ -1,0 +1,584 @@
+{
+  "schema_version": 1,
+  "days": [
+    {
+      "day": 1,
+      "title": "Python Mental Model + Core ML Framing",
+      "topics": [
+        "python",
+        "ml-foundations",
+        "supervised-learning",
+        "generalization",
+        "bias-variance"
+      ],
+      "tags": [
+        "python",
+        "ml-foundations"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 17,
+        "should_know": 6
+      },
+      "card_count": 23,
+      "qa_count": 23,
+      "path": "day_01.json"
+    },
+    {
+      "day": 2,
+      "title": "Supervised Learning, Data Splits, Generalization & Regularization",
+      "topics": [
+        "supervised-learning",
+        "regularization",
+        "cross-validation",
+        "data-leakage",
+        "bias-variance",
+        "l1",
+        "l2",
+        "ridge",
+        "lasso"
+      ],
+      "tags": [
+        "supervised-learning",
+        "ml-theory"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 24,
+        "should_know": 2
+      },
+      "card_count": 26,
+      "qa_count": 26,
+      "path": "day_02.json"
+    },
+    {
+      "day": 3,
+      "title": "Loss Functions, Optimization & Gradient Descent",
+      "topics": [
+        "loss-functions",
+        "mse",
+        "mae",
+        "cross-entropy",
+        "gradient-descent",
+        "sgd",
+        "adam",
+        "optimization",
+        "learning-rate"
+      ],
+      "tags": [
+        "loss-functions",
+        "optimization"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 21,
+        "should_know": 5
+      },
+      "card_count": 26,
+      "qa_count": 20,
+      "path": "day_03.json"
+    },
+    {
+      "day": 4,
+      "title": "Classification Evaluation Metrics",
+      "topics": [
+        "confusion-matrix",
+        "precision",
+        "recall",
+        "f1-score",
+        "roc-auc",
+        "pr-auc",
+        "threshold-selection",
+        "calibration",
+        "class-imbalance"
+      ],
+      "tags": [
+        "evaluation",
+        "metrics",
+        "classification"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 12,
+        "should_know": 1
+      },
+      "card_count": 13,
+      "qa_count": 18,
+      "path": "day_04.json"
+    },
+    {
+      "day": 5,
+      "title": "Preprocessing & Feature Engineering",
+      "topics": [
+        "preprocessing",
+        "scaling",
+        "encoding",
+        "missing-values",
+        "outliers",
+        "feature-selection",
+        "pca",
+        "dimensionality-reduction"
+      ],
+      "tags": [
+        "preprocessing",
+        "feature-engineering"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 6,
+        "should_know": 3
+      },
+      "card_count": 9,
+      "qa_count": 16,
+      "path": "day_05.json"
+    },
+    {
+      "day": 6,
+      "title": "Classical Algorithms: Trees, Ensembles, k-NN, Naive Bayes, SVM",
+      "topics": [
+        "machine-learning",
+        "classical-algorithms",
+        "ensembles",
+        "trees",
+        "svm"
+      ],
+      "tags": [
+        "decision-trees",
+        "random-forest",
+        "gradient-boosting",
+        "knn",
+        "naive-bayes",
+        "svm"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 12,
+        "should_know": 1
+      },
+      "card_count": 13,
+      "qa_count": 8,
+      "path": "day_06.json"
+    },
+    {
+      "day": 7,
+      "title": "Unsupervised Learning + ML Pipeline Fundamentals",
+      "topics": [
+        "unsupervised-learning",
+        "k-means",
+        "dbscan",
+        "anomaly-detection",
+        "ml-pipelines",
+        "mlops",
+        "drift-monitoring"
+      ],
+      "tags": [
+        "unsupervised-learning",
+        "mlops"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 12,
+        "should_know": 3
+      },
+      "card_count": 15,
+      "qa_count": 10,
+      "path": "day_07.json"
+    },
+    {
+      "day": 8,
+      "title": "Neural Networks: Architecture & Forward Propagation",
+      "topics": [
+        "deep-learning",
+        "neural-networks",
+        "forward-propagation",
+        "activation-functions"
+      ],
+      "tags": [
+        "deep-learning",
+        "neural-networks"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 10,
+        "should_know": 1
+      },
+      "card_count": 11,
+      "qa_count": 6,
+      "path": "day_08.json"
+    },
+    {
+      "day": 9,
+      "title": "BACKPROPAGATION & TRAINING MECHANICS",
+      "topics": [
+        "deep-learning",
+        "backpropagation",
+        "optimization"
+      ],
+      "tags": [
+        "neural-networks",
+        "deep-learning",
+        "training"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 15,
+        "should_know": 2
+      },
+      "card_count": 17,
+      "qa_count": 10,
+      "path": "day_09.json"
+    },
+    {
+      "day": 10,
+      "title": "CNNs/RNNs (COMPRESSED) + NLP FOUNDATIONS",
+      "topics": [
+        "deep-learning",
+        "nlp"
+      ],
+      "tags": [
+        "deep-learning",
+        "nlp"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 7,
+        "should_know": 5
+      },
+      "card_count": 12,
+      "qa_count": 12,
+      "path": "day_10.json"
+    },
+    {
+      "day": 11,
+      "title": "Attention Mechanisms",
+      "topics": [
+        "deep-learning",
+        "nlp",
+        "transformers"
+      ],
+      "tags": [
+        "attention",
+        "qkv",
+        "transformers"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 6,
+        "should_know": 2
+      },
+      "card_count": 8,
+      "qa_count": 11,
+      "path": "day_11.json"
+    },
+    {
+      "day": 12,
+      "title": "Transformers: Full Architecture + LLM Training/Inference/Decoding",
+      "topics": [
+        "transformers",
+        "llm-architecture",
+        "training-inference",
+        "decoding"
+      ],
+      "tags": [
+        "deep-learning",
+        "llm"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 10,
+        "should_know": 4
+      },
+      "card_count": 14,
+      "qa_count": 13,
+      "path": "day_12.json"
+    },
+    {
+      "day": 13,
+      "title": "FINE-TUNING: SFT, PEFT/LoRA, RLHF/PPO",
+      "topics": [
+        "fine-tuning",
+        "peft",
+        "lora",
+        "rlhf",
+        "ppo"
+      ],
+      "tags": [
+        "fine-tuning",
+        "llm"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 1,
+        "must_know": 11,
+        "should_know": 0
+      },
+      "card_count": 12,
+      "qa_count": 15,
+      "path": "day_13.json"
+    },
+    {
+      "day": 14,
+      "title": "Embeddings, Vector Search & ANN/HNSW",
+      "topics": [
+        "embeddings",
+        "vector-search",
+        "ann",
+        "hnsw"
+      ],
+      "tags": [
+        "embeddings",
+        "retrieval"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 6,
+        "should_know": 2
+      },
+      "card_count": 8,
+      "qa_count": 12,
+      "path": "day_14.json"
+    },
+    {
+      "day": 15,
+      "title": "RAG Architecture: Chunking, Retrieval, Reranking",
+      "topics": [
+        "rag",
+        "retrieval",
+        "chunking",
+        "reranking",
+        "vector-search"
+      ],
+      "tags": [
+        "rag",
+        "nlp",
+        "information-retrieval"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 6,
+        "should_know": 3
+      },
+      "card_count": 9,
+      "qa_count": 11,
+      "path": "day_15.json"
+    },
+    {
+      "day": 16,
+      "title": "RAG Evaluation & Production GenAI",
+      "topics": [
+        "rag-evaluation",
+        "production",
+        "latency",
+        "cost",
+        "security"
+      ],
+      "tags": [
+        "evaluation",
+        "production",
+        "security"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 8,
+        "should_know": 2
+      },
+      "card_count": 10,
+      "qa_count": 13,
+      "path": "day_16.json"
+    },
+    {
+      "day": 17,
+      "title": "Python Execution Model: Scopes, Iterators, Generators, Decorators, Context Managers & OOP",
+      "topics": [
+        "python-execution-model",
+        "iterators",
+        "generators",
+        "decorators",
+        "context-managers",
+        "oop"
+      ],
+      "tags": [
+        "python",
+        "software-engineering",
+        "interview-prep"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 1,
+        "must_know": 12,
+        "should_know": 3
+      },
+      "card_count": 16,
+      "qa_count": 16,
+      "path": "day_17.json"
+    },
+    {
+      "day": 18,
+      "title": "Python Concurrency: GIL, Threading, Multiprocessing & Asyncio",
+      "topics": [
+        "python-concurrency",
+        "threading",
+        "multiprocessing",
+        "asyncio",
+        "synchronization"
+      ],
+      "tags": [
+        "python",
+        "concurrency",
+        "software-engineering",
+        "mle-systems"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 14,
+        "should_know": 2
+      },
+      "card_count": 16,
+      "qa_count": 16,
+      "path": "day_18.json"
+    },
+    {
+      "day": 19,
+      "title": "SQL Theory for MLE Interviews",
+      "topics": [
+        "sql",
+        "relational-modeling",
+        "query-performance",
+        "transactions"
+      ],
+      "tags": [
+        "sql",
+        "data-engineering",
+        "mle-systems",
+        "interview-prep"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 13,
+        "should_know": 3
+      },
+      "card_count": 16,
+      "qa_count": 15,
+      "path": "day_19.json"
+    },
+    {
+      "day": 20,
+      "title": "Kafka, Spark & Airflow: Compressed Data Platform Fundamentals",
+      "topics": [
+        "kafka",
+        "apache-spark",
+        "airflow",
+        "data-pipelines",
+        "streaming"
+      ],
+      "tags": [
+        "data-engineering",
+        "mle-systems",
+        "streaming",
+        "orchestration"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 11,
+        "should_know": 3
+      },
+      "card_count": 14,
+      "qa_count": 13,
+      "path": "day_20.json"
+    },
+    {
+      "day": 21,
+      "title": "ML System Design & MLOps Foundations",
+      "topics": [
+        "ml-system-design",
+        "mlops",
+        "model-serving",
+        "monitoring",
+        "experimentation"
+      ],
+      "tags": [
+        "mle-systems",
+        "mlops",
+        "system-design",
+        "interview-prep"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 13,
+        "should_know": 1
+      },
+      "card_count": 14,
+      "qa_count": 13,
+      "path": "day_21.json"
+    },
+    {
+      "day": 22,
+      "title": "LLM Inference & Serving",
+      "topics": [
+        "llm-inference",
+        "vllm",
+        "quantization",
+        "serving"
+      ],
+      "tags": [
+        "inference",
+        "systems",
+        "engineering"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 8,
+        "should_know": 5
+      },
+      "card_count": 13,
+      "qa_count": 5,
+      "path": "day_22.json"
+    },
+    {
+      "day": 23,
+      "title": "Interview Coding, DSA & Testing",
+      "topics": [
+        "dsa",
+        "testing",
+        "data-structures",
+        "code-quality"
+      ],
+      "tags": [
+        "interview-prep",
+        "mle-coding"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 7,
+        "should_know": 5
+      },
+      "card_count": 12,
+      "qa_count": 12,
+      "path": "day_23.json"
+    },
+    {
+      "day": 24,
+      "title": "Advanced LLM Topics: MoE, QLoRA, DPO & GRPO",
+      "topics": [
+        "advanced-llm",
+        "moe",
+        "qlora",
+        "dpo",
+        "grpo"
+      ],
+      "tags": [
+        "advanced-llm",
+        "moe",
+        "qlora",
+        "dpo",
+        "grpo"
+      ],
+      "priority_distribution": {
+        "nice_to_know": 0,
+        "must_know": 4,
+        "should_know": 0
+      },
+      "card_count": 4,
+      "qa_count": 4,
+      "path": "day_24.json"
+    }
+  ]
+}

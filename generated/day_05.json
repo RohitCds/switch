@@ -1,0 +1,351 @@
+{
+  "schema_version": 1,
+  "day": 5,
+  "title": "Preprocessing & Feature Engineering",
+  "topics": [
+    "preprocessing",
+    "scaling",
+    "encoding",
+    "missing-values",
+    "outliers",
+    "feature-selection",
+    "pca",
+    "dimensionality-reduction"
+  ],
+  "tags": [
+    "preprocessing",
+    "feature-engineering"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 0,
+    "must_know": 6,
+    "should_know": 3
+  },
+  "daily_objective_markdown": "Explain why raw data almost never goes straight into a model, when scaling matters and when it doesn't, how to handle categorical variables and missing values without introducing bugs or leakage, how to think about outliers as either noise or signal depending on the problem, the difference between filter/wrapper/embedded feature selection, and PCA — what it does, why it works, and when to reach for it. Last \"gets a model ready to train\" topic before classical algorithms (Day 6) and unsupervised + pipeline (Day 7).\n\n---",
+  "syllabus_markdown": "- 🔴 **MUST KNOW:** Why preprocessing matters, normalization vs standardization (and which algorithms need it), one-hot encoding, missing value strategies, outlier handling basics, PCA concept and when to use it, the preprocessing-leakage discipline, choosing the right metric for encoding\n- 🟡 **SHOULD KNOW:** Label/ordinal/target encoding, IQR and z-score outlier detection, filter vs wrapper vs embedded feature selection, explained variance in PCA\n- 🟢 **NICE TO KNOW:** Missingness taxonomy (MCAR/MAR/MNAR), KNN imputation / MICE, t-SNE / UMAP as PCA alternatives\n\n---",
+  "cards": [
+    {
+      "id": "d05-why-preprocessing-matters",
+      "title": "Why Preprocessing Matters",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "preprocessing",
+        "feature-engineering",
+        "data-leakage"
+      ],
+      "content_markdown": "**Core Concept**\n\nModels consume numbers in a specific shape, scale, and distribution — not raw data. Preprocessing transforms raw data into a form the model can consume correctly.\n**Why It Matters**\n\nTwo recurring failure modes: (1) the model literally can't consume the data (string category into a linear model), and (2) the model consumes it but learns something distorted (a feature on 0–1,000,000 dominating one on 0–1 purely due to units, not importance).\n**Mental Model / Mechanics**\n  ```\n  Raw data → Cleaning → Encoding → Scaling → Feature selection/reduction → Model\n  ```\n  Preprocessing is also where data leakage most commonly sneaks in. Every transform must be fit on training data only.\n**Failure Modes / Tradeoffs**\n  - Preprocessing decisions are invisible in your final metrics — until they're the reason your metrics are wrong\n  - Interviewers probe this area specifically because it separates practitioners from textbook learners\n**Interview-Ready Explanation**\n  > Models don't consume raw data — they consume numbers in a specific shape, scale, and distribution. Preprocessing transforms data so the model can learn correctly, and it's where most silent bugs and leakage actually originate.\n\n---",
+      "markdown": "### [CARD: Why Preprocessing Matters]\n<!-- id: d05-why-preprocessing-matters -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** preprocessing, feature-engineering, data-leakage\n**Core Concept**\n\nModels consume numbers in a specific shape, scale, and distribution — not raw data. Preprocessing transforms raw data into a form the model can consume correctly.\n**Why It Matters**\n\nTwo recurring failure modes: (1) the model literally can't consume the data (string category into a linear model), and (2) the model consumes it but learns something distorted (a feature on 0–1,000,000 dominating one on 0–1 purely due to units, not importance).\n**Mental Model / Mechanics**\n  ```\n  Raw data → Cleaning → Encoding → Scaling → Feature selection/reduction → Model\n  ```\n  Preprocessing is also where data leakage most commonly sneaks in. Every transform must be fit on training data only.\n**Failure Modes / Tradeoffs**\n  - Preprocessing decisions are invisible in your final metrics — until they're the reason your metrics are wrong\n  - Interviewers probe this area specifically because it separates practitioners from textbook learners\n**Interview-Ready Explanation**\n  > Models don't consume raw data — they consume numbers in a specific shape, scale, and distribution. Preprocessing transforms data so the model can learn correctly, and it's where most silent bugs and leakage actually originate.\n\n---"
+    },
+    {
+      "id": "d05-normalization-vs-standardization",
+      "title": "Normalization vs Standardization",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "normalization",
+        "standardization",
+        "scaling"
+      ],
+      "content_markdown": "**Core Concept**\n\n**Normalization (Min-Max):** rescales to [0,1] via `x' = (x - min) / (max - min)`. **Standardization (Z-score):** centers at mean 0, std 1 via `x' = (x - mean) / std`.\n**Why It Matters**\n\nDistance-based and gradient-based models need features on comparable scales to work correctly. The choice between the two depends on outlier sensitivity.\n**Mental Model / Mechanics**\n  ```\n  Normalization (Min-Max):\n    x' = (x - min) / (max - min)\n    → Fixed range [0, 1]\n    → Sensitive to outliers (one extreme stretches the whole range)\n\n  Standardization (Z-score):\n    x' = (x - mean) / std\n    → Mean 0, std 1\n    → No bounded range, but more robust to moderate outliers\n  ```\n\n  **Which algorithms need scaling?**\n\n  | Needs scaling | Doesn't need scaling |\n  |---|---|\n  | k-NN (distance-based) | Decision trees |\n  | SVM (distance/margin-based) | Random forest |\n  | Linear/logistic regression (esp. with regularization) | Gradient boosting / XGBoost |\n  | Neural networks (gradient descent convergence) | Naive Bayes (mostly) |\n  | K-means, PCA | |\n\n  **Why tree-based models don't care:** A tree splits on `feature > threshold`. That decision doesn't change whether `feature` is in meters or kilometers — the *ordering* of values is what matters, not their scale.\n\n  **Why distance/gradient-based models do care:** k-NN computes Euclidean distance — a feature on 0–1,000,000 dominates regardless of actual predictive value. Gradient descent converges faster when features are on comparable scales (badly-scaled features distort the loss landscape into a narrow, elongated valley).\n**Example**\n  ```python\n  from sklearn.preprocessing import StandardScaler, MinMaxScaler\n\n  # FIT ON TRAIN ONLY — apply to val/test with same parameters\n  scaler = StandardScaler()\n  X_train_scaled = scaler.fit_transform(X_train)\n  X_val_scaled = scaler.transform(X_val)      # uses train's mean/std\n  X_test_scaled = scaler.transform(X_test)     # uses train's mean/std\n  ```\n**Failure Modes / Tradeoffs**\n  - **Leakage rule:** Fit scaler on TRAIN ONLY → apply those same train-derived stats to val and test\n  - Min-max is sensitive to outliers; z-score is more robust but unbounded\n  - Tree-based models are scale-invariant — scaling them is unnecessary (and can hurt interpretability)\n**Interview-Ready Explanation**\n  > Scaling matters for distance-based and gradient-based models — k-NN, SVM, linear models, neural networks — because feature magnitude directly affects distance calculations or gradient step sizes. Tree-based models split on thresholds, so scale doesn't change the split decision, and they're scale-invariant.\n\n---",
+      "markdown": "### [CARD: Normalization vs Standardization]\n<!-- id: d05-normalization-vs-standardization -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** normalization, standardization, scaling\n**Core Concept**\n\n**Normalization (Min-Max):** rescales to [0,1] via `x' = (x - min) / (max - min)`. **Standardization (Z-score):** centers at mean 0, std 1 via `x' = (x - mean) / std`.\n**Why It Matters**\n\nDistance-based and gradient-based models need features on comparable scales to work correctly. The choice between the two depends on outlier sensitivity.\n**Mental Model / Mechanics**\n  ```\n  Normalization (Min-Max):\n    x' = (x - min) / (max - min)\n    → Fixed range [0, 1]\n    → Sensitive to outliers (one extreme stretches the whole range)\n\n  Standardization (Z-score):\n    x' = (x - mean) / std\n    → Mean 0, std 1\n    → No bounded range, but more robust to moderate outliers\n  ```\n\n  **Which algorithms need scaling?**\n\n  | Needs scaling | Doesn't need scaling |\n  |---|---|\n  | k-NN (distance-based) | Decision trees |\n  | SVM (distance/margin-based) | Random forest |\n  | Linear/logistic regression (esp. with regularization) | Gradient boosting / XGBoost |\n  | Neural networks (gradient descent convergence) | Naive Bayes (mostly) |\n  | K-means, PCA | |\n\n  **Why tree-based models don't care:** A tree splits on `feature > threshold`. That decision doesn't change whether `feature` is in meters or kilometers — the *ordering* of values is what matters, not their scale.\n\n  **Why distance/gradient-based models do care:** k-NN computes Euclidean distance — a feature on 0–1,000,000 dominates regardless of actual predictive value. Gradient descent converges faster when features are on comparable scales (badly-scaled features distort the loss landscape into a narrow, elongated valley).\n**Example**\n  ```python\n  from sklearn.preprocessing import StandardScaler, MinMaxScaler\n\n  # FIT ON TRAIN ONLY — apply to val/test with same parameters\n  scaler = StandardScaler()\n  X_train_scaled = scaler.fit_transform(X_train)\n  X_val_scaled = scaler.transform(X_val)      # uses train's mean/std\n  X_test_scaled = scaler.transform(X_test)     # uses train's mean/std\n  ```\n**Failure Modes / Tradeoffs**\n  - **Leakage rule:** Fit scaler on TRAIN ONLY → apply those same train-derived stats to val and test\n  - Min-max is sensitive to outliers; z-score is more robust but unbounded\n  - Tree-based models are scale-invariant — scaling them is unnecessary (and can hurt interpretability)\n**Interview-Ready Explanation**\n  > Scaling matters for distance-based and gradient-based models — k-NN, SVM, linear models, neural networks — because feature magnitude directly affects distance calculations or gradient step sizes. Tree-based models split on thresholds, so scale doesn't change the split decision, and they're scale-invariant.\n\n---"
+    },
+    {
+      "id": "d05-one-hot-encoding",
+      "title": "One-Hot Encoding",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "encoding",
+        "one-hot",
+        "categorical"
+      ],
+      "content_markdown": "**Core Concept**\n\nEach category becomes its own binary column. Used when categories have **no inherent order** (region, device type, processor ID).\n**Why It Matters**\n\nMost models expect numeric input. One-hot encoding converts unordered categories into a numerically safe representation without implying any false ordering.\n**Mental Model / Mechanics**\n  ```\n  region        →  region_north  region_south  region_east\n  \"north\"            1              0             0\n  \"south\"            0              1             0\n  \"east\"             0              0             1\n  ```\n**Failure Modes / Tradeoffs**\n  - High-cardinality categories (thousands of unique IDs) explode into thousands of sparse columns — the \"curse of dimensionality\" in miniature\n  - Safe for correctness, but not always practical at scale\n**Interview-Ready Explanation**\n  > One-hot encoding is safe for unordered categories — no false ordering implied — but it explodes dimensionality at high cardinality. For high-cardinality features, consider target encoding or embeddings instead.\n\n---",
+      "markdown": "### [CARD: One-Hot Encoding]\n<!-- id: d05-one-hot-encoding -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** encoding, one-hot, categorical\n**Core Concept**\n\nEach category becomes its own binary column. Used when categories have **no inherent order** (region, device type, processor ID).\n**Why It Matters**\n\nMost models expect numeric input. One-hot encoding converts unordered categories into a numerically safe representation without implying any false ordering.\n**Mental Model / Mechanics**\n  ```\n  region        →  region_north  region_south  region_east\n  \"north\"            1              0             0\n  \"south\"            0              1             0\n  \"east\"             0              0             1\n  ```\n**Failure Modes / Tradeoffs**\n  - High-cardinality categories (thousands of unique IDs) explode into thousands of sparse columns — the \"curse of dimensionality\" in miniature\n  - Safe for correctness, but not always practical at scale\n**Interview-Ready Explanation**\n  > One-hot encoding is safe for unordered categories — no false ordering implied — but it explodes dimensionality at high cardinality. For high-cardinality features, consider target encoding or embeddings instead.\n\n---"
+    },
+    {
+      "id": "d05-label-ordinal-encoding",
+      "title": "Label / Ordinal Encoding",
+      "priority": "should_know",
+      "category": "ml-theory",
+      "tags": [
+        "encoding",
+        "label-encoding",
+        "ordinal-encoding",
+        "categorical"
+      ],
+      "content_markdown": "**Core Concept**\n\nAssign each category an integer. **Only appropriate when categories have a genuine order** (low/medium/high, never/sometimes/always).\n**Why It Matters**\n\nCompact numeric representation for ordinal categories. Avoids the dimensionality explosion of one-hot.\n**Mental Model / Mechanics**\n  ```\n  priority: low=0, medium=1, high=2     ← genuine order → VALID\n\n  region: north=0, south=1, east=2      ← no order → INVALID\n  (silently tells the model \"east > north\", which is meaningless)\n  ```\n**Failure Modes / Tradeoffs**\n  - Using label encoding on unordered categories implies a false numeric relationship that can actively mislead linear/distance-based models\n  - Tree-based models are somewhat more tolerant (they can split on any threshold), but it's still conceptually wrong\n**Interview-Ready Explanation**\n  > Label encoding is only valid for genuinely ordinal categories. Using it on nominal categories implies a false ordering that can mislead the model.\n\n---",
+      "markdown": "### [CARD: Label / Ordinal Encoding]\n<!-- id: d05-label-ordinal-encoding -->\n\n- **Priority:** should_know\n- **Category:** ml-theory\n- **Tags:** encoding, label-encoding, ordinal-encoding, categorical\n**Core Concept**\n\nAssign each category an integer. **Only appropriate when categories have a genuine order** (low/medium/high, never/sometimes/always).\n**Why It Matters**\n\nCompact numeric representation for ordinal categories. Avoids the dimensionality explosion of one-hot.\n**Mental Model / Mechanics**\n  ```\n  priority: low=0, medium=1, high=2     ← genuine order → VALID\n\n  region: north=0, south=1, east=2      ← no order → INVALID\n  (silently tells the model \"east > north\", which is meaningless)\n  ```\n**Failure Modes / Tradeoffs**\n  - Using label encoding on unordered categories implies a false numeric relationship that can actively mislead linear/distance-based models\n  - Tree-based models are somewhat more tolerant (they can split on any threshold), but it's still conceptually wrong\n**Interview-Ready Explanation**\n  > Label encoding is only valid for genuinely ordinal categories. Using it on nominal categories implies a false ordering that can mislead the model.\n\n---"
+    },
+    {
+      "id": "d05-target-mean-encoding",
+      "title": "Target / Mean Encoding",
+      "priority": "should_know",
+      "category": "ml-theory",
+      "tags": [
+        "encoding",
+        "target-encoding",
+        "mean-encoding",
+        "categorical",
+        "data-leakage"
+      ],
+      "content_markdown": "**Core Concept**\n\nReplace a category with the average target value for that category (e.g., replace `processor_id` with its historical failure rate). Powerful for high-cardinality features, but a well-known **leakage trap**.\n**Why It Matters**\n\nHandles high-cardinality categories without dimensionality explosion. Captures the relationship between a category and the target directly.\n**Mental Model / Mechanics**\n  ```\n  processor_id → average failure rate for that processor\n\n  Leakage risk: if computed on the entire dataset (including the row\n  being encoded), it leaks the label directly into the feature.\n\n  Safe: compute strictly within cross-validation folds —\n        each row's encoding uses only OTHER rows' target values.\n  ```\n  This connects directly to data leakage discussions.\n**Failure Modes / Tradeoffs**\n  - Classic leakage trap — requires careful cross-validation-based computation\n  - Can overfit to categories with few samples (regularization/smoothing helps)\n**Interview-Ready Explanation**\n  > Target encoding handles high cardinality well but is a classic leakage trap if not computed strictly within cross-validation folds. The encoding must never include the current row's target value.\n\n---",
+      "markdown": "### [CARD: Target / Mean Encoding]\n<!-- id: d05-target-mean-encoding -->\n\n- **Priority:** should_know\n- **Category:** ml-theory\n- **Tags:** encoding, target-encoding, mean-encoding, categorical, data-leakage\n**Core Concept**\n\nReplace a category with the average target value for that category (e.g., replace `processor_id` with its historical failure rate). Powerful for high-cardinality features, but a well-known **leakage trap**.\n**Why It Matters**\n\nHandles high-cardinality categories without dimensionality explosion. Captures the relationship between a category and the target directly.\n**Mental Model / Mechanics**\n  ```\n  processor_id → average failure rate for that processor\n\n  Leakage risk: if computed on the entire dataset (including the row\n  being encoded), it leaks the label directly into the feature.\n\n  Safe: compute strictly within cross-validation folds —\n        each row's encoding uses only OTHER rows' target values.\n  ```\n  This connects directly to data leakage discussions.\n**Failure Modes / Tradeoffs**\n  - Classic leakage trap — requires careful cross-validation-based computation\n  - Can overfit to categories with few samples (regularization/smoothing helps)\n**Interview-Ready Explanation**\n  > Target encoding handles high cardinality well but is a classic leakage trap if not computed strictly within cross-validation folds. The encoding must never include the current row's target value.\n\n---"
+    },
+    {
+      "id": "d05-missing-values",
+      "title": "Missing Values",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "missing-values",
+        "imputation",
+        "data-cleaning"
+      ],
+      "content_markdown": "**Core Concept**\n\nStrategies for handling absent data: deletion, imputation (mean/median/mode/model-based), and missingness indicators. The choice depends on **why** the data is missing.\n**Why It Matters**\n\nReal-world data almost always has gaps. Naive handling destroys signal or introduces bias.\n**Mental Model / Mechanics**\n  **Deletion:**\n  - Drop rows with missing values — simple but loses data; biases if missingness isn't random\n  - Drop columns with excessive missingness — reasonable when a feature is mostly empty\n\n  **Imputation:**\n  - Mean/median for numeric (median more robust to outliers)\n  - Mode for categorical\n  - Forward-fill / backward-fill for time-series\n  - Model-based imputation (predict missing from other features)\n\n  **Missingness indicator:**\n  ```\n  raw:     latency = [42, NaN, 55]\n  imputed: latency = [42, 48.5, 55]      (median-filled)\n  flag:    latency_missing = [0, 1, 0]    (preserves the signal)\n  ```\n  Useful when missingness itself is predictive (MNAR case) — the model can learn from the fact of absence, not just the filled-in value.\n\n  **Missingness taxonomy:**\n  - MCAR: missingness unrelated to anything\n  - MAR: missingness related to other observed features\n  - MNAR: missingness related to the missing value itself (e.g., high-income people declining to report) — the dangerous case where naive imputation destroys signal\n**Failure Modes / Tradeoffs**\n  - Don't reflexively mean-impute — consider *why* the data is missing\n  - MNAR cases carry real signal in the fact of absence\n  - Imputation parameters (mean, median) must be computed on training data only (leakage rule)\n**Interview-Ready Explanation**\n  > Missing values should be handled based on why they're missing, not just filled reflexively. If missingness itself might be predictive, add an indicator flag rather than only imputing — otherwise you can silently destroy signal.\n\n---",
+      "markdown": "### [CARD: Missing Values]\n<!-- id: d05-missing-values -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** missing-values, imputation, data-cleaning\n**Core Concept**\n\nStrategies for handling absent data: deletion, imputation (mean/median/mode/model-based), and missingness indicators. The choice depends on **why** the data is missing.\n**Why It Matters**\n\nReal-world data almost always has gaps. Naive handling destroys signal or introduces bias.\n**Mental Model / Mechanics**\n  **Deletion:**\n  - Drop rows with missing values — simple but loses data; biases if missingness isn't random\n  - Drop columns with excessive missingness — reasonable when a feature is mostly empty\n\n  **Imputation:**\n  - Mean/median for numeric (median more robust to outliers)\n  - Mode for categorical\n  - Forward-fill / backward-fill for time-series\n  - Model-based imputation (predict missing from other features)\n\n  **Missingness indicator:**\n  ```\n  raw:     latency = [42, NaN, 55]\n  imputed: latency = [42, 48.5, 55]      (median-filled)\n  flag:    latency_missing = [0, 1, 0]    (preserves the signal)\n  ```\n  Useful when missingness itself is predictive (MNAR case) — the model can learn from the fact of absence, not just the filled-in value.\n\n  **Missingness taxonomy:**\n  - MCAR: missingness unrelated to anything\n  - MAR: missingness related to other observed features\n  - MNAR: missingness related to the missing value itself (e.g., high-income people declining to report) — the dangerous case where naive imputation destroys signal\n**Failure Modes / Tradeoffs**\n  - Don't reflexively mean-impute — consider *why* the data is missing\n  - MNAR cases carry real signal in the fact of absence\n  - Imputation parameters (mean, median) must be computed on training data only (leakage rule)\n**Interview-Ready Explanation**\n  > Missing values should be handled based on why they're missing, not just filled reflexively. If missingness itself might be predictive, add an indicator flag rather than only imputing — otherwise you can silently destroy signal.\n\n---"
+    },
+    {
+      "id": "d05-outliers",
+      "title": "Outliers",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "outliers",
+        "data-cleaning",
+        "anomaly-detection"
+      ],
+      "content_markdown": "**Core Concept**\n\nExtreme values that may represent either data-quality errors (noise) or genuine rare events (signal). The handling strategy depends entirely on this distinction.\n**Why It Matters**\n\nOutliers can dominate distance calculations, inflate mean-based statistics, and distort model training — or they can be exactly the signal you need.\n**Mental Model / Mechanics**\n  **Detection:**\n  ```\n  IQR method: flag outside [Q1 - 1.5×IQR, Q3 + 1.5×IQR]\n    → Robust (based on quartiles, not mean/std)\n\n  Z-score method: flag |z| > 3\n    → Less robust (the outlier itself inflates mean/std)\n  ```\n\n  **Handling:**\n  - **Removal** — only when confident it's a data-quality error (sensor glitch, entry mistake)\n  - **Capping / winsorizing** — clip at a percentile (e.g., 99th) rather than deleting\n  - **Transformation** — log-transform heavily right-skewed features (income, transaction amounts) to compress extreme values\n\n  **The critical judgment call:**\n  - House prices? A ₹500Cr mansion in a ₹50L–₹2Cr dataset is a legitimate rare point\n  - Fraud / outage detection? **The outliers ARE the positive class.** Removing them deletes the exact examples the model needs to learn from.\n**Failure Modes / Tradeoffs**\n  - Always decide whether the outlier is noise or signal BEFORE choosing a handling strategy\n  - In anomaly-detection problems, aggressively \"cleaning\" outliers removes the thing you're modeling\n**Interview-Ready Explanation**\n  > Before handling an outlier, decide whether it represents noise (a data-quality issue) or signal (a genuine rare event). In fraud or anomaly-detection problems, the outliers often ARE the label you're trying to predict — removing them removes the thing you're modeling.\n\n---",
+      "markdown": "### [CARD: Outliers]\n<!-- id: d05-outliers -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** outliers, data-cleaning, anomaly-detection\n**Core Concept**\n\nExtreme values that may represent either data-quality errors (noise) or genuine rare events (signal). The handling strategy depends entirely on this distinction.\n**Why It Matters**\n\nOutliers can dominate distance calculations, inflate mean-based statistics, and distort model training — or they can be exactly the signal you need.\n**Mental Model / Mechanics**\n  **Detection:**\n  ```\n  IQR method: flag outside [Q1 - 1.5×IQR, Q3 + 1.5×IQR]\n    → Robust (based on quartiles, not mean/std)\n\n  Z-score method: flag |z| > 3\n    → Less robust (the outlier itself inflates mean/std)\n  ```\n\n  **Handling:**\n  - **Removal** — only when confident it's a data-quality error (sensor glitch, entry mistake)\n  - **Capping / winsorizing** — clip at a percentile (e.g., 99th) rather than deleting\n  - **Transformation** — log-transform heavily right-skewed features (income, transaction amounts) to compress extreme values\n\n  **The critical judgment call:**\n  - House prices? A ₹500Cr mansion in a ₹50L–₹2Cr dataset is a legitimate rare point\n  - Fraud / outage detection? **The outliers ARE the positive class.** Removing them deletes the exact examples the model needs to learn from.\n**Failure Modes / Tradeoffs**\n  - Always decide whether the outlier is noise or signal BEFORE choosing a handling strategy\n  - In anomaly-detection problems, aggressively \"cleaning\" outliers removes the thing you're modeling\n**Interview-Ready Explanation**\n  > Before handling an outlier, decide whether it represents noise (a data-quality issue) or signal (a genuine rare event). In fraud or anomaly-detection problems, the outliers often ARE the label you're trying to predict — removing them removes the thing you're modeling.\n\n---"
+    },
+    {
+      "id": "d05-feature-selection",
+      "title": "Feature Selection — Filter, Wrapper, Embedded",
+      "priority": "should_know",
+      "category": "ml-theory",
+      "tags": [
+        "feature-selection",
+        "dimensionality-reduction",
+        "regularization"
+      ],
+      "content_markdown": "**Core Concept**\n\nThree families of methods for choosing which features to keep. **Filter:** score features independently. **Wrapper:** retrain on subsets. **Embedded:** selection happens during training itself (e.g., L1/Lasso, tree importances).\n**Why It Matters**\n\nIrrelevant/redundant features add variance (overfitting risk), slow training, hurt interpretability, and dilute distance-based models. \"The model can just ignore them\" is theoretically true but practically wrong.\n**Mental Model / Mechanics**\n  ```\n  Filter   → score features independently, pick top-K\n             (fast, model-agnostic, ignores interactions)\n             Methods: correlation, chi-square, mutual information\n\n  Wrapper  → retrain repeatedly on different subsets, keep best\n             (slow, captures interactions)\n             Methods: Recursive Feature Elimination (RFE)\n\n  Embedded → selection happens AS PART of training\n             (efficient, model-specific)\n             Methods: L1/Lasso (drives coefficients to zero = feature selection),\n                      tree-based feature importances\n  ```\n  Lasso/L1 regularization is essentially an embedded feature selection method.\n**Failure Modes / Tradeoffs**\n  - Filter methods are fast but miss feature interactions\n  - Wrapper methods capture interactions but are computationally expensive\n  - Embedded methods are efficient but tied to a specific model type\n  - \"More features is always better\" is false — extra features add variance and overfitting risk\n**Interview-Ready Explanation**\n  > Filter methods score features independently (fast, ignores interactions). Wrapper methods retrain on subsets (slow, captures interactions). Embedded methods select during training itself — Lasso driving coefficients to zero is feature selection integrated into model training.\n\n---",
+      "markdown": "### [CARD: Feature Selection — Filter, Wrapper, Embedded]\n<!-- id: d05-feature-selection -->\n\n- **Priority:** should_know\n- **Category:** ml-theory\n- **Tags:** feature-selection, dimensionality-reduction, regularization\n**Core Concept**\n\nThree families of methods for choosing which features to keep. **Filter:** score features independently. **Wrapper:** retrain on subsets. **Embedded:** selection happens during training itself (e.g., L1/Lasso, tree importances).\n**Why It Matters**\n\nIrrelevant/redundant features add variance (overfitting risk), slow training, hurt interpretability, and dilute distance-based models. \"The model can just ignore them\" is theoretically true but practically wrong.\n**Mental Model / Mechanics**\n  ```\n  Filter   → score features independently, pick top-K\n             (fast, model-agnostic, ignores interactions)\n             Methods: correlation, chi-square, mutual information\n\n  Wrapper  → retrain repeatedly on different subsets, keep best\n             (slow, captures interactions)\n             Methods: Recursive Feature Elimination (RFE)\n\n  Embedded → selection happens AS PART of training\n             (efficient, model-specific)\n             Methods: L1/Lasso (drives coefficients to zero = feature selection),\n                      tree-based feature importances\n  ```\n  Lasso/L1 regularization is essentially an embedded feature selection method.\n**Failure Modes / Tradeoffs**\n  - Filter methods are fast but miss feature interactions\n  - Wrapper methods capture interactions but are computationally expensive\n  - Embedded methods are efficient but tied to a specific model type\n  - \"More features is always better\" is false — extra features add variance and overfitting risk\n**Interview-Ready Explanation**\n  > Filter methods score features independently (fast, ignores interactions). Wrapper methods retrain on subsets (slow, captures interactions). Embedded methods select during training itself — Lasso driving coefficients to zero is feature selection integrated into model training.\n\n---"
+    },
+    {
+      "id": "d05-pca",
+      "title": "PCA — Principal Component Analysis",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "pca",
+        "dimensionality-reduction",
+        "feature-engineering"
+      ],
+      "content_markdown": "**Core Concept**\n\nPCA finds new orthogonal axes (principal components) that are linear combinations of original features, ordered by how much variance each explains. Used for dimensionality reduction, multicollinearity removal, and visualization.\n**Why It Matters**\n\nThe **curse of dimensionality** — data becomes sparse in high-dimensional space, distance-based methods degrade, correlated features make models unstable, and visualization beyond 3D is impossible.\n**Mental Model / Mechanics**\n  ```\n  Original features: x1, x2, x3, ..., x50\n          ↓ PCA\n  Principal components: PC1, PC2, PC3, ...\n          (ordered by variance explained)\n\n  Core idea:\n  1. PC1 captures MAXIMUM variance in the data\n  2. Each subsequent PC captures maximum REMAINING variance\n  3. All PCs are ORTHOGONAL (uncorrelated) to each other\n\n  Why maximize variance?\n  → Directions with high variance carry more information\n  → Directions where data looks identical tell you nothing about\n     what distinguishes one example from another\n  ```\n\n  **Explained variance:**\n  ```\n  PC1 = 62%, PC2 = 21%, PC3 = 9%, ...\n  Keep enough components for target cumulative variance (e.g., 95%)\n  → Reduce 50 features to ~8 components while retaining most information\n  ```\n**Failure Modes / Tradeoffs**\n  - **Gains:** fewer dimensions → faster training, less overfitting, removes multicollinearity, enables visualization\n  - **Interpretability loss:** PC1 = `0.4×latency + 0.3×packet_loss - 0.2×uptime + ...` — \"what does PC1 mean?\" is hard to explain to a stakeholder\n  - **Scale-sensitive:** PCA is variance-based, so you MUST standardize first — otherwise a feature with larger units dominates due to scale, not information\n  - **Linear only:** PCA finds linear combinations; won't capture nonlinear structure (t-SNE/UMAP are nonlinear alternatives, mainly for visualization)\n**Interview-Ready Explanation**\n  > PCA finds orthogonal directions that maximize captured variance, letting you compress many correlated features into fewer components while retaining most of the information. The tradeoff is interpretability — principal components are linear blends of the original features, not features you can explain individually — and PCA requires standardized inputs since it's inherently scale-sensitive.\n\n---",
+      "markdown": "### [CARD: PCA — Principal Component Analysis]\n<!-- id: d05-pca -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** pca, dimensionality-reduction, feature-engineering\n**Core Concept**\n\nPCA finds new orthogonal axes (principal components) that are linear combinations of original features, ordered by how much variance each explains. Used for dimensionality reduction, multicollinearity removal, and visualization.\n**Why It Matters**\n\nThe **curse of dimensionality** — data becomes sparse in high-dimensional space, distance-based methods degrade, correlated features make models unstable, and visualization beyond 3D is impossible.\n**Mental Model / Mechanics**\n  ```\n  Original features: x1, x2, x3, ..., x50\n          ↓ PCA\n  Principal components: PC1, PC2, PC3, ...\n          (ordered by variance explained)\n\n  Core idea:\n  1. PC1 captures MAXIMUM variance in the data\n  2. Each subsequent PC captures maximum REMAINING variance\n  3. All PCs are ORTHOGONAL (uncorrelated) to each other\n\n  Why maximize variance?\n  → Directions with high variance carry more information\n  → Directions where data looks identical tell you nothing about\n     what distinguishes one example from another\n  ```\n\n  **Explained variance:**\n  ```\n  PC1 = 62%, PC2 = 21%, PC3 = 9%, ...\n  Keep enough components for target cumulative variance (e.g., 95%)\n  → Reduce 50 features to ~8 components while retaining most information\n  ```\n**Failure Modes / Tradeoffs**\n  - **Gains:** fewer dimensions → faster training, less overfitting, removes multicollinearity, enables visualization\n  - **Interpretability loss:** PC1 = `0.4×latency + 0.3×packet_loss - 0.2×uptime + ...` — \"what does PC1 mean?\" is hard to explain to a stakeholder\n  - **Scale-sensitive:** PCA is variance-based, so you MUST standardize first — otherwise a feature with larger units dominates due to scale, not information\n  - **Linear only:** PCA finds linear combinations; won't capture nonlinear structure (t-SNE/UMAP are nonlinear alternatives, mainly for visualization)\n**Interview-Ready Explanation**\n  > PCA finds orthogonal directions that maximize captured variance, letting you compress many correlated features into fewer components while retaining most of the information. The tradeoff is interpretability — principal components are linear blends of the original features, not features you can explain individually — and PCA requires standardized inputs since it's inherently scale-sensitive.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "```\nDay 2 (regularization/leakage):\n  ├─→ L1/Lasso reappears as \"embedded\" feature selection\n  └─→ \"fit only on train\" rule applies to scalers AND target encoding\n\nDay 3/4 (loss/metrics):\n  └─→ Bad preprocessing → distorted feature distributions →\n      harder optimization landscape → worse loss convergence →\n      misleading metrics that look like a \"model problem\"\n      but are actually a data problem\n\nDay 6 (classical algorithms — next):\n  └─→ \"Does this algorithm need scaling?\" table is the exact question\n      you'll re-apply to every algorithm covered next\n```\n\n**One-sentence version:** Preprocessing decisions are invisible in your final metrics until they're the reason your metrics are wrong — which is exactly why interviewers probe this area so often.\n\n---",
+  "common_misconceptions_markdown": "- **Myth:** \"Scaling always helps, so just do it by default.\"\n  **Reality:** Unnecessary (and sometimes counterproductive for interpretability) on tree-based models. Know *why* it doesn't matter there rather than cargo-culting it.\n\n- **Myth:** \"One-hot encoding is always the safe default for categoricals.\"\n  **Reality:** Safe for correctness, but high-cardinality features can blow up dimensionality — that's when target/embedding-based encodings become relevant.\n\n- **Myth:** \"Missing values should just be dropped or mean-imputed.\"\n  **Reality:** Only reasonable once you've considered *why* they're missing. MNAR cases can carry real signal that naive imputation destroys.\n\n- **Myth:** \"Outliers should generally be removed.\"\n  **Reality:** Depends entirely on the problem. In anomaly-detection contexts, removing outliers removes the exact examples you're trying to learn to detect.\n\n- **Myth:** \"PCA is just for visualization.\"\n  **Reality:** Visualization is one use case, but PCA is a general-purpose dimensionality-reduction and multicollinearity-mitigation technique.\n\n- **Myth:** \"More features is always better since the model can just ignore irrelevant ones.\"\n  **Reality:** Extra features add variance and overfitting risk — the same bias-variance logic applied to feature count, not just model complexity.\n\n---",
+  "out_of_scope_markdown": "- Formal MCAR/MAR/MNAR statistical tests\n- KNN imputation / MICE algorithm internals\n- t-SNE / UMAP mechanics (know they exist as nonlinear PCA alternatives)\n- Eigenvalue/eigenvector derivation of PCA (know the variance-maximization intuition, not the linear algebra proof)\n- Exact chi-square / mutual-information formulas for filter-method feature selection\n\n---",
+  "qa_drill": [
+    {
+      "id": "d05-qa-001",
+      "question": "Why do tree-based models not need feature scaling, while k-NN does?",
+      "answer": "Tree-based models split on `feature > threshold` — the ordering of values is what matters, not their scale. k-NN computes Euclidean distance, so a feature on a 0–1,000,000 scale dominates the distance calculation regardless of actual predictive value.",
+      "tags": [
+        "scaling",
+        "trees",
+        "k-nn"
+      ],
+      "linked_card_ids": [
+        "d05-normalization-vs-standardization"
+      ]
+    },
+    {
+      "id": "d05-qa-002",
+      "question": "What's the formula difference between normalization and standardization, and which is more outlier-robust?",
+      "answer": "Normalization (min-max): `x' = (x - min) / (max - min)` — rescales to [0,1], sensitive to outliers. Standardization (z-score): `x' = (x - mean) / std` — centers at mean 0, std 1, more robust to moderate outliers because one extreme value doesn't compress the entire range.",
+      "tags": [
+        "normalization",
+        "standardization",
+        "scaling"
+      ],
+      "linked_card_ids": [
+        "d05-normalization-vs-standardization"
+      ]
+    },
+    {
+      "id": "d05-qa-003",
+      "question": "Why is fitting a scaler on the full dataset (before splitting) a leakage bug?",
+      "answer": "It lets test-set statistics (mean, std, min, max) influence the training distribution. The scaler must be fit on training data only, then those exact parameters are reused to transform validation and test sets.",
+      "tags": [
+        "scaling",
+        "data-leakage"
+      ],
+      "linked_card_ids": [
+        "d05-normalization-vs-standardization"
+      ]
+    },
+    {
+      "id": "d05-qa-004",
+      "question": "When is label encoding actively wrong to use?",
+      "answer": "When categories have no inherent order. Assigning `north=0, south=1, east=2` implies \"east > north,\" which is meaningless and can mislead models that treat the numeric value as continuous.",
+      "tags": [
+        "encoding",
+        "label-encoding",
+        "categorical"
+      ],
+      "linked_card_ids": [
+        "d05-label-ordinal-encoding"
+      ]
+    },
+    {
+      "id": "d05-qa-005",
+      "question": "What's the risk with naive target encoding, and how does it connect to data leakage?",
+      "answer": "If computed on the entire dataset (including the row being encoded), it leaks the target label directly into the feature — a form of data leakage. Must be computed strictly within cross-validation folds where each row's encoding uses only other rows' target values.",
+      "tags": [
+        "encoding",
+        "target-encoding",
+        "data-leakage"
+      ],
+      "linked_card_ids": [
+        "d05-target-mean-encoding"
+      ]
+    },
+    {
+      "id": "d05-qa-006",
+      "question": "Name two strategies for handling missing values and when each applies.",
+      "answer": "(1) Median imputation — when data is missing randomly and you need a simple robust fill. (2) Missingness indicator flag — when the fact of absence itself might be predictive (MNAR), preserving the signal that data was missing rather than just filling it.",
+      "tags": [
+        "missing-values",
+        "imputation",
+        "data-cleaning"
+      ],
+      "linked_card_ids": [
+        "d05-missing-values"
+      ]
+    },
+    {
+      "id": "d05-qa-007",
+      "question": "Why would you add a \"missingness indicator\" flag instead of only imputing?",
+      "answer": "When missingness itself is informative (MNAR case). For example, if high-income people decline to report income, the fact of absence carries signal about the value. The indicator lets the model learn from the pattern of missingness, not just the imputed value.",
+      "tags": [
+        "missing-values",
+        "imputation"
+      ],
+      "linked_card_ids": [
+        "d05-missing-values"
+      ]
+    },
+    {
+      "id": "d05-qa-008",
+      "question": "Give an example where removing an outlier would be a mistake.",
+      "answer": "In fraud detection or network-outage prediction, the outliers (extreme transaction amounts, unusual telemetry spikes) often ARE the positive class you're trying to predict. Removing them deletes the exact examples the model needs to learn from.",
+      "tags": [
+        "outliers",
+        "anomaly-detection"
+      ],
+      "linked_card_ids": [
+        "d05-outliers"
+      ]
+    },
+    {
+      "id": "d05-qa-009",
+      "question": "What's the difference between filter, wrapper, and embedded feature selection?",
+      "answer": "Filter: score features independently of any model (fast, ignores interactions). Wrapper: retrain repeatedly on different subsets, keep the best (slow, captures interactions). Embedded: selection happens during training itself — e.g., Lasso driving coefficients to zero, tree-based importances.",
+      "tags": [
+        "feature-selection"
+      ],
+      "linked_card_ids": [
+        "d05-feature-selection"
+      ]
+    },
+    {
+      "id": "d05-qa-010",
+      "question": "Which feature selection method is L1/Lasso regularization?",
+      "answer": "L1/Lasso regularization is an embedded method. Lasso drives some coefficients to exactly zero, which is feature selection integrated directly into model training.",
+      "tags": [
+        "feature-selection",
+        "regularization",
+        "lasso"
+      ],
+      "linked_card_ids": [
+        "d05-feature-selection"
+      ]
+    },
+    {
+      "id": "d05-qa-011",
+      "question": "In one sentence, what is PCA actually optimizing for?",
+      "answer": "PCA finds orthogonal linear combinations of the original features that capture the maximum possible variance in the data, ordered from most to least variance explained.",
+      "tags": [
+        "pca",
+        "dimensionality-reduction"
+      ],
+      "linked_card_ids": [
+        "d05-pca"
+      ]
+    },
+    {
+      "id": "d05-qa-012",
+      "question": "Why does PCA require standardized input?",
+      "answer": "PCA is variance-based — it maximizes captured variance. Without standardization, a feature with naturally larger units (e.g., income in dollars vs. age in years) will dominate purely due to scale, not because it carries more information.",
+      "tags": [
+        "pca",
+        "scaling",
+        "standardization"
+      ],
+      "linked_card_ids": [
+        "d05-pca"
+      ]
+    },
+    {
+      "id": "d05-qa-013",
+      "question": "What's the main cost of using PCA, beyond compute?",
+      "answer": "Interpretability loss. A principal component is a weighted blend of original features (e.g., `PC1 = 0.4×latency + 0.3×packet_loss - 0.2×uptime`), so explaining \"what matters\" to a stakeholder becomes much harder than pointing to individual features.",
+      "tags": [
+        "pca",
+        "interpretability"
+      ],
+      "linked_card_ids": [
+        "d05-pca"
+      ]
+    },
+    {
+      "id": "d05-qa-014",
+      "question": "What is the explained variance ratio in PCA, and how is it used?",
+      "answer": "Each principal component has an explained variance ratio (e.g., PC1=62%, PC2=21%). You keep enough components to reach a target cumulative variance (e.g., 95%), reducing 50 features to perhaps 8 components while retaining most information.",
+      "tags": [
+        "pca",
+        "variance"
+      ],
+      "linked_card_ids": [
+        "d05-pca"
+      ]
+    },
+    {
+      "id": "d05-qa-015",
+      "question": "Why is \"more features is always better\" wrong?",
+      "answer": "Extra features add variance and overfitting risk (bias-variance tradeoff applied to feature count). Irrelevant features give the model more opportunity to fit noise, slow training, and can dilute distance-based models.",
+      "tags": [
+        "feature-selection",
+        "bias-variance"
+      ],
+      "linked_card_ids": [
+        "d05-feature-selection"
+      ]
+    },
+    {
+      "id": "d05-qa-016",
+      "question": "Name the algorithms that need scaling and those that don't.",
+      "answer": "Need scaling: k-NN, SVM, linear/logistic regression (esp. with regularization), neural networks, K-means, PCA. Don't need scaling: decision trees, random forest, gradient boosting/XGBoost, Naive Bayes.",
+      "tags": [
+        "scaling",
+        "algorithms"
+      ],
+      "linked_card_ids": [
+        "d05-normalization-vs-standardization"
+      ]
+    }
+  ]
+}

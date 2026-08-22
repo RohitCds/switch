@@ -1,0 +1,303 @@
+{
+  "schema_version": 1,
+  "day": 6,
+  "title": "Classical Algorithms: Trees, Ensembles, k-NN, Naive Bayes, SVM",
+  "topics": [
+    "machine-learning",
+    "classical-algorithms",
+    "ensembles",
+    "trees",
+    "svm"
+  ],
+  "tags": [
+    "decision-trees",
+    "random-forest",
+    "gradient-boosting",
+    "knn",
+    "naive-bayes",
+    "svm"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 0,
+    "must_know": 12,
+    "should_know": 1
+  },
+  "daily_objective_markdown": "By the end of today you should be able to explain, from intuition rather than memorized formulas: how a decision tree chooses splits, why Random Forest reduces variance and Gradient Boosting reduces bias (and why that distinction matters), what makes XGBoost/LightGBM the production default over vanilla boosting, how k-NN and Naive Bayes actually make predictions, and how SVM's margin-maximization and kernel trick work conceptually.\n\n---",
+  "syllabus_markdown": "- **MUST KNOW:** what each algorithm does and why, bagging vs boosting distinction, the bias/variance mechanism each ensemble exploits, k-NN and Naive Bayes core logic, SVM's margin/support-vector/kernel intuition.\n- **SHOULD KNOW:** XGBoost/LightGBM's specific engineering improvements over vanilla GBM, pruning strategies.\n- **NICE TO KNOW:** exact Gini/entropy/info-gain formulas' derivations, cost-complexity pruning math, second-order (Newton) boosting math, SMO algorithm for training SVMs, kernel trick's formal Hilbert-space justification.\n\n---",
+  "cards": [
+    {
+      "id": "d06-decision-trees",
+      "title": "Decision Trees",
+      "priority": "must_know",
+      "category": "algorithms",
+      "tags": [
+        "decision-trees",
+        "classification",
+        "regression"
+      ],
+      "content_markdown": "**Core Concept**\n\nA tree recursively splits data on `feature > threshold` questions, with leaves holding the final prediction.\n\n**Why It Matters**\n\nThey are interpretable, require no feature scaling, handle both numeric and categorical features naturally, and can capture non-linear relationships.\n\n**Mental Model / Mechanics**\nAt each step, the model picks a feature and a threshold that best separates the data into distinct classes (for classification) or reduces variance (for regression). This process repeats recursively until a stopping criterion is met.\n\n**Failure Modes / Tradeoffs**\n- High variance and inherently unstable (small changes in data can lead to completely different trees).\n- Can only make axis-aligned splits.\n- Biased toward features with more possible split points.\n\n**Interview-Ready Explanation**\n> A decision tree recursively splits data based on feature thresholds, ending in leaves that provide the final prediction. It is interpretable and requires no feature scaling, but is prone to high variance and overfitting if not constrained.\n\n---",
+      "markdown": "### [CARD: Decision Trees]\n<!-- id: d06-decision-trees -->\n\n- **Priority:** must_know\n- **Category:** algorithms\n- **Tags:** decision-trees, classification, regression\n**Core Concept**\n\nA tree recursively splits data on `feature > threshold` questions, with leaves holding the final prediction.\n\n**Why It Matters**\n\nThey are interpretable, require no feature scaling, handle both numeric and categorical features naturally, and can capture non-linear relationships.\n\n**Mental Model / Mechanics**\nAt each step, the model picks a feature and a threshold that best separates the data into distinct classes (for classification) or reduces variance (for regression). This process repeats recursively until a stopping criterion is met.\n\n**Failure Modes / Tradeoffs**\n- High variance and inherently unstable (small changes in data can lead to completely different trees).\n- Can only make axis-aligned splits.\n- Biased toward features with more possible split points.\n\n**Interview-Ready Explanation**\n> A decision tree recursively splits data based on feature thresholds, ending in leaves that provide the final prediction. It is interpretable and requires no feature scaling, but is prone to high variance and overfitting if not constrained.\n\n---"
+    },
+    {
+      "id": "d06-decision-tree-split-selection",
+      "title": "Decision Tree Split Selection",
+      "priority": "must_know",
+      "category": "algorithms",
+      "tags": [
+        "decision-trees",
+        "gini",
+        "entropy"
+      ],
+      "content_markdown": "**Core Concept**\n\nAt each node, candidate splits are evaluated by how much they increase the \"purity\" of the resulting child nodes.\n\n**Mental Model / Mechanics**\n- **Gini impurity**: `Gini = 1 - Σp_i²`, where `p_i` is the proportion of class `i` in the node. `Gini = 0` means perfectly pure.\n- **Entropy**: `Entropy = -Σp_i·log₂(p_i)` measures disorder. Lower entropy equals a purer node.\n- **Information gain**: The difference between the parent's entropy and the weighted average entropy of the children.\n\n**Failure Modes / Tradeoffs**\nIn practice, Gini and entropy produce very similar trees, but Gini is cheaper to compute (no logarithm), which is why algorithms like CART use it by default.\n\n**Interview-Ready Explanation**\n> Decision trees choose splits by evaluating which feature and threshold maximize the purity of the resulting child nodes. Purity is typically measured using Gini impurity or Information Gain (based on entropy), with Gini being the standard due to computational efficiency.\n\n---",
+      "markdown": "### [CARD: Decision Tree Split Selection]\n<!-- id: d06-decision-tree-split-selection -->\n\n- **Priority:** must_know\n- **Category:** algorithms\n- **Tags:** decision-trees, gini, entropy\n**Core Concept**\n\nAt each node, candidate splits are evaluated by how much they increase the \"purity\" of the resulting child nodes.\n\n**Mental Model / Mechanics**\n- **Gini impurity**: `Gini = 1 - Σp_i²`, where `p_i` is the proportion of class `i` in the node. `Gini = 0` means perfectly pure.\n- **Entropy**: `Entropy = -Σp_i·log₂(p_i)` measures disorder. Lower entropy equals a purer node.\n- **Information gain**: The difference between the parent's entropy and the weighted average entropy of the children.\n\n**Failure Modes / Tradeoffs**\nIn practice, Gini and entropy produce very similar trees, but Gini is cheaper to compute (no logarithm), which is why algorithms like CART use it by default.\n\n**Interview-Ready Explanation**\n> Decision trees choose splits by evaluating which feature and threshold maximize the purity of the resulting child nodes. Purity is typically measured using Gini impurity or Information Gain (based on entropy), with Gini being the standard due to computational efficiency.\n\n---"
+    },
+    {
+      "id": "d06-decision-tree-overfitting-and-pruning",
+      "title": "Decision Tree Overfitting and Pruning",
+      "priority": "must_know",
+      "category": "algorithms",
+      "tags": [
+        "decision-trees",
+        "overfitting",
+        "pruning"
+      ],
+      "content_markdown": "**Core Concept**\n\nAn unconstrained tree keeps splitting until every leaf is pure, essentially memorizing the training set and exhibiting extreme variance. Pruning is required to prevent this.\n\n**Mental Model / Mechanics**\n- **Pre-pruning**: Setting stopping criteria upfront during training (e.g., `max_depth`, `min_samples_leaf`).\n- **Post-pruning**: Growing the full tree first, then cutting back branches that do not improve validation performance (cost-complexity pruning).\n\n**Why It Matters**\nWithout constraints, a decision tree will almost always overfit. Controlling its depth or complexity is essential for generalization.\n\n**Interview-Ready Explanation**\n> Unconstrained decision trees will perfectly memorize the training data, leading to severe overfitting. To fix this, we use pre-pruning techniques like setting a maximum depth, or post-pruning techniques to remove branches that don't help validation performance.\n\n---",
+      "markdown": "### [CARD: Decision Tree Overfitting and Pruning]\n<!-- id: d06-decision-tree-overfitting-and-pruning -->\n\n- **Priority:** must_know\n- **Category:** algorithms\n- **Tags:** decision-trees, overfitting, pruning\n**Core Concept**\n\nAn unconstrained tree keeps splitting until every leaf is pure, essentially memorizing the training set and exhibiting extreme variance. Pruning is required to prevent this.\n\n**Mental Model / Mechanics**\n- **Pre-pruning**: Setting stopping criteria upfront during training (e.g., `max_depth`, `min_samples_leaf`).\n- **Post-pruning**: Growing the full tree first, then cutting back branches that do not improve validation performance (cost-complexity pruning).\n\n**Why It Matters**\nWithout constraints, a decision tree will almost always overfit. Controlling its depth or complexity is essential for generalization.\n\n**Interview-Ready Explanation**\n> Unconstrained decision trees will perfectly memorize the training data, leading to severe overfitting. To fix this, we use pre-pruning techniques like setting a maximum depth, or post-pruning techniques to remove branches that don't help validation performance.\n\n---"
+    },
+    {
+      "id": "d06-bagging",
+      "title": "Bagging",
+      "priority": "must_know",
+      "category": "ensembles",
+      "tags": [
+        "bagging",
+        "variance-reduction",
+        "ensembles"
+      ],
+      "content_markdown": "**Core Concept**\n\nBagging (Bootstrap Aggregating) involves training many independent models on different bootstrap samples (random samples with replacement) and aggregating their predictions.\n\n**Why It Matters**\n\nIt is a powerful ensemble technique specifically designed to reduce variance and prevent overfitting.\n\n**Mental Model / Mechanics**\nBy training high-variance/low-bias models (like unpruned decision trees) on slightly different resampled data, their errors become less correlated. Averaging their predictions cancels out the noise while preserving the low bias.\n- **Aggregation**: Average for regression, majority vote for classification.\n\n**Interview-Ready Explanation**\n> Bagging trains many independent models on different bootstrap samples of the data, then averages their predictions. It works by combining models that have high variance and low bias, which cancels out uncorrelated noise and drastically reduces the overall variance.\n\n---",
+      "markdown": "### [CARD: Bagging]\n<!-- id: d06-bagging -->\n\n- **Priority:** must_know\n- **Category:** ensembles\n- **Tags:** bagging, variance-reduction, ensembles\n**Core Concept**\n\nBagging (Bootstrap Aggregating) involves training many independent models on different bootstrap samples (random samples with replacement) and aggregating their predictions.\n\n**Why It Matters**\n\nIt is a powerful ensemble technique specifically designed to reduce variance and prevent overfitting.\n\n**Mental Model / Mechanics**\nBy training high-variance/low-bias models (like unpruned decision trees) on slightly different resampled data, their errors become less correlated. Averaging their predictions cancels out the noise while preserving the low bias.\n- **Aggregation**: Average for regression, majority vote for classification.\n\n**Interview-Ready Explanation**\n> Bagging trains many independent models on different bootstrap samples of the data, then averages their predictions. It works by combining models that have high variance and low bias, which cancels out uncorrelated noise and drastically reduces the overall variance.\n\n---"
+    },
+    {
+      "id": "d06-random-forest",
+      "title": "Random Forest",
+      "priority": "must_know",
+      "category": "ensembles",
+      "tags": [
+        "random-forest",
+        "bagging",
+        "trees"
+      ],
+      "content_markdown": "**Core Concept**\n\nRandom Forest is bagging applied to decision trees, with one extra trick: at each split, only a random subset of features is considered.\n\n**Why It Matters**\n\nWithout feature subsampling, a strong dominant feature would cause most trees to make the same initial splits, resulting in highly correlated trees. Subsampling decorrelates them, maximizing the variance-reduction benefit of bagging.\n\n**Mental Model / Mechanics**\n- **Out-of-bag (OOB) error**: Each bootstrap sample leaves out ~37% of the data. These left-out points serve as a built-in validation set for each tree, allowing for free evaluation during training.\n\n**Failure Modes / Tradeoffs**\n- **Strengths**: Robust to overfitting, handles high-dimensional data, provides feature importance, excellent out-of-the-box performance.\n- **Weaknesses**: Less interpretable than a single tree, slower prediction time, can still overfit on highly noisy labels.\n\n**Interview-Ready Explanation**\n> Random Forest is an ensemble of decision trees trained via bagging, where each split only considers a random subset of features. This feature subsampling decorrelates the trees, making the ensemble much more robust to overfitting than a single tree.\n\n---",
+      "markdown": "### [CARD: Random Forest]\n<!-- id: d06-random-forest -->\n\n- **Priority:** must_know\n- **Category:** ensembles\n- **Tags:** random-forest, bagging, trees\n**Core Concept**\n\nRandom Forest is bagging applied to decision trees, with one extra trick: at each split, only a random subset of features is considered.\n\n**Why It Matters**\n\nWithout feature subsampling, a strong dominant feature would cause most trees to make the same initial splits, resulting in highly correlated trees. Subsampling decorrelates them, maximizing the variance-reduction benefit of bagging.\n\n**Mental Model / Mechanics**\n- **Out-of-bag (OOB) error**: Each bootstrap sample leaves out ~37% of the data. These left-out points serve as a built-in validation set for each tree, allowing for free evaluation during training.\n\n**Failure Modes / Tradeoffs**\n- **Strengths**: Robust to overfitting, handles high-dimensional data, provides feature importance, excellent out-of-the-box performance.\n- **Weaknesses**: Less interpretable than a single tree, slower prediction time, can still overfit on highly noisy labels.\n\n**Interview-Ready Explanation**\n> Random Forest is an ensemble of decision trees trained via bagging, where each split only considers a random subset of features. This feature subsampling decorrelates the trees, making the ensemble much more robust to overfitting than a single tree.\n\n---"
+    },
+    {
+      "id": "d06-bagging-vs-boosting",
+      "title": "Bagging vs Boosting",
+      "priority": "must_know",
+      "category": "ensembles",
+      "tags": [
+        "bagging",
+        "boosting",
+        "bias-variance"
+      ],
+      "content_markdown": "**Core Concept**\n\nBagging trains independent models in parallel to reduce variance. Boosting trains models sequentially, where each depends on the last, to reduce bias.\n\n**Mental Model / Mechanics**\n- **Bagging**: Parallel, independent, strong base models (e.g., deep trees). Focuses on reducing variance.\n- **Boosting**: Sequential, dependent, weak base models (e.g., shallow trees). Focuses on correcting the errors of previous models to reduce bias.\n\n**Interview-Ready Explanation**\n> Bagging builds independent models in parallel to average out their errors and reduce variance. Boosting builds models sequentially, where each new model deliberately corrects the mistakes of the previous ensemble, primarily to reduce bias.\n\n---",
+      "markdown": "### [CARD: Bagging vs Boosting]\n<!-- id: d06-bagging-vs-boosting -->\n\n- **Priority:** must_know\n- **Category:** ensembles\n- **Tags:** bagging, boosting, bias-variance\n**Core Concept**\n\nBagging trains independent models in parallel to reduce variance. Boosting trains models sequentially, where each depends on the last, to reduce bias.\n\n**Mental Model / Mechanics**\n- **Bagging**: Parallel, independent, strong base models (e.g., deep trees). Focuses on reducing variance.\n- **Boosting**: Sequential, dependent, weak base models (e.g., shallow trees). Focuses on correcting the errors of previous models to reduce bias.\n\n**Interview-Ready Explanation**\n> Bagging builds independent models in parallel to average out their errors and reduce variance. Boosting builds models sequentially, where each new model deliberately corrects the mistakes of the previous ensemble, primarily to reduce bias.\n\n---"
+    },
+    {
+      "id": "d06-gradient-boosting",
+      "title": "Gradient Boosting",
+      "priority": "must_know",
+      "category": "ensembles",
+      "tags": [
+        "gradient-boosting",
+        "boosting",
+        "optimization"
+      ],
+      "content_markdown": "**Core Concept**\n\nGradient Boosting builds an ensemble additively, where each new tree is trained to predict the residual error (negative gradient of the loss function) of the current ensemble.\n\n**Mental Model / Mechanics**\n1. Start with a simple prediction (e.g., the mean).\n2. Compute residuals (actual - prediction).\n3. Train a small tree to predict those residuals.\n4. Scale the tree's output by a **learning rate** and add it to the running prediction.\n5. Repeat, recalculating residuals against the updated prediction.\n\nGradient boosting is effectively gradient descent in function space.\n\n**Failure Modes / Tradeoffs**\n- **Learning rate (shrinkage)**: A smaller learning rate requires more trees but generally generalizes better (speed-vs-stability tradeoff).\n- **Strengths**: Often best-in-class for tabular data; flexible with any differentiable loss function.\n- **Weaknesses**: Sequential training is slow, requires tuning many hyperparameters, and is more prone to overfitting than Random Forest if the learning rate or number of trees is too high.\n\n**Interview-Ready Explanation**\n> Gradient boosting trains models sequentially, where each new model is fitted to the residual errors of the previous ensemble. It is literally performing gradient descent in function space to minimize the loss, often yielding best-in-class performance on tabular data.\n\n---",
+      "markdown": "### [CARD: Gradient Boosting]\n<!-- id: d06-gradient-boosting -->\n\n- **Priority:** must_know\n- **Category:** ensembles\n- **Tags:** gradient-boosting, boosting, optimization\n**Core Concept**\n\nGradient Boosting builds an ensemble additively, where each new tree is trained to predict the residual error (negative gradient of the loss function) of the current ensemble.\n\n**Mental Model / Mechanics**\n1. Start with a simple prediction (e.g., the mean).\n2. Compute residuals (actual - prediction).\n3. Train a small tree to predict those residuals.\n4. Scale the tree's output by a **learning rate** and add it to the running prediction.\n5. Repeat, recalculating residuals against the updated prediction.\n\nGradient boosting is effectively gradient descent in function space.\n\n**Failure Modes / Tradeoffs**\n- **Learning rate (shrinkage)**: A smaller learning rate requires more trees but generally generalizes better (speed-vs-stability tradeoff).\n- **Strengths**: Often best-in-class for tabular data; flexible with any differentiable loss function.\n- **Weaknesses**: Sequential training is slow, requires tuning many hyperparameters, and is more prone to overfitting than Random Forest if the learning rate or number of trees is too high.\n\n**Interview-Ready Explanation**\n> Gradient boosting trains models sequentially, where each new model is fitted to the residual errors of the previous ensemble. It is literally performing gradient descent in function space to minimize the loss, often yielding best-in-class performance on tabular data.\n\n---"
+    },
+    {
+      "id": "d06-xgboost-lightgbm",
+      "title": "XGBoost and LightGBM",
+      "priority": "should_know",
+      "category": "algorithms",
+      "tags": [
+        "xgboost",
+        "lightgbm",
+        "gradient-boosting"
+      ],
+      "content_markdown": "**Core Concept**\n\nXGBoost and LightGBM are heavily optimized engineering implementations of gradient boosting that serve as production defaults for tabular data.\n\n**Mental Model / Mechanics**\nKey improvements over vanilla Gradient Boosting:\n- Built-in L1/L2 regularization on leaf weights.\n- Uses second-order gradient information (Hessian) for more precise updates (Newton boosting).\n- Native handling of missing values (learns the best default direction during splits).\n- Highly efficient parallelized split-finding.\n- **LightGBM specifically**: Uses histogram-based split finding and leaf-wise (best-first) growth, making it exceptionally fast.\n\n**Interview-Ready Explanation**\n> XGBoost and LightGBM are highly optimized gradient boosting frameworks. They improve upon vanilla GBM by incorporating L1/L2 regularization, second-order gradients, native missing value handling, and efficient histogram-based split finding.\n\n---",
+      "markdown": "### [CARD: XGBoost and LightGBM]\n<!-- id: d06-xgboost-lightgbm -->\n\n- **Priority:** should_know\n- **Category:** algorithms\n- **Tags:** xgboost, lightgbm, gradient-boosting\n**Core Concept**\n\nXGBoost and LightGBM are heavily optimized engineering implementations of gradient boosting that serve as production defaults for tabular data.\n\n**Mental Model / Mechanics**\nKey improvements over vanilla Gradient Boosting:\n- Built-in L1/L2 regularization on leaf weights.\n- Uses second-order gradient information (Hessian) for more precise updates (Newton boosting).\n- Native handling of missing values (learns the best default direction during splits).\n- Highly efficient parallelized split-finding.\n- **LightGBM specifically**: Uses histogram-based split finding and leaf-wise (best-first) growth, making it exceptionally fast.\n\n**Interview-Ready Explanation**\n> XGBoost and LightGBM are highly optimized gradient boosting frameworks. They improve upon vanilla GBM by incorporating L1/L2 regularization, second-order gradients, native missing value handling, and efficient histogram-based split finding.\n\n---"
+    },
+    {
+      "id": "d06-k-nearest-neighbors",
+      "title": "k-Nearest Neighbors (k-NN)",
+      "priority": "must_know",
+      "category": "algorithms",
+      "tags": [
+        "knn",
+        "distance-metrics",
+        "classification"
+      ],
+      "content_markdown": "**Core Concept**\n\nk-NN makes predictions by finding the `k` closest training points (usually via Euclidean distance) and aggregating their labels: majority vote for classification, average for regression.\n\n**Why It Matters**\n\nIt is a non-parametric, \"lazy\" learner. There is no real training phase; all computation happens at prediction time.\n\n**Mental Model / Mechanics**\n- **Choosing K**: Small K gives low bias/high variance (sensitive to noise). Large K gives high bias/low variance (smoother decision boundary).\n- **Feature Scaling**: CRITICAL. Since it relies on distance, unscaled features with larger ranges will completely dominate the prediction.\n\n**Failure Modes / Tradeoffs**\n- **Curse of Dimensionality**: In high dimensions, points become roughly equidistant, breaking the core assumption that \"closest neighbors are meaningfully similar.\"\n- Slow at prediction time and memory-heavy, as it must store and compare against the entire training set.\n\n**Interview-Ready Explanation**\n> k-NN predicts the label of a new point by looking at the labels of its k closest neighbors in the training data. It requires no training time but is slow at inference, heavily reliant on feature scaling, and degrades rapidly in high-dimensional spaces.\n\n---",
+      "markdown": "### [CARD: k-Nearest Neighbors (k-NN)]\n<!-- id: d06-k-nearest-neighbors -->\n\n- **Priority:** must_know\n- **Category:** algorithms\n- **Tags:** knn, distance-metrics, classification\n**Core Concept**\n\nk-NN makes predictions by finding the `k` closest training points (usually via Euclidean distance) and aggregating their labels: majority vote for classification, average for regression.\n\n**Why It Matters**\n\nIt is a non-parametric, \"lazy\" learner. There is no real training phase; all computation happens at prediction time.\n\n**Mental Model / Mechanics**\n- **Choosing K**: Small K gives low bias/high variance (sensitive to noise). Large K gives high bias/low variance (smoother decision boundary).\n- **Feature Scaling**: CRITICAL. Since it relies on distance, unscaled features with larger ranges will completely dominate the prediction.\n\n**Failure Modes / Tradeoffs**\n- **Curse of Dimensionality**: In high dimensions, points become roughly equidistant, breaking the core assumption that \"closest neighbors are meaningfully similar.\"\n- Slow at prediction time and memory-heavy, as it must store and compare against the entire training set.\n\n**Interview-Ready Explanation**\n> k-NN predicts the label of a new point by looking at the labels of its k closest neighbors in the training data. It requires no training time but is slow at inference, heavily reliant on feature scaling, and degrades rapidly in high-dimensional spaces.\n\n---"
+    },
+    {
+      "id": "d06-naive-bayes",
+      "title": "Naive Bayes",
+      "priority": "must_know",
+      "category": "algorithms",
+      "tags": [
+        "naive-bayes",
+        "probabilistic",
+        "classification"
+      ],
+      "content_markdown": "**Core Concept**\n\nA probabilistic classifier based on Bayes' theorem: `P(class | features) ∝ P(features | class) × P(class)`. It naively assumes that all features are conditionally independent given the class.\n\n**Mental Model / Mechanics**\nEven though features are rarely strictly independent, the algorithm works surprisingly well because classification only requires the correct ranking of class probabilities, not perfectly calibrated absolute values.\n\n**Failure Modes / Tradeoffs**\n- **Strengths**: Extremely fast, requires little training data, and works remarkably well on sparse, high-dimensional data (like text classification).\n- **Weaknesses**: The independence assumption can lead to poorly calibrated probability outputs. Cannot capture feature interactions.\n\n**Interview-Ready Explanation**\n> Naive Bayes uses Bayes' theorem to predict class probabilities, making the 'naive' assumption that all features are independent given the class. While this assumption is almost always false, it still achieves accurate classification rankings, making it very effective for high-dimensional sparse data like text.\n\n---",
+      "markdown": "### [CARD: Naive Bayes]\n<!-- id: d06-naive-bayes -->\n\n- **Priority:** must_know\n- **Category:** algorithms\n- **Tags:** naive-bayes, probabilistic, classification\n**Core Concept**\n\nA probabilistic classifier based on Bayes' theorem: `P(class | features) ∝ P(features | class) × P(class)`. It naively assumes that all features are conditionally independent given the class.\n\n**Mental Model / Mechanics**\nEven though features are rarely strictly independent, the algorithm works surprisingly well because classification only requires the correct ranking of class probabilities, not perfectly calibrated absolute values.\n\n**Failure Modes / Tradeoffs**\n- **Strengths**: Extremely fast, requires little training data, and works remarkably well on sparse, high-dimensional data (like text classification).\n- **Weaknesses**: The independence assumption can lead to poorly calibrated probability outputs. Cannot capture feature interactions.\n\n**Interview-Ready Explanation**\n> Naive Bayes uses Bayes' theorem to predict class probabilities, making the 'naive' assumption that all features are independent given the class. While this assumption is almost always false, it still achieves accurate classification rankings, making it very effective for high-dimensional sparse data like text.\n\n---"
+    },
+    {
+      "id": "d06-svm-margin-and-support-vectors",
+      "title": "SVM Margin and Support Vectors",
+      "priority": "must_know",
+      "category": "algorithms",
+      "tags": [
+        "svm",
+        "classification",
+        "margins"
+      ],
+      "content_markdown": "**Core Concept**\n\nSupport Vector Machines (SVM) find the hyperplane that separates classes with the maximum margin (the largest possible distance to the nearest points of each class).\n\n**Mental Model / Mechanics**\n- **Support Vectors**: These are the data points closest to the decision boundary. They are the *only* points that dictate where the boundary sits. The rest of the training data does not affect the boundary.\n- **Why maximize?**: A wider margin acts as a built-in regularization, leading to better generalization on unseen data.\n\n**Failure Modes / Tradeoffs**\n- Needs feature scaling because it is a margin/distance-based method.\n- Memory efficient since only support vectors are retained.\n\n**Interview-Ready Explanation**\n> An SVM finds the decision boundary that maximizes the margin between classes. The boundary is entirely determined by the support vectors—the data points closest to the margin. Maximizing this distance provides built-in regularization for better generalization.\n\n---",
+      "markdown": "### [CARD: SVM Margin and Support Vectors]\n<!-- id: d06-svm-margin-and-support-vectors -->\n\n- **Priority:** must_know\n- **Category:** algorithms\n- **Tags:** svm, classification, margins\n**Core Concept**\n\nSupport Vector Machines (SVM) find the hyperplane that separates classes with the maximum margin (the largest possible distance to the nearest points of each class).\n\n**Mental Model / Mechanics**\n- **Support Vectors**: These are the data points closest to the decision boundary. They are the *only* points that dictate where the boundary sits. The rest of the training data does not affect the boundary.\n- **Why maximize?**: A wider margin acts as a built-in regularization, leading to better generalization on unseen data.\n\n**Failure Modes / Tradeoffs**\n- Needs feature scaling because it is a margin/distance-based method.\n- Memory efficient since only support vectors are retained.\n\n**Interview-Ready Explanation**\n> An SVM finds the decision boundary that maximizes the margin between classes. The boundary is entirely determined by the support vectors—the data points closest to the margin. Maximizing this distance provides built-in regularization for better generalization.\n\n---"
+    },
+    {
+      "id": "d06-svm-c-parameter",
+      "title": "SVM C Parameter",
+      "priority": "must_know",
+      "category": "algorithms",
+      "tags": [
+        "svm",
+        "regularization",
+        "hyperparameters"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe `C` parameter in SVM controls the penalty for misclassified points (the \"soft margin\").\n\n**Mental Model / Mechanics**\n- **Large C**: Heavy penalty for misclassification. The model will choose a narrower margin to get more points classified correctly (lower bias, higher variance).\n- **Small C**: Tolerates misclassification. The model prefers a wider, smoother margin even if some points are on the wrong side (higher bias, lower variance).\n- `C` is conceptually the inverse of regularization strength `λ`.\n\n**Interview-Ready Explanation**\n> The C parameter in an SVM controls the tradeoff between a wide margin and correct classification. A small C allows more misclassifications for a wider, more robust margin, while a large C strictly penalizes errors, leading to a narrower margin that might overfit.\n\n---",
+      "markdown": "### [CARD: SVM C Parameter]\n<!-- id: d06-svm-c-parameter -->\n\n- **Priority:** must_know\n- **Category:** algorithms\n- **Tags:** svm, regularization, hyperparameters\n**Core Concept**\n\nThe `C` parameter in SVM controls the penalty for misclassified points (the \"soft margin\").\n\n**Mental Model / Mechanics**\n- **Large C**: Heavy penalty for misclassification. The model will choose a narrower margin to get more points classified correctly (lower bias, higher variance).\n- **Small C**: Tolerates misclassification. The model prefers a wider, smoother margin even if some points are on the wrong side (higher bias, lower variance).\n- `C` is conceptually the inverse of regularization strength `λ`.\n\n**Interview-Ready Explanation**\n> The C parameter in an SVM controls the tradeoff between a wide margin and correct classification. A small C allows more misclassifications for a wider, more robust margin, while a large C strictly penalizes errors, leading to a narrower margin that might overfit.\n\n---"
+    },
+    {
+      "id": "d06-svm-kernel-trick",
+      "title": "SVM Kernel Trick",
+      "priority": "must_know",
+      "category": "algorithms",
+      "tags": [
+        "svm",
+        "kernels",
+        "non-linear"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe kernel trick allows SVMs to find non-linear decision boundaries by implicitly operating as if the data had been mapped into a higher-dimensional space where it is linearly separable.\n\n**Mental Model / Mechanics**\nThe math of the SVM only requires the dot product between data points. A kernel function computes this dot product directly in the higher-dimensional space without ever explicitly transforming the data.\n- Common kernels: Linear, Polynomial, and RBF/Gaussian (the default for non-linear).\n\n**Failure Modes / Tradeoffs**\n- Doesn't scale well to very large datasets (training time grows quadratically/cubically).\n- Highly sensitive to the choice of kernel and its hyperparameters.\n\n**Interview-Ready Explanation**\n> The kernel trick allows SVMs to solve non-linear problems without explicitly transforming data. It uses a kernel function to compute the dot products of points in an implicitly higher-dimensional space where the classes become linearly separable.\n\n---",
+      "markdown": "### [CARD: SVM Kernel Trick]\n<!-- id: d06-svm-kernel-trick -->\n\n- **Priority:** must_know\n- **Category:** algorithms\n- **Tags:** svm, kernels, non-linear\n**Core Concept**\n\nThe kernel trick allows SVMs to find non-linear decision boundaries by implicitly operating as if the data had been mapped into a higher-dimensional space where it is linearly separable.\n\n**Mental Model / Mechanics**\nThe math of the SVM only requires the dot product between data points. A kernel function computes this dot product directly in the higher-dimensional space without ever explicitly transforming the data.\n- Common kernels: Linear, Polynomial, and RBF/Gaussian (the default for non-linear).\n\n**Failure Modes / Tradeoffs**\n- Doesn't scale well to very large datasets (training time grows quadratically/cubically).\n- Highly sensitive to the choice of kernel and its hyperparameters.\n\n**Interview-Ready Explanation**\n> The kernel trick allows SVMs to solve non-linear problems without explicitly transforming data. It uses a kernel function to compute the dot products of points in an implicitly higher-dimensional space where the classes become linearly separable.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "- **Day 2 (bias-variance, regularization)**: Bagging/RF = variance reduction; Boosting = bias reduction; SVM's C is conceptually the inverse of λ; XGBoost uses L1/L2 leaf penalties.\n- **Day 3 (gradient descent)**: Gradient boosting IS gradient descent, operating in function space.\n- **Day 4 (calibration)**: Naive Bayes and SVM can both have highly distorted probability outputs.\n- **Day 5 (preprocessing)**: k-NN and SVM require strict feature scaling; tree-based models don't. The curse of dimensionality implies you might run PCA before k-NN. XGBoost natively handles missing values.\n- **Forward**: k-NN's computational bottleneck reappears in production vector search (RAG) on Day 14, requiring approximate nearest-neighbor indexes (KD-tree/HNSW).\n\n---",
+  "common_misconceptions_markdown": "1. **\"Random Forest can't overfit.\"** — It is much more resistant than a single tree, but it absolutely still can overfit, especially with very noisy labels.\n2. **\"Boosting is always better than Random Forest.\"** — Boosting aggressively tries to correct every error, including noise, making it more prone to overfitting. Random Forest is often easier to tune for solid out-of-the-box performance.\n3. **\"k-NN needs no training so it's simple in production.\"** — Because prediction requires comparing against the whole dataset, it is extremely expensive and memory-heavy in production, requiring specialized indexes.\n4. **\"Naive Bayes is a bad model because the independence assumption is false.\"** — The assumption being empirically false doesn't ruin the model; classification only needs relative ranking to be correct.\n5. **\"SVM's decision boundary depends on all training points.\"** — It strictly depends *only* on the support vectors.\n6. **\"Gini and entropy give meaningfully different trees.\"** — They almost always produce very similar trees in practice; Gini is just computationally cheaper.\n\n---",
+  "out_of_scope_markdown": "- Deriving Gini/entropy/information-gain from information theory.\n- Cost-complexity pruning's exact mathematical formulation.\n- XGBoost's full regularized objective or second-order boosting math.\n- Kernel trick's formal Hilbert-space justification (Mercer's theorem).\n- KD-tree / ball-tree exact algorithmic complexity.\n- SMO algorithm mechanics.\n\n---",
+  "qa_drill": [
+    {
+      "id": "d06-qa-001",
+      "question": "How does a decision tree determine the best feature and threshold to split on at a given node?",
+      "answer": "It evaluates all candidate splits and chooses the one that maximizes the \"purity\" of the resulting child nodes, typically measured by minimizing Gini impurity or maximizing Information Gain (entropy).",
+      "tags": [
+        "decision-trees",
+        "purity"
+      ],
+      "linked_card_ids": [
+        "d06-decision-tree-split-selection"
+      ]
+    },
+    {
+      "id": "d06-qa-002",
+      "question": "Why does a Random Forest generalize better than a single unpruned decision tree?",
+      "answer": "An unpruned tree has high variance and memorizes the data. Random Forest uses bagging to average many such trees trained on bootstrap samples, which cancels out uncorrelated noise and significantly reduces variance.",
+      "tags": [
+        "random-forest",
+        "variance-reduction"
+      ],
+      "linked_card_ids": [
+        "d06-random-forest",
+        "d06-bagging"
+      ]
+    },
+    {
+      "id": "d06-qa-003",
+      "question": "What is the fundamental difference in the goals of Bagging versus Boosting?",
+      "answer": "Bagging trains independent, high-variance models in parallel to reduce variance. Boosting trains weak models sequentially, where each model corrects the errors of the previous one, primarily to reduce bias.",
+      "tags": [
+        "ensembles",
+        "bias-variance"
+      ],
+      "linked_card_ids": [
+        "d06-bagging-vs-boosting"
+      ]
+    },
+    {
+      "id": "d06-qa-004",
+      "question": "Why is feature scaling strictly required for k-NN but not for Decision Trees?",
+      "answer": "k-NN relies entirely on distance metrics (like Euclidean) to find neighbors, meaning unscaled features with large ranges will dominate the calculation. Trees split on single-feature thresholds independently, so the scale of the feature doesn't affect the split point.",
+      "tags": [
+        "knn",
+        "scaling",
+        "decision-trees"
+      ],
+      "linked_card_ids": [
+        "d06-k-nearest-neighbors",
+        "d06-decision-trees"
+      ]
+    },
+    {
+      "id": "d06-qa-005",
+      "question": "If the feature independence assumption of Naive Bayes is almost never true in the real world, why does the model still perform well for classification?",
+      "answer": "Classification only requires the relative ranking of class probabilities to be correct to make the right prediction, not the absolute perfectly calibrated probability values.",
+      "tags": [
+        "naive-bayes",
+        "assumptions"
+      ],
+      "linked_card_ids": [
+        "d06-naive-bayes"
+      ]
+    },
+    {
+      "id": "d06-qa-006",
+      "question": "How does decreasing the `C` parameter in an SVM affect the margin and the model's bias-variance tradeoff?",
+      "answer": "Decreasing `C` makes the model more tolerant of misclassifications, resulting in a wider, smoother margin. This increases the model's bias but lowers its variance, preventing overfitting.",
+      "tags": [
+        "svm",
+        "hyperparameters",
+        "bias-variance"
+      ],
+      "linked_card_ids": [
+        "d06-svm-c-parameter"
+      ]
+    },
+    {
+      "id": "d06-qa-007",
+      "question": "What is the \"Kernel Trick\" in SVMs, and why is it useful?",
+      "answer": "It allows the SVM to find non-linear decision boundaries by computing dot products in a higher-dimensional space without ever explicitly transforming the data into that space, saving massive computational cost.",
+      "tags": [
+        "svm",
+        "kernels"
+      ],
+      "linked_card_ids": [
+        "d06-svm-kernel-trick"
+      ]
+    },
+    {
+      "id": "d06-qa-008",
+      "question": "What specific mechanisms make XGBoost/LightGBM superior to standard Gradient Boosting in production?",
+      "answer": "They include L1/L2 regularization on leaf weights, use second-order gradients (Hessians) for better updates, natively handle missing values, and use highly efficient, parallelized histogram-based split finding.",
+      "tags": [
+        "xgboost",
+        "lightgbm"
+      ],
+      "linked_card_ids": [
+        "d06-xgboost-lightgbm"
+      ]
+    }
+  ]
+}

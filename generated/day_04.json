@@ -1,0 +1,428 @@
+{
+  "schema_version": 1,
+  "day": 4,
+  "title": "Classification Evaluation Metrics",
+  "topics": [
+    "confusion-matrix",
+    "precision",
+    "recall",
+    "f1-score",
+    "roc-auc",
+    "pr-auc",
+    "threshold-selection",
+    "calibration",
+    "class-imbalance"
+  ],
+  "tags": [
+    "evaluation",
+    "metrics",
+    "classification"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 0,
+    "must_know": 12,
+    "should_know": 1
+  },
+  "daily_objective_markdown": "Build a confusion matrix from scratch, explain precision/recall/F1/specificity, know when accuracy actively lies, explain ROC-AUC vs PR-AUC and when each is the right call, understand threshold selection, and know what \"calibration\" means and why a model can be discriminative but badly calibrated. One of the highest-yield interview days — evaluation metrics come up in nearly every ML interview.\n\n---",
+  "syllabus_markdown": "- 🔴 **MUST KNOW:** Confusion matrix, precision, recall, specificity, F1, why accuracy fails under imbalance, ROC/AUC, PR-AUC, threshold selection, loss vs metric distinction, choosing the right metric\n- 🟡 **SHOULD KNOW:** Calibration, Brier score concept, macro vs micro averaging for multi-class\n- 🟢 **NICE TO KNOW:** Exact AUC trapezoidal computation, statistical significance testing between two models' metrics\n\n---",
+  "cards": [
+    {
+      "id": "d04-loss-vs-metric",
+      "title": "Loss vs Metric",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "loss-functions",
+        "metrics",
+        "evaluation"
+      ],
+      "content_markdown": "**Core Concept**\n\nA loss function is what the optimizer minimizes during training (must be differentiable). A metric is what you (or the business) use to judge whether the model is actually good (doesn't need to be differentiable).\n**Why It Matters**\n\nPrevents the classic interview conflation. You can train with cross-entropy and evaluate with F1 — they don't have to match, and usually don't. A model can have great loss but still be unacceptable on the metric the business cares about.\n**Mental Model / Mechanics**\n  ```\n  Loss function:\n    - What the optimizer sees\n    - Must be differentiable (e.g., cross-entropy, MSE)\n    - Drives parameter updates\n\n  Metric:\n    - What humans/business judge\n    - Doesn't need to be differentiable (e.g., F1, accuracy, AUC)\n    - Can diverge from loss — model can improve on loss while a metric stays flat or worsens\n  ```\n**Failure Modes / Tradeoffs**\n  - A model improving on training loss does NOT guarantee improvement on the metric you care about\n  - Always monitor both loss and business-relevant metrics during development\n**Interview-Ready Explanation**\n  > Loss is what the optimizer minimizes during training and must be differentiable. Metrics are how we judge the model's real-world usefulness and don't need to be differentiable — they can diverge, so a model can improve on loss while a metric you care about stays flat or worsens.\n\n---",
+      "markdown": "### [CARD: Loss vs Metric]\n<!-- id: d04-loss-vs-metric -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** loss-functions, metrics, evaluation\n**Core Concept**\n\nA loss function is what the optimizer minimizes during training (must be differentiable). A metric is what you (or the business) use to judge whether the model is actually good (doesn't need to be differentiable).\n**Why It Matters**\n\nPrevents the classic interview conflation. You can train with cross-entropy and evaluate with F1 — they don't have to match, and usually don't. A model can have great loss but still be unacceptable on the metric the business cares about.\n**Mental Model / Mechanics**\n  ```\n  Loss function:\n    - What the optimizer sees\n    - Must be differentiable (e.g., cross-entropy, MSE)\n    - Drives parameter updates\n\n  Metric:\n    - What humans/business judge\n    - Doesn't need to be differentiable (e.g., F1, accuracy, AUC)\n    - Can diverge from loss — model can improve on loss while a metric stays flat or worsens\n  ```\n**Failure Modes / Tradeoffs**\n  - A model improving on training loss does NOT guarantee improvement on the metric you care about\n  - Always monitor both loss and business-relevant metrics during development\n**Interview-Ready Explanation**\n  > Loss is what the optimizer minimizes during training and must be differentiable. Metrics are how we judge the model's real-world usefulness and don't need to be differentiable — they can diverge, so a model can improve on loss while a metric you care about stays flat or worsens.\n\n---"
+    },
+    {
+      "id": "d04-confusion-matrix",
+      "title": "The Confusion Matrix",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "confusion-matrix",
+        "evaluation",
+        "true-positive",
+        "false-positive"
+      ],
+      "content_markdown": "**Core Concept**\n\nA 2×2 table for binary classification that records all four possible prediction outcomes: TP, TN, FP, FN. Every classification metric is just a different arithmetic combination of these four numbers.\n**Why It Matters**\n\nThe foundation for every evaluation metric in classification. If you can reconstruct it from a scenario, you can derive any metric from first principles — even if you blank on the formula.\n**Mental Model / Mechanics**\n  ```\n                        Actual Positive     Actual Negative\n  Predicted Positive         TP                   FP\n  Predicted Negative         FN                   TN\n\n  TP (True Positive):  predicted positive, actually positive → correctly caught\n  TN (True Negative):  predicted negative, actually negative → correctly cleared\n  FP (False Positive): predicted positive, actually negative → false alarm\n  FN (False Negative): predicted negative, actually positive → miss\n  ```\n**Example**\n  **Telecom outage example:**\n  - FP = system flags an outage that never happens → wasted investigation, alert fatigue\n  - FN = system misses a real outage → the actual bad outcome you're trying to prevent\n**Failure Modes / Tradeoffs**\n  - \"Positive\" is the class you care about detecting (fraud, outage, disease) — not necessarily the majority class\n  - Every metric below is derived from these four numbers\n**Interview-Ready Explanation**\n  > A confusion matrix is a 2×2 table of TP/TN/FP/FN that every classification metric is derived from. TP and TN are correct predictions; FP is a false alarm; FN is a miss.\n\n---",
+      "markdown": "### [CARD: The Confusion Matrix]\n<!-- id: d04-confusion-matrix -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** confusion-matrix, evaluation, true-positive, false-positive\n**Core Concept**\n\nA 2×2 table for binary classification that records all four possible prediction outcomes: TP, TN, FP, FN. Every classification metric is just a different arithmetic combination of these four numbers.\n**Why It Matters**\n\nThe foundation for every evaluation metric in classification. If you can reconstruct it from a scenario, you can derive any metric from first principles — even if you blank on the formula.\n**Mental Model / Mechanics**\n  ```\n                        Actual Positive     Actual Negative\n  Predicted Positive         TP                   FP\n  Predicted Negative         FN                   TN\n\n  TP (True Positive):  predicted positive, actually positive → correctly caught\n  TN (True Negative):  predicted negative, actually negative → correctly cleared\n  FP (False Positive): predicted positive, actually negative → false alarm\n  FN (False Negative): predicted negative, actually positive → miss\n  ```\n**Example**\n  **Telecom outage example:**\n  - FP = system flags an outage that never happens → wasted investigation, alert fatigue\n  - FN = system misses a real outage → the actual bad outcome you're trying to prevent\n**Failure Modes / Tradeoffs**\n  - \"Positive\" is the class you care about detecting (fraud, outage, disease) — not necessarily the majority class\n  - Every metric below is derived from these four numbers\n**Interview-Ready Explanation**\n  > A confusion matrix is a 2×2 table of TP/TN/FP/FN that every classification metric is derived from. TP and TN are correct predictions; FP is a false alarm; FN is a miss.\n\n---"
+    },
+    {
+      "id": "d04-accuracy-and-imbalance",
+      "title": "Accuracy — And Why It Lies Under Imbalance",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "accuracy",
+        "class-imbalance",
+        "evaluation"
+      ],
+      "content_markdown": "**Core Concept**\n\n`Accuracy = (TP + TN) / (TP + TN + FP + FN)` — fraction of all predictions that were correct. Actively misleading under class imbalance.\n**Why It Matters**\n\nSimple, intuitive metric — but its simplicity is exactly its danger. Understanding when accuracy fails is a core interview signal.\n**Mental Model / Mechanics**\n  ```\n  The imbalance trap:\n    Dataset: 1% fraud, 99% legitimate\n    Model: always predicts \"not fraud\"\n    Accuracy: 99% — while catching ZERO fraud\n\n  Accuracy counts all correct predictions equally.\n  Under imbalance, the majority class dominates.\n  ```\n  This is exactly why stratified cross-validation is used — imbalanced classes make naive metrics misleading.\n**Failure Modes / Tradeoffs**\n  - Useful only when classes are roughly balanced AND there's no strong asymmetry in FP/FN costs\n  - Under imbalance, a trivial majority-class predictor gets high accuracy\n**Interview-Ready Explanation**\n  > Accuracy can be misleading under class imbalance — a model that always predicts the majority class can score very high accuracy while being completely useless at detecting the minority class.\n\n---",
+      "markdown": "### [CARD: Accuracy — And Why It Lies Under Imbalance]\n<!-- id: d04-accuracy-and-imbalance -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** accuracy, class-imbalance, evaluation\n**Core Concept**\n\n`Accuracy = (TP + TN) / (TP + TN + FP + FN)` — fraction of all predictions that were correct. Actively misleading under class imbalance.\n**Why It Matters**\n\nSimple, intuitive metric — but its simplicity is exactly its danger. Understanding when accuracy fails is a core interview signal.\n**Mental Model / Mechanics**\n  ```\n  The imbalance trap:\n    Dataset: 1% fraud, 99% legitimate\n    Model: always predicts \"not fraud\"\n    Accuracy: 99% — while catching ZERO fraud\n\n  Accuracy counts all correct predictions equally.\n  Under imbalance, the majority class dominates.\n  ```\n  This is exactly why stratified cross-validation is used — imbalanced classes make naive metrics misleading.\n**Failure Modes / Tradeoffs**\n  - Useful only when classes are roughly balanced AND there's no strong asymmetry in FP/FN costs\n  - Under imbalance, a trivial majority-class predictor gets high accuracy\n**Interview-Ready Explanation**\n  > Accuracy can be misleading under class imbalance — a model that always predicts the majority class can score very high accuracy while being completely useless at detecting the minority class.\n\n---"
+    },
+    {
+      "id": "d04-precision",
+      "title": "Precision",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "precision",
+        "false-positive",
+        "evaluation"
+      ],
+      "content_markdown": "**Core Concept**\n\n`Precision = TP / (TP + FP)` — of everything I predicted positive, how much was actually positive?\n**Why It Matters**\n\nMeasures the trustworthiness of positive predictions. Critical when false positives are costly.\n**Mental Model / Mechanics**\n  ```\n  High precision = few false alarms\n\n  When FP is costly:\n    - Flagging legitimate transaction as fraud → blocks customer's card\n    - RCA engine firing false root-cause alert → engineer on wild goose chase\n    - Spam filter marking a real email as spam → user loses important mail\n  ```\n**Failure Modes / Tradeoffs**\n  - You can trivially get near-100% precision by only predicting positive when extremely confident — but recall collapses (you miss borderline true positives)\n  - Precision alone never tells you how many positives you missed\n**Interview-Ready Explanation**\n  > Precision answers 'of what I flagged, how much was correct?' — TP/(TP+FP). High precision means few false alarms. It matters most when false positives are costly.\n\n---",
+      "markdown": "### [CARD: Precision]\n<!-- id: d04-precision -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** precision, false-positive, evaluation\n**Core Concept**\n\n`Precision = TP / (TP + FP)` — of everything I predicted positive, how much was actually positive?\n**Why It Matters**\n\nMeasures the trustworthiness of positive predictions. Critical when false positives are costly.\n**Mental Model / Mechanics**\n  ```\n  High precision = few false alarms\n\n  When FP is costly:\n    - Flagging legitimate transaction as fraud → blocks customer's card\n    - RCA engine firing false root-cause alert → engineer on wild goose chase\n    - Spam filter marking a real email as spam → user loses important mail\n  ```\n**Failure Modes / Tradeoffs**\n  - You can trivially get near-100% precision by only predicting positive when extremely confident — but recall collapses (you miss borderline true positives)\n  - Precision alone never tells you how many positives you missed\n**Interview-Ready Explanation**\n  > Precision answers 'of what I flagged, how much was correct?' — TP/(TP+FP). High precision means few false alarms. It matters most when false positives are costly.\n\n---"
+    },
+    {
+      "id": "d04-recall",
+      "title": "Recall (Sensitivity)",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "recall",
+        "sensitivity",
+        "false-negative"
+      ],
+      "content_markdown": "**Core Concept**\n\n`Recall = TP / (TP + FN)` — of everything that was actually positive, how much did I catch?\n**Why It Matters**\n\nMeasures completeness of detection. Critical when false negatives are costly (missing a real event is the bad outcome).\n**Mental Model / Mechanics**\n  ```\n  High recall = few misses\n\n  When FN is costly:\n    - Missing actual fraud → financial loss\n    - Missing a real network outage → service disruption\n    - Missing a disease diagnosis → patient harm\n  ```\n**Failure Modes / Tradeoffs**\n  - You can trivially get 100% recall by predicting positive for everything — but precision collapses\n  - The core tension: precision and recall usually trade off against each other\n**Interview-Ready Explanation**\n  > Recall answers 'of what was actually true, how much did I catch?' — TP/(TP+FN). High recall means few misses. It matters most when false negatives are costly.\n\n---",
+      "markdown": "### [CARD: Recall (Sensitivity)]\n<!-- id: d04-recall -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** recall, sensitivity, false-negative\n**Core Concept**\n\n`Recall = TP / (TP + FN)` — of everything that was actually positive, how much did I catch?\n**Why It Matters**\n\nMeasures completeness of detection. Critical when false negatives are costly (missing a real event is the bad outcome).\n**Mental Model / Mechanics**\n  ```\n  High recall = few misses\n\n  When FN is costly:\n    - Missing actual fraud → financial loss\n    - Missing a real network outage → service disruption\n    - Missing a disease diagnosis → patient harm\n  ```\n**Failure Modes / Tradeoffs**\n  - You can trivially get 100% recall by predicting positive for everything — but precision collapses\n  - The core tension: precision and recall usually trade off against each other\n**Interview-Ready Explanation**\n  > Recall answers 'of what was actually true, how much did I catch?' — TP/(TP+FN). High recall means few misses. It matters most when false negatives are costly.\n\n---"
+    },
+    {
+      "id": "d04-precision-recall-tradeoff",
+      "title": "Precision-Recall Tradeoff",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "precision",
+        "recall",
+        "tradeoff",
+        "evaluation"
+      ],
+      "content_markdown": "**Core Concept**\n\nPrecision and recall typically trade off — improving one degrades the other. The balance depends on the relative cost of FP vs FN for the specific business problem.\n**Why It Matters**\n\nUnderstanding this tradeoff is essential for threshold selection and metric choice. Interviewers test whether candidates understand that you can't maximize both freely.\n**Mental Model / Mechanics**\n  ```\n  Predict positive for everything → Recall = 100%, Precision collapses\n  Predict positive only when extremely confident → Precision ≈ 100%, Recall collapses\n\n  Which matters more? Depends on the business:\n    Fraud detection (missing fraud is expensive)   → prioritize recall\n    Spam filtering (losing real email is expensive) → prioritize precision\n  ```\n  Genuinely improving BOTH usually requires a better model, not just a threshold shift.\n**Interview-Ready Explanation**\n  > Precision and recall typically trade off via the threshold. Which one matters more depends on whether false positives or false negatives are more costly for the business.\n\n---",
+      "markdown": "### [CARD: Precision-Recall Tradeoff]\n<!-- id: d04-precision-recall-tradeoff -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** precision, recall, tradeoff, evaluation\n**Core Concept**\n\nPrecision and recall typically trade off — improving one degrades the other. The balance depends on the relative cost of FP vs FN for the specific business problem.\n**Why It Matters**\n\nUnderstanding this tradeoff is essential for threshold selection and metric choice. Interviewers test whether candidates understand that you can't maximize both freely.\n**Mental Model / Mechanics**\n  ```\n  Predict positive for everything → Recall = 100%, Precision collapses\n  Predict positive only when extremely confident → Precision ≈ 100%, Recall collapses\n\n  Which matters more? Depends on the business:\n    Fraud detection (missing fraud is expensive)   → prioritize recall\n    Spam filtering (losing real email is expensive) → prioritize precision\n  ```\n  Genuinely improving BOTH usually requires a better model, not just a threshold shift.\n**Interview-Ready Explanation**\n  > Precision and recall typically trade off via the threshold. Which one matters more depends on whether false positives or false negatives are more costly for the business.\n\n---"
+    },
+    {
+      "id": "d04-specificity",
+      "title": "Specificity",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "specificity",
+        "false-positive-rate",
+        "evaluation"
+      ],
+      "content_markdown": "**Core Concept**\n\n`Specificity = TN / (TN + FP)` — of everything actually negative, how much did I correctly identify as negative? Recall for the negative class.\n**Why It Matters**\n\nComplements recall (sensitivity). Important in medical/anomaly-detection contexts. Used as the x-axis complement in ROC curves (FPR = 1 − Specificity).\n**Mental Model / Mechanics**\n  ```\n  Recall (Sensitivity): how well we detect positives    → TP / (TP + FN)\n  Specificity:          how well we detect negatives    → TN / (TN + FP)\n  False Positive Rate:  1 - Specificity                 → FP / (FP + TN)\n  ```\n**Interview-Ready Explanation**\n  > Specificity is recall for the negative class — TN/(TN+FP). It measures how well the model correctly identifies negatives. FPR = 1 − Specificity.\n\n---",
+      "markdown": "### [CARD: Specificity]\n<!-- id: d04-specificity -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** specificity, false-positive-rate, evaluation\n**Core Concept**\n\n`Specificity = TN / (TN + FP)` — of everything actually negative, how much did I correctly identify as negative? Recall for the negative class.\n**Why It Matters**\n\nComplements recall (sensitivity). Important in medical/anomaly-detection contexts. Used as the x-axis complement in ROC curves (FPR = 1 − Specificity).\n**Mental Model / Mechanics**\n  ```\n  Recall (Sensitivity): how well we detect positives    → TP / (TP + FN)\n  Specificity:          how well we detect negatives    → TN / (TN + FP)\n  False Positive Rate:  1 - Specificity                 → FP / (FP + TN)\n  ```\n**Interview-Ready Explanation**\n  > Specificity is recall for the negative class — TN/(TN+FP). It measures how well the model correctly identifies negatives. FPR = 1 − Specificity.\n\n---"
+    },
+    {
+      "id": "d04-f1-score",
+      "title": "F1 Score",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "f1-score",
+        "harmonic-mean",
+        "metrics"
+      ],
+      "content_markdown": "**Core Concept**\n\n`F1 = 2 × (Precision × Recall) / (Precision + Recall)` — the harmonic mean of precision and recall. Only looks good when both are reasonably good.\n**Why It Matters**\n\nProvides a single number balancing precision and recall. The harmonic mean (not simple average) ensures that if either is terrible, F1 is terrible — it can't be gamed by maximizing just one.\n**Mental Model / Mechanics**\n  ```\n  Simple average:  (0.9 + 0.1) / 2 = 0.50 — looks deceptively okay\n  Harmonic mean:   2×(0.9×0.1)/(0.9+0.1) = 0.18 — correctly punishes the imbalance\n\n  Harmonic mean is dominated by the smaller value.\n  F1 only looks good when BOTH precision AND recall are reasonably good.\n  ```\n  **F-beta generalization (nice-to-know):**\n  - β > 1 → weights recall more (e.g., F2 for fraud detection)\n  - β < 1 → weights precision more (e.g., F0.5 for spam filtering)\n**Failure Modes / Tradeoffs**\n  - F1 assumes precision and recall matter equally — if the business cares much more about one, use F-beta or report them separately\n  - F1 doesn't account for true negatives at all\n**Interview-Ready Explanation**\n  > F1 is the harmonic mean of precision and recall — it punishes the case where one is much worse than the other, unlike a simple average. It only looks good when both precision and recall are reasonably good.\n\n---",
+      "markdown": "### [CARD: F1 Score]\n<!-- id: d04-f1-score -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** f1-score, harmonic-mean, metrics\n**Core Concept**\n\n`F1 = 2 × (Precision × Recall) / (Precision + Recall)` — the harmonic mean of precision and recall. Only looks good when both are reasonably good.\n**Why It Matters**\n\nProvides a single number balancing precision and recall. The harmonic mean (not simple average) ensures that if either is terrible, F1 is terrible — it can't be gamed by maximizing just one.\n**Mental Model / Mechanics**\n  ```\n  Simple average:  (0.9 + 0.1) / 2 = 0.50 — looks deceptively okay\n  Harmonic mean:   2×(0.9×0.1)/(0.9+0.1) = 0.18 — correctly punishes the imbalance\n\n  Harmonic mean is dominated by the smaller value.\n  F1 only looks good when BOTH precision AND recall are reasonably good.\n  ```\n  **F-beta generalization (nice-to-know):**\n  - β > 1 → weights recall more (e.g., F2 for fraud detection)\n  - β < 1 → weights precision more (e.g., F0.5 for spam filtering)\n**Failure Modes / Tradeoffs**\n  - F1 assumes precision and recall matter equally — if the business cares much more about one, use F-beta or report them separately\n  - F1 doesn't account for true negatives at all\n**Interview-Ready Explanation**\n  > F1 is the harmonic mean of precision and recall — it punishes the case where one is much worse than the other, unlike a simple average. It only looks good when both precision and recall are reasonably good.\n\n---"
+    },
+    {
+      "id": "d04-threshold-selection",
+      "title": "Threshold Selection",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "threshold",
+        "probability",
+        "evaluation"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe model outputs a probability; the threshold converts it to a hard prediction. The threshold is a business decision, not a fixed model property. Default 0.5 is not always correct.\n**Why It Matters**\n\nMany candidates think 0.5 is \"the\" threshold. In practice, you tune it based on the cost of FP vs FN — this is a genuinely high-value interview point.\n**Mental Model / Mechanics**\n  ```\n  probability ≥ threshold → predict positive\n  probability <  threshold → predict negative\n\n  Lower threshold  → more predicted positive → ↑ recall, ↓ precision\n  Higher threshold → fewer predicted positive → ↑ precision, ↓ recall\n\n  Threshold moves you along the precision-recall tradeoff\n  WITHOUT retraining the model.\n  ```\n**Example**\n  Fraud detection where missing fraud is expensive → deliberately lower threshold to trade some precision for higher recall.\n**Failure Modes / Tradeoffs**\n  - Threshold tuning changes the operating point, not the model itself\n  - Should be tuned on validation data, not test data\n  - Different deployment contexts may warrant different thresholds for the same model\n**Interview-Ready Explanation**\n  > The classification threshold is a business decision, not a fixed model property. Lowering it trades precision for recall and vice versa — you pick it based on the relative cost of false positives versus false negatives, not by default at 0.5.\n\n---",
+      "markdown": "### [CARD: Threshold Selection]\n<!-- id: d04-threshold-selection -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** threshold, probability, evaluation\n**Core Concept**\n\nThe model outputs a probability; the threshold converts it to a hard prediction. The threshold is a business decision, not a fixed model property. Default 0.5 is not always correct.\n**Why It Matters**\n\nMany candidates think 0.5 is \"the\" threshold. In practice, you tune it based on the cost of FP vs FN — this is a genuinely high-value interview point.\n**Mental Model / Mechanics**\n  ```\n  probability ≥ threshold → predict positive\n  probability <  threshold → predict negative\n\n  Lower threshold  → more predicted positive → ↑ recall, ↓ precision\n  Higher threshold → fewer predicted positive → ↑ precision, ↓ recall\n\n  Threshold moves you along the precision-recall tradeoff\n  WITHOUT retraining the model.\n  ```\n**Example**\n  Fraud detection where missing fraud is expensive → deliberately lower threshold to trade some precision for higher recall.\n**Failure Modes / Tradeoffs**\n  - Threshold tuning changes the operating point, not the model itself\n  - Should be tuned on validation data, not test data\n  - Different deployment contexts may warrant different thresholds for the same model\n**Interview-Ready Explanation**\n  > The classification threshold is a business decision, not a fixed model property. Lowering it trades precision for recall and vice versa — you pick it based on the relative cost of false positives versus false negatives, not by default at 0.5.\n\n---"
+    },
+    {
+      "id": "d04-roc-auc",
+      "title": "ROC Curve and AUC",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "roc-curve",
+        "auc",
+        "ranking"
+      ],
+      "content_markdown": "**Core Concept**\n\nROC plots True Positive Rate (recall) vs False Positive Rate (1−specificity) as the threshold sweeps from 1→0. AUC summarizes the entire curve as a single number measuring ranking quality across all thresholds.\n**Why It Matters**\n\nProvides a threshold-independent measure of model quality. Answers: \"does the model generally rank positives above negatives?\"\n**Mental Model / Mechanics**\n  ```\n  ROC Curve:\n    X-axis: FPR = FP / (FP + TN)  [= 1 - Specificity]\n    Y-axis: TPR = TP / (TP + FN)  [= Recall]\n\n  TPR\n   1 │                    ●───●\n     │              ●\n     │         ●\n     │    ●\n     │●\n   0 └──────────────────────── FPR\n     0                        1\n\n  Diagonal line = random classifier (FPR = TPR everywhere)\n  Top-left corner = perfect classifier (TPR=1, FPR=0)\n\n  AUC values:\n    AUC = 1.0  → perfect ranking\n    AUC = 0.5  → no better than random\n    AUC < 0.5  → worse than random (predictions inverted)\n  ```\n  **The key intuition:** AUC = the probability that the model ranks a randomly-chosen positive example higher than a randomly-chosen negative example.\n**Failure Modes / Tradeoffs**\n  - High AUC means good ranking — it says nothing about calibration\n  - It says nothing about performance at any specific operating threshold\n  - Can be misleading under severe class imbalance (see PR-AUC)\n**Interview-Ready Explanation**\n  > AUC is the probability that a randomly-chosen positive example is ranked above a randomly-chosen negative example — a threshold-independent measure of ranking quality. AUC=1 is perfect, AUC=0.5 is random.\n\n---",
+      "markdown": "### [CARD: ROC Curve and AUC]\n<!-- id: d04-roc-auc -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** roc-curve, auc, ranking\n**Core Concept**\n\nROC plots True Positive Rate (recall) vs False Positive Rate (1−specificity) as the threshold sweeps from 1→0. AUC summarizes the entire curve as a single number measuring ranking quality across all thresholds.\n**Why It Matters**\n\nProvides a threshold-independent measure of model quality. Answers: \"does the model generally rank positives above negatives?\"\n**Mental Model / Mechanics**\n  ```\n  ROC Curve:\n    X-axis: FPR = FP / (FP + TN)  [= 1 - Specificity]\n    Y-axis: TPR = TP / (TP + FN)  [= Recall]\n\n  TPR\n   1 │                    ●───●\n     │              ●\n     │         ●\n     │    ●\n     │●\n   0 └──────────────────────── FPR\n     0                        1\n\n  Diagonal line = random classifier (FPR = TPR everywhere)\n  Top-left corner = perfect classifier (TPR=1, FPR=0)\n\n  AUC values:\n    AUC = 1.0  → perfect ranking\n    AUC = 0.5  → no better than random\n    AUC < 0.5  → worse than random (predictions inverted)\n  ```\n  **The key intuition:** AUC = the probability that the model ranks a randomly-chosen positive example higher than a randomly-chosen negative example.\n**Failure Modes / Tradeoffs**\n  - High AUC means good ranking — it says nothing about calibration\n  - It says nothing about performance at any specific operating threshold\n  - Can be misleading under severe class imbalance (see PR-AUC)\n**Interview-Ready Explanation**\n  > AUC is the probability that a randomly-chosen positive example is ranked above a randomly-chosen negative example — a threshold-independent measure of ranking quality. AUC=1 is perfect, AUC=0.5 is random.\n\n---"
+    },
+    {
+      "id": "d04-pr-auc",
+      "title": "PR-AUC — Why It's Better Under Imbalance",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "pr-auc",
+        "class-imbalance",
+        "precision-recall"
+      ],
+      "content_markdown": "**Core Concept**\n\nArea under the Precision-Recall curve. Unlike ROC-AUC, PR-AUC doesn't use TN — so it stays honest when negatives massively outnumber positives.\n**Why It Matters**\n\nROC-AUC's FPR denominator includes TN. Under heavy imbalance, TN is huge, so FPR stays artificially low even with many false positives relative to the small positive class. PR-AUC exposes this.\n**Mental Model / Mechanics**\n  ```\n  ROC-AUC uses: FPR = FP / (FP + TN)\n    → Under imbalance, TN is huge → FPR stays low → ROC-AUC inflated\n\n  PR-AUC uses: Precision = TP / (TP + FP)\n    → No TN in the formula → directly sensitive to FP relative to TP\n    → Honest about how the model handles the rare positive class\n\n  Rule of thumb:\n    Balanced classes                         → ROC-AUC is fine\n    Heavy imbalance (fraud, outage, etc.)    → prefer PR-AUC\n  ```\n**Failure Modes / Tradeoffs**\n  - PR-AUC and ROC-AUC can diverge meaningfully under imbalance\n  - PR-AUC baseline depends on class prevalence (not 0.5 like ROC-AUC)\n**Interview-Ready Explanation**\n  > ROC-AUC can look artificially good under severe class imbalance because FPR is diluted by abundant true negatives. PR-AUC is more informative because precision is directly sensitive to how well the model handles the rare positive class.\n\n---",
+      "markdown": "### [CARD: PR-AUC — Why It's Better Under Imbalance]\n<!-- id: d04-pr-auc -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** pr-auc, class-imbalance, precision-recall\n**Core Concept**\n\nArea under the Precision-Recall curve. Unlike ROC-AUC, PR-AUC doesn't use TN — so it stays honest when negatives massively outnumber positives.\n**Why It Matters**\n\nROC-AUC's FPR denominator includes TN. Under heavy imbalance, TN is huge, so FPR stays artificially low even with many false positives relative to the small positive class. PR-AUC exposes this.\n**Mental Model / Mechanics**\n  ```\n  ROC-AUC uses: FPR = FP / (FP + TN)\n    → Under imbalance, TN is huge → FPR stays low → ROC-AUC inflated\n\n  PR-AUC uses: Precision = TP / (TP + FP)\n    → No TN in the formula → directly sensitive to FP relative to TP\n    → Honest about how the model handles the rare positive class\n\n  Rule of thumb:\n    Balanced classes                         → ROC-AUC is fine\n    Heavy imbalance (fraud, outage, etc.)    → prefer PR-AUC\n  ```\n**Failure Modes / Tradeoffs**\n  - PR-AUC and ROC-AUC can diverge meaningfully under imbalance\n  - PR-AUC baseline depends on class prevalence (not 0.5 like ROC-AUC)\n**Interview-Ready Explanation**\n  > ROC-AUC can look artificially good under severe class imbalance because FPR is diluted by abundant true negatives. PR-AUC is more informative because precision is directly sensitive to how well the model handles the rare positive class.\n\n---"
+    },
+    {
+      "id": "d04-calibration",
+      "title": "Calibration",
+      "priority": "should_know",
+      "category": "ml-theory",
+      "tags": [
+        "calibration",
+        "probability",
+        "discrimination"
+      ],
+      "content_markdown": "**Core Concept**\n\nWhether the model's stated probabilities match real-world frequencies. A model can have great discrimination (AUC) but terrible calibration.\n**Why It Matters**\n\nMatters whenever the raw probability is used downstream — combining with dollar costs, presenting confidence scores to users, or thresholding at non-default values.\n**Mental Model / Mechanics**\n  ```\n  Discrimination: Can the model separate positive from negative?\n    → What AUC measures\n\n  Calibration: When the model says \"0.8 probability,\" does ~80% of such\n    predictions actually turn out positive?\n\n  Example: A model outputs either 0.51 or 0.99 (nothing between).\n    If ranking is correct → perfect AUC\n    But 0.51 doesn't genuinely mean \"51% chance\" → badly calibrated\n\n  Reliability diagram: bucket predictions by predicted probability,\n    compare to actual observed frequency per bucket\n  ```\n**Failure Modes / Tradeoffs**\n  - Calibration matters for: cost-sensitive decisions, confidence scores shown to users, combining predictions with business logic\n  - Good AUC ≠ good calibration — they measure different things\n  - Post-hoc calibration methods exist (Platt scaling, isotonic regression)\n**Interview-Ready Explanation**\n  > Discrimination is whether the model ranks positives above negatives correctly (AUC). Calibration is whether its stated probabilities match real-world frequencies. A model can have great AUC and still be badly calibrated.\n\n---",
+      "markdown": "### [CARD: Calibration]\n<!-- id: d04-calibration -->\n\n- **Priority:** should_know\n- **Category:** ml-theory\n- **Tags:** calibration, probability, discrimination\n**Core Concept**\n\nWhether the model's stated probabilities match real-world frequencies. A model can have great discrimination (AUC) but terrible calibration.\n**Why It Matters**\n\nMatters whenever the raw probability is used downstream — combining with dollar costs, presenting confidence scores to users, or thresholding at non-default values.\n**Mental Model / Mechanics**\n  ```\n  Discrimination: Can the model separate positive from negative?\n    → What AUC measures\n\n  Calibration: When the model says \"0.8 probability,\" does ~80% of such\n    predictions actually turn out positive?\n\n  Example: A model outputs either 0.51 or 0.99 (nothing between).\n    If ranking is correct → perfect AUC\n    But 0.51 doesn't genuinely mean \"51% chance\" → badly calibrated\n\n  Reliability diagram: bucket predictions by predicted probability,\n    compare to actual observed frequency per bucket\n  ```\n**Failure Modes / Tradeoffs**\n  - Calibration matters for: cost-sensitive decisions, confidence scores shown to users, combining predictions with business logic\n  - Good AUC ≠ good calibration — they measure different things\n  - Post-hoc calibration methods exist (Platt scaling, isotonic regression)\n**Interview-Ready Explanation**\n  > Discrimination is whether the model ranks positives above negatives correctly (AUC). Calibration is whether its stated probabilities match real-world frequencies. A model can have great AUC and still be badly calibrated.\n\n---"
+    },
+    {
+      "id": "d04-choosing-the-right-metric",
+      "title": "Choosing the Right Metric",
+      "priority": "must_know",
+      "category": "ml-theory",
+      "tags": [
+        "metrics",
+        "business-context",
+        "evaluation"
+      ],
+      "content_markdown": "**Core Concept**\n\nThere is no universal \"best\" metric — the choice depends on class balance and the relative cost of FP vs FN. The interview differentiator is justifying the metric by naming what FP and FN cost in that business context.\n**Why It Matters**\n\nSeparates candidates who memorize metric formulas from those who understand which metric to deploy and why.\n**Mental Model / Mechanics**\n  | Scenario | Primary Metric | Why |\n  |---|---|---|\n  | Balanced, no strong FP/FN asymmetry | Accuracy or F1 | Simple, representative |\n  | Fraud detection (rare positive, missing fraud costly) | Recall + precision floor / PR-AUC | Minimize FN even at some precision cost |\n  | Spam filtering (FP = lost real email) | Precision + recall floor | Minimize FP — missed spam tolerated more than lost mail |\n  | Outage/anomaly prediction, imbalanced | PR-AUC, recall-focused | Rare positive class, misses expensive |\n  | Ranking quality regardless of threshold | ROC-AUC or PR-AUC | Threshold-independent view |\n  | Raw probability needed downstream | Calibration (Brier score) | Ranking alone isn't enough |\n\n  **The interview move:** Don't just name a metric — justify it by naming what a false positive costs vs what a false negative costs in that specific business context.\n**Interview-Ready Explanation**\n  > The right metric depends on class balance and the relative cost of FP vs FN. For fraud detection, prioritize recall because missing fraud is expensive. For spam filtering, prioritize precision because losing real email is worse than missing spam. Always justify the metric by naming the business cost of each error type.\n\n---",
+      "markdown": "### [CARD: Choosing the Right Metric]\n<!-- id: d04-choosing-the-right-metric -->\n\n- **Priority:** must_know\n- **Category:** ml-theory\n- **Tags:** metrics, business-context, evaluation\n**Core Concept**\n\nThere is no universal \"best\" metric — the choice depends on class balance and the relative cost of FP vs FN. The interview differentiator is justifying the metric by naming what FP and FN cost in that business context.\n**Why It Matters**\n\nSeparates candidates who memorize metric formulas from those who understand which metric to deploy and why.\n**Mental Model / Mechanics**\n  | Scenario | Primary Metric | Why |\n  |---|---|---|\n  | Balanced, no strong FP/FN asymmetry | Accuracy or F1 | Simple, representative |\n  | Fraud detection (rare positive, missing fraud costly) | Recall + precision floor / PR-AUC | Minimize FN even at some precision cost |\n  | Spam filtering (FP = lost real email) | Precision + recall floor | Minimize FP — missed spam tolerated more than lost mail |\n  | Outage/anomaly prediction, imbalanced | PR-AUC, recall-focused | Rare positive class, misses expensive |\n  | Ranking quality regardless of threshold | ROC-AUC or PR-AUC | Threshold-independent view |\n  | Raw probability needed downstream | Calibration (Brier score) | Ranking alone isn't enough |\n\n  **The interview move:** Don't just name a metric — justify it by naming what a false positive costs vs what a false negative costs in that specific business context.\n**Interview-Ready Explanation**\n  > The right metric depends on class balance and the relative cost of FP vs FN. For fraud detection, prioritize recall because missing fraud is expensive. For spam filtering, prioritize precision because losing real email is worse than missing spam. Always justify the metric by naming the business cost of each error type.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "```\nDay 3: Loss (BCE) trains model to output probabilities\n              ↓\nDay 4: Threshold converts probability → hard prediction\n              ↓\n       Confusion Matrix (TP / TN / FP / FN)\n              ↓\n    ┌─────────┼─────────┐\n    ↓         ↓         ↓\nPrecision   Recall   Specificity\n    └─────────┬─────────┘\n              ↓\n             F1\n              ↓\n   (sweep threshold) → ROC-AUC / PR-AUC\n              ↓\n   Choice of metric depends on:\n   - Class imbalance\n   - Cost of FP vs FN (business context)\n              ↓\n   Calibration: is the raw probability trustworthy?\n```\n\nAlso ties back to data leakage: artificially high metrics (from leakage) show up as suspiciously excellent precision/recall/AUC on validation that collapses in production — evaluation metrics are only trustworthy if the evaluation process is clean.\n\n---",
+  "common_misconceptions_markdown": "- **Myth:** \"Accuracy is a fine default metric.\"\n  **Reality:** Only under roughly balanced classes with no strong FP/FN cost asymmetry — it actively misleads under imbalance.\n\n- **Myth:** \"0.5 is the threshold.\"\n  **Reality:** It's a default, not a rule. The right threshold depends on the cost of FP vs FN for the specific business problem.\n\n- **Myth:** \"High AUC means the model is good.\"\n  **Reality:** High AUC means good ranking. It says nothing about calibration, and nothing about performance at any specific operating threshold.\n\n- **Myth:** \"ROC-AUC and PR-AUC will roughly agree.\"\n  **Reality:** Under class imbalance they can diverge meaningfully — PR-AUC is usually the more honest signal there.\n\n- **Myth:** \"F1 is always the right metric to optimize.\"\n  **Reality:** F1 assumes precision and recall matter equally. If the business cares much more about one, use F-beta or report them separately with a stated floor on the other.\n\n- **Myth:** \"Precision and recall are independent — I can improve both freely.\"\n  **Reality:** They typically trade off via the threshold. Genuinely improving both usually requires a better model, not just a threshold shift.\n\n---",
+  "out_of_scope_markdown": "- Exact trapezoidal-rule computation of AUC by hand\n- Formal statistical significance tests (DeLong's test, bootstrap CIs) for comparing two models' AUCs\n- Multi-class ROC/AUC extension nuances (one-vs-rest vs one-vs-one macro/micro averaging) — know they exist, don't derive them\n- Brier score formula derivation — know it exists as a calibration metric, that's enough\n\n---",
+  "qa_drill": [
+    {
+      "id": "d04-qa-001",
+      "question": "Draw a confusion matrix and label all four cells.",
+      "answer": "Rows = Predicted (Positive/Negative), Columns = Actual (Positive/Negative). Cells: TP (predicted positive, actually positive), FP (predicted positive, actually negative), FN (predicted negative, actually positive), TN (predicted negative, actually negative).",
+      "tags": [
+        "confusion-matrix",
+        "evaluation"
+      ],
+      "linked_card_ids": [
+        "d04-confusion-matrix"
+      ]
+    },
+    {
+      "id": "d04-qa-002",
+      "question": "Why can a model have 99% accuracy and still be useless?",
+      "answer": "Under class imbalance (e.g., 1% fraud), a model predicting the majority class for everything achieves 99% accuracy while catching zero positive cases. Accuracy is dominated by the majority class.",
+      "tags": [
+        "accuracy",
+        "class-imbalance"
+      ],
+      "linked_card_ids": [
+        "d04-accuracy-and-imbalance"
+      ]
+    },
+    {
+      "id": "d04-qa-003",
+      "question": "Write the precision formula and explain it in one sentence.",
+      "answer": "Precision = TP / (TP + FP). Of everything I predicted positive, how much was actually positive — measures the trustworthiness of positive predictions.",
+      "tags": [
+        "precision",
+        "false-positive"
+      ],
+      "linked_card_ids": [
+        "d04-precision"
+      ]
+    },
+    {
+      "id": "d04-qa-004",
+      "question": "Write the recall formula and explain it in one sentence.",
+      "answer": "Recall = TP / (TP + FN). Of everything that was actually positive, how much did I catch — measures completeness of detection.",
+      "tags": [
+        "recall",
+        "false-negative"
+      ],
+      "linked_card_ids": [
+        "d04-recall"
+      ]
+    },
+    {
+      "id": "d04-qa-005",
+      "question": "Why is F1 the harmonic mean rather than a simple average of precision and recall?",
+      "answer": "The harmonic mean is dominated by the smaller value. Simple average of 0.9 and 0.1 gives 0.5 (deceptively okay); harmonic mean gives 0.18 (correctly punishes the imbalance). F1 can't be gamed by maximizing just one.",
+      "tags": [
+        "f1-score",
+        "metrics"
+      ],
+      "linked_card_ids": [
+        "d04-f1-score"
+      ]
+    },
+    {
+      "id": "d04-qa-006",
+      "question": "What happens to precision and recall if you lower the classification threshold?",
+      "answer": "Lower threshold → more things predicted positive → recall increases (catch more), precision decreases (more false alarms).",
+      "tags": [
+        "precision",
+        "recall",
+        "threshold"
+      ],
+      "linked_card_ids": [
+        "d04-threshold-selection",
+        "d04-precision-recall-tradeoff"
+      ]
+    },
+    {
+      "id": "d04-qa-007",
+      "question": "What happens if you raise the threshold?",
+      "answer": "Higher threshold → fewer things predicted positive → precision increases (fewer false alarms), recall decreases (miss more).",
+      "tags": [
+        "precision",
+        "recall",
+        "threshold"
+      ],
+      "linked_card_ids": [
+        "d04-threshold-selection",
+        "d04-precision-recall-tradeoff"
+      ]
+    },
+    {
+      "id": "d04-qa-008",
+      "question": "Is 0.5 always the right threshold? Why or why not?",
+      "answer": "No — 0.5 is a default, not a rule. The right threshold is a business decision based on the relative cost of FP vs FN. For fraud detection where missing fraud is expensive, you might lower it to trade precision for recall.",
+      "tags": [
+        "threshold",
+        "business-context"
+      ],
+      "linked_card_ids": [
+        "d04-threshold-selection"
+      ]
+    },
+    {
+      "id": "d04-qa-009",
+      "question": "What does an AUC of 0.5 mean? What does 1.0 mean?",
+      "answer": "AUC = 0.5 means the model is no better than random guessing. AUC = 1.0 means perfect ranking — every positive is ranked above every negative.",
+      "tags": [
+        "auc",
+        "ranking"
+      ],
+      "linked_card_ids": [
+        "d04-roc-auc"
+      ]
+    },
+    {
+      "id": "d04-qa-010",
+      "question": "Give the \"probability of correct ranking\" definition of AUC from memory.",
+      "answer": "AUC is the probability that the model ranks a randomly-chosen positive example higher than a randomly-chosen negative example.",
+      "tags": [
+        "auc",
+        "probability"
+      ],
+      "linked_card_ids": [
+        "d04-roc-auc"
+      ]
+    },
+    {
+      "id": "d04-qa-011",
+      "question": "Why can ROC-AUC look artificially good under severe class imbalance?",
+      "answer": "Because FPR = FP/(FP+TN), and under imbalance TN is huge. Even with many false positives, FPR stays low because it's diluted by the large TN denominator. This inflates ROC-AUC.",
+      "tags": [
+        "roc-auc",
+        "class-imbalance"
+      ],
+      "linked_card_ids": [
+        "d04-roc-auc"
+      ]
+    },
+    {
+      "id": "d04-qa-012",
+      "question": "When would you reach for PR-AUC instead of ROC-AUC?",
+      "answer": "Under heavy class imbalance (fraud, outage detection, rare disease). PR-AUC doesn't use TN at all — precision is TP/(TP+FP) — so it stays sensitive to how the model handles the rare positive class.",
+      "tags": [
+        "pr-auc",
+        "class-imbalance"
+      ],
+      "linked_card_ids": [
+        "d04-pr-auc"
+      ]
+    },
+    {
+      "id": "d04-qa-013",
+      "question": "What's the difference between discrimination and calibration?",
+      "answer": "Discrimination is whether the model can separate positives from negatives (what AUC measures). Calibration is whether the model's stated probabilities match real-world frequencies (when it says 0.8, are ~80% actually positive?).",
+      "tags": [
+        "calibration",
+        "discrimination"
+      ],
+      "linked_card_ids": [
+        "d04-calibration"
+      ]
+    },
+    {
+      "id": "d04-qa-014",
+      "question": "Give an example where a model has great AUC but poor calibration.",
+      "answer": "A model that only outputs 0.51 or 0.99 (never anything between) can have perfect AUC if the ranking is correct — all positives get 0.99, all negatives get 0.51. But \"0.51\" doesn't genuinely mean 51% probability; the probabilities are meaningless even though discrimination is perfect.",
+      "tags": [
+        "calibration",
+        "auc"
+      ],
+      "linked_card_ids": [
+        "d04-calibration"
+      ]
+    },
+    {
+      "id": "d04-qa-015",
+      "question": "For a fraud-detection problem, would you prioritize precision or recall — and why?",
+      "answer": "Recall — because missing actual fraud (FN) is typically more costly than investigating a false alarm (FP). You'd set a precision floor to avoid excessive false alarms, but the primary objective is catching fraud.",
+      "tags": [
+        "precision",
+        "recall",
+        "business-context"
+      ],
+      "linked_card_ids": [
+        "d04-choosing-the-right-metric"
+      ]
+    },
+    {
+      "id": "d04-qa-016",
+      "question": "Explain, in your own words, why loss and metric don't have to be the same thing.",
+      "answer": "Loss must be differentiable for gradient-based optimization (e.g., cross-entropy). Metrics measure real-world usefulness (e.g., F1, AUC) and need not be differentiable. You train with loss but evaluate with metrics — they can diverge, so a model can improve on loss while a business metric stays flat or worsens.",
+      "tags": [
+        "loss",
+        "metrics"
+      ],
+      "linked_card_ids": [
+        "d04-loss-vs-metric"
+      ]
+    },
+    {
+      "id": "d04-qa-017",
+      "question": "What is specificity and how does it relate to recall?",
+      "answer": "Specificity = TN/(TN+FP) — recall for the negative class. Recall measures how well we detect positives; specificity measures how well we detect negatives. FPR = 1 − Specificity.",
+      "tags": [
+        "specificity",
+        "recall"
+      ],
+      "linked_card_ids": [
+        "d04-specificity"
+      ]
+    },
+    {
+      "id": "d04-qa-018",
+      "question": "What is the relationship between threshold selection and the precision-recall tradeoff?",
+      "answer": "Moving the threshold moves you along the precision-recall tradeoff without retraining. Lower threshold increases recall (catch more) but decreases precision (more false alarms). The threshold is a business decision, not a model property.",
+      "tags": [
+        "threshold",
+        "precision-recall-tradeoff"
+      ],
+      "linked_card_ids": [
+        "d04-threshold-selection",
+        "d04-precision-recall-tradeoff"
+      ]
+    }
+  ]
+}

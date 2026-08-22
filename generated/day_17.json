@@ -1,0 +1,442 @@
+{
+  "schema_version": 1,
+  "day": 17,
+  "title": "Python Execution Model: Scopes, Iterators, Generators, Decorators, Context Managers & OOP",
+  "topics": [
+    "python-execution-model",
+    "iterators",
+    "generators",
+    "decorators",
+    "context-managers",
+    "oop"
+  ],
+  "tags": [
+    "python",
+    "software-engineering",
+    "interview-prep"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 1,
+    "must_know": 12,
+    "should_know": 3
+  },
+  "daily_objective_markdown": "Understand how Python resolves names and executes function calls, then build the practical tools that follow from that model: iterators, generators, decorators, context managers, exceptions, and object-oriented design. By the end, you should be able to explain these concepts clearly and choose them appropriately in production Python or an interview.\n\n---",
+  "syllabus_markdown": "- 🔴 **MUST KNOW:** namespaces and scope, LEGB lookup, mutable default arguments, iterables vs. iterators, the iterator protocol, generators and `yield`, lazy evaluation, decorators, context managers, exception cleanup, classes/instances, instance/class/static methods.\n- 🟡 **SHOULD KNOW:** `functools.wraps`, composition vs. inheritance, `dataclass`.\n- 🟢 **NICE TO KNOW:** generator delegation with `yield from`.\n\n---",
+  "cards": [
+    {
+      "id": "d17-namespaces-and-call-frames",
+      "title": "Names, Objects, Namespaces, and Call Frames",
+      "priority": "must_know",
+      "category": "python-execution-model",
+      "tags": [
+        "names",
+        "namespaces",
+        "scope",
+        "call-stack"
+      ],
+      "content_markdown": "**Core Concept**\n\nPython variables are names bound to objects. A namespace is the mapping from names to objects in a particular context, such as a module, a function call, or an instance. Each function call creates its own local namespace, often called a call frame.\n\n**Why It Matters**\n\nThis extends Day 1's object/reference model. It explains why a function's local variable does not normally affect a variable with the same spelling outside the function, and why recursion has separate local state for every call.\n\n**Mental Model / Mechanics**\n\n```text\nmodule namespace:  threshold ──► 0.5\n\nscore(record):\n  local call frame: threshold ──► 0.8\n  local call frame: record    ──► {...}\n```\n\nThe two `threshold` names are distinct bindings. They can point to different objects without conflict.\n\n**Example**\n\n```python\nthreshold = 0.5\n\ndef is_high_score(score):\n    threshold = 0.8\n    return score >= threshold\n\nprint(is_high_score(0.7))  # False\nprint(threshold)           # 0.5\n```\n\n**Interview-Ready Explanation**\n\n> Python variables are names, not boxes. Names live in namespaces; every function call has its own local namespace, so local bindings normally do not change outer bindings.\n\n---",
+      "markdown": "### [CARD: Names, Objects, Namespaces, and Call Frames]\n<!-- id: d17-namespaces-and-call-frames -->\n\n- **Priority:** must_know\n- **Category:** python-execution-model\n- **Tags:** names, namespaces, scope, call-stack\n\n**Core Concept**\n\nPython variables are names bound to objects. A namespace is the mapping from names to objects in a particular context, such as a module, a function call, or an instance. Each function call creates its own local namespace, often called a call frame.\n\n**Why It Matters**\n\nThis extends Day 1's object/reference model. It explains why a function's local variable does not normally affect a variable with the same spelling outside the function, and why recursion has separate local state for every call.\n\n**Mental Model / Mechanics**\n\n```text\nmodule namespace:  threshold ──► 0.5\n\nscore(record):\n  local call frame: threshold ──► 0.8\n  local call frame: record    ──► {...}\n```\n\nThe two `threshold` names are distinct bindings. They can point to different objects without conflict.\n\n**Example**\n\n```python\nthreshold = 0.5\n\ndef is_high_score(score):\n    threshold = 0.8\n    return score >= threshold\n\nprint(is_high_score(0.7))  # False\nprint(threshold)           # 0.5\n```\n\n**Interview-Ready Explanation**\n\n> Python variables are names, not boxes. Names live in namespaces; every function call has its own local namespace, so local bindings normally do not change outer bindings.\n\n---"
+    },
+    {
+      "id": "d17-legb-and-closures",
+      "title": "LEGB Name Resolution and Closures",
+      "priority": "must_know",
+      "category": "python-execution-model",
+      "tags": [
+        "legb",
+        "scope",
+        "closures",
+        "nonlocal"
+      ],
+      "content_markdown": "**Core Concept**\n\nWhen Python evaluates an unqualified name inside a function, it searches in LEGB order: **Local**, **Enclosing**, **Global**, then **Built-in**. A closure is an inner function that retains access to names from an enclosing function after that outer function has returned.\n\n**Why It Matters**\n\nClosures power decorators and small configurable functions. Understanding the lookup order also prevents accidental shadowing and explains when `global` or `nonlocal` is required.\n\n**Mental Model / Mechanics**\n\nAn assignment inside a function creates a local binding by default. To rebind an enclosing function's binding, write `nonlocal`; to rebind a module-level binding, write `global`. Mutating an object is different from rebinding its name.\n\n**Example**\n\n```python\ndef make_multiplier(factor):\n    def multiply(value):\n        return value * factor  # factor comes from the enclosing scope\n    return multiply\n\ntriple = make_multiplier(3)\nprint(triple(7))  # 21\n```\n\n**Failure Modes / Tradeoffs**\n\n- Avoid `global` for ordinary application state; explicit parameters and returned values are easier to test.\n- A closure captures a binding, not a frozen snapshot in every situation. Be careful when closing over a loop variable that later changes.\n\n**Interview-Ready Explanation**\n\n> Python resolves names Local → Enclosing → Global → Built-in. A closure is an inner function that keeps access to an enclosing scope, which is why it is useful for factories and decorators.\n\n---",
+      "markdown": "### [CARD: LEGB Name Resolution and Closures]\n<!-- id: d17-legb-and-closures -->\n\n- **Priority:** must_know\n- **Category:** python-execution-model\n- **Tags:** legb, scope, closures, nonlocal\n\n**Core Concept**\n\nWhen Python evaluates an unqualified name inside a function, it searches in LEGB order: **Local**, **Enclosing**, **Global**, then **Built-in**. A closure is an inner function that retains access to names from an enclosing function after that outer function has returned.\n\n**Why It Matters**\n\nClosures power decorators and small configurable functions. Understanding the lookup order also prevents accidental shadowing and explains when `global` or `nonlocal` is required.\n\n**Mental Model / Mechanics**\n\nAn assignment inside a function creates a local binding by default. To rebind an enclosing function's binding, write `nonlocal`; to rebind a module-level binding, write `global`. Mutating an object is different from rebinding its name.\n\n**Example**\n\n```python\ndef make_multiplier(factor):\n    def multiply(value):\n        return value * factor  # factor comes from the enclosing scope\n    return multiply\n\ntriple = make_multiplier(3)\nprint(triple(7))  # 21\n```\n\n**Failure Modes / Tradeoffs**\n\n- Avoid `global` for ordinary application state; explicit parameters and returned values are easier to test.\n- A closure captures a binding, not a frozen snapshot in every situation. Be careful when closing over a loop variable that later changes.\n\n**Interview-Ready Explanation**\n\n> Python resolves names Local → Enclosing → Global → Built-in. A closure is an inner function that keeps access to an enclosing scope, which is why it is useful for factories and decorators.\n\n---"
+    },
+    {
+      "id": "d17-function-arguments-and-mutable-defaults",
+      "title": "Function Arguments and Mutable Default Values",
+      "priority": "must_know",
+      "category": "python-functions",
+      "tags": [
+        "arguments",
+        "defaults",
+        "mutability",
+        "shared-state"
+      ],
+      "content_markdown": "**Core Concept**\n\nDefault argument expressions are evaluated once, when the `def` statement runs—not each time the function is called. A mutable default, such as `[]` or `{}`, is therefore shared across calls that omit that argument.\n\n**Why It Matters**\n\nThis is a classic Python production and interview bug. It directly follows from Day 1's shared-reference model.\n\n**Example**\n\n```python\ndef add_item(item, bucket=[]):\n    bucket.append(item)\n    return bucket\n\nprint(add_item(\"a\"))  # ['a']\nprint(add_item(\"b\"))  # ['a', 'b']  -- usually surprising\n\ndef safe_add_item(item, bucket=None):\n    if bucket is None:\n        bucket = []\n    bucket.append(item)\n    return bucket\n```\n\n**Failure Modes / Tradeoffs**\n\nUse `None` as the sentinel when a fresh mutable value is needed per call. Do not use a truthiness check such as `if not bucket:` when an intentionally supplied empty list is valid.\n\n**Interview-Ready Explanation**\n\n> Default arguments are created once at function definition time. A mutable default is shared between calls, so I use `None` and allocate the list or dictionary inside the function.\n\n---",
+      "markdown": "### [CARD: Function Arguments and Mutable Default Values]\n<!-- id: d17-function-arguments-and-mutable-defaults -->\n\n- **Priority:** must_know\n- **Category:** python-functions\n- **Tags:** arguments, defaults, mutability, shared-state\n\n**Core Concept**\n\nDefault argument expressions are evaluated once, when the `def` statement runs—not each time the function is called. A mutable default, such as `[]` or `{}`, is therefore shared across calls that omit that argument.\n\n**Why It Matters**\n\nThis is a classic Python production and interview bug. It directly follows from Day 1's shared-reference model.\n\n**Example**\n\n```python\ndef add_item(item, bucket=[]):\n    bucket.append(item)\n    return bucket\n\nprint(add_item(\"a\"))  # ['a']\nprint(add_item(\"b\"))  # ['a', 'b']  -- usually surprising\n\ndef safe_add_item(item, bucket=None):\n    if bucket is None:\n        bucket = []\n    bucket.append(item)\n    return bucket\n```\n\n**Failure Modes / Tradeoffs**\n\nUse `None` as the sentinel when a fresh mutable value is needed per call. Do not use a truthiness check such as `if not bucket:` when an intentionally supplied empty list is valid.\n\n**Interview-Ready Explanation**\n\n> Default arguments are created once at function definition time. A mutable default is shared between calls, so I use `None` and allocate the list or dictionary inside the function.\n\n---"
+    },
+    {
+      "id": "d17-iterables-vs-iterators",
+      "title": "Iterables vs. Iterators",
+      "priority": "must_know",
+      "category": "python-iteration",
+      "tags": [
+        "iterables",
+        "iterators",
+        "for-loop"
+      ],
+      "content_markdown": "**Core Concept**\n\nAn **iterable** is an object you can ask for an iterator, such as a list, string, dictionary, file, or generator. An **iterator** is the stateful object that produces the next item until it is exhausted.\n\n**Why It Matters**\n\nThis distinction makes `for` loops, files, streaming data, generators, and many pandas/PyTorch-style data pipelines easier to reason about.\n\n**Mental Model / Mechanics**\n\n```text\nlist [10, 20, 30]  --iter()-->  iterator at position 0\n                                     --next()--> 10\n                                     --next()--> 20\n```\n\nMany containers are re-iterable: calling `iter(a_list)` again creates a fresh iterator. A generator object is itself an iterator, so after it is consumed, it cannot be restarted.\n\n**Example**\n\n```python\nitems = [\"a\", \"b\"]\nit = iter(items)\nprint(next(it))  # a\nprint(next(it))  # b\n```\n\n**Interview-Ready Explanation**\n\n> An iterable can create an iterator. An iterator carries traversal state and yields one item at a time, eventually becoming exhausted. A `for` loop obtains an iterator and repeatedly advances it.\n\n---",
+      "markdown": "### [CARD: Iterables vs. Iterators]\n<!-- id: d17-iterables-vs-iterators -->\n\n- **Priority:** must_know\n- **Category:** python-iteration\n- **Tags:** iterables, iterators, for-loop\n\n**Core Concept**\n\nAn **iterable** is an object you can ask for an iterator, such as a list, string, dictionary, file, or generator. An **iterator** is the stateful object that produces the next item until it is exhausted.\n\n**Why It Matters**\n\nThis distinction makes `for` loops, files, streaming data, generators, and many pandas/PyTorch-style data pipelines easier to reason about.\n\n**Mental Model / Mechanics**\n\n```text\nlist [10, 20, 30]  --iter()-->  iterator at position 0\n                                     --next()--> 10\n                                     --next()--> 20\n```\n\nMany containers are re-iterable: calling `iter(a_list)` again creates a fresh iterator. A generator object is itself an iterator, so after it is consumed, it cannot be restarted.\n\n**Example**\n\n```python\nitems = [\"a\", \"b\"]\nit = iter(items)\nprint(next(it))  # a\nprint(next(it))  # b\n```\n\n**Interview-Ready Explanation**\n\n> An iterable can create an iterator. An iterator carries traversal state and yields one item at a time, eventually becoming exhausted. A `for` loop obtains an iterator and repeatedly advances it.\n\n---"
+    },
+    {
+      "id": "d17-iterator-protocol",
+      "title": "The Iterator Protocol and the for Loop",
+      "priority": "must_know",
+      "category": "python-iteration",
+      "tags": [
+        "iter",
+        "next",
+        "stopiteration",
+        "protocol"
+      ],
+      "content_markdown": "**Core Concept**\n\nPython iteration is a protocol: `iter(obj)` obtains an iterator, and `next(iterator)` obtains the next value. When there are no more values, `next()` raises `StopIteration`. A `for` loop handles that exception for you.\n\n**Why It Matters**\n\nProtocols are a central Python design idea: unrelated types can work together if they support the same operations. You can write custom streaming or batching objects without inheriting from a particular base class.\n\n**Example**\n\n```python\nnumbers = [2, 4, 6]\nit = iter(numbers)\n\nwhile True:\n    try:\n        value = next(it)\n        print(value)\n    except StopIteration:\n        break\n```\n\nThis is conceptually what `for value in numbers:` does.\n\n**Failure Modes / Tradeoffs**\n\nDo not call `next()` repeatedly without handling exhaustion unless you know another value exists. Iterators are useful for memory efficiency but are often one-pass, which can surprise code that needs a second traversal.\n\n**Interview-Ready Explanation**\n\n> The iterator protocol is `iter()` plus `next()`, with `StopIteration` signaling exhaustion. A `for` loop is syntax that drives this protocol safely.\n\n---",
+      "markdown": "### [CARD: The Iterator Protocol and the for Loop]\n<!-- id: d17-iterator-protocol -->\n\n- **Priority:** must_know\n- **Category:** python-iteration\n- **Tags:** iter, next, stopiteration, protocol\n\n**Core Concept**\n\nPython iteration is a protocol: `iter(obj)` obtains an iterator, and `next(iterator)` obtains the next value. When there are no more values, `next()` raises `StopIteration`. A `for` loop handles that exception for you.\n\n**Why It Matters**\n\nProtocols are a central Python design idea: unrelated types can work together if they support the same operations. You can write custom streaming or batching objects without inheriting from a particular base class.\n\n**Example**\n\n```python\nnumbers = [2, 4, 6]\nit = iter(numbers)\n\nwhile True:\n    try:\n        value = next(it)\n        print(value)\n    except StopIteration:\n        break\n```\n\nThis is conceptually what `for value in numbers:` does.\n\n**Failure Modes / Tradeoffs**\n\nDo not call `next()` repeatedly without handling exhaustion unless you know another value exists. Iterators are useful for memory efficiency but are often one-pass, which can surprise code that needs a second traversal.\n\n**Interview-Ready Explanation**\n\n> The iterator protocol is `iter()` plus `next()`, with `StopIteration` signaling exhaustion. A `for` loop is syntax that drives this protocol safely.\n\n---"
+    },
+    {
+      "id": "d17-generator-functions-and-yield",
+      "title": "Generator Functions and yield",
+      "priority": "must_know",
+      "category": "python-iteration",
+      "tags": [
+        "generators",
+        "yield",
+        "lazy-evaluation",
+        "streaming"
+      ],
+      "content_markdown": "**Core Concept**\n\nA function containing `yield` is a generator function. Calling it returns a generator object immediately; its body runs only as values are requested. Each `yield` emits one value and suspends local state until the next request.\n\n**Why It Matters**\n\nGenerators let you process large files, batches, API pages, or model outputs incrementally rather than loading all results into memory.\n\n**Example**\n\n```python\ndef read_batches(records, batch_size):\n    for start in range(0, len(records), batch_size):\n        yield records[start : start + batch_size]\n\nfor batch in read_batches(list(range(10)), batch_size=4):\n    print(batch)\n# [0, 1, 2, 3], [4, 5, 6, 7], [8, 9]\n```\n\n**Failure Modes / Tradeoffs**\n\nGenerators trade memory use for one-pass behavior and deferred errors. An exception in a generator may appear later, when it is consumed rather than when it is created.\n\n**Interview-Ready Explanation**\n\n> A generator function uses `yield` to produce values lazily. It pauses after each yielded value, preserving its local state, which makes it ideal for streaming large data with low memory usage.\n\n---",
+      "markdown": "### [CARD: Generator Functions and yield]\n<!-- id: d17-generator-functions-and-yield -->\n\n- **Priority:** must_know\n- **Category:** python-iteration\n- **Tags:** generators, yield, lazy-evaluation, streaming\n\n**Core Concept**\n\nA function containing `yield` is a generator function. Calling it returns a generator object immediately; its body runs only as values are requested. Each `yield` emits one value and suspends local state until the next request.\n\n**Why It Matters**\n\nGenerators let you process large files, batches, API pages, or model outputs incrementally rather than loading all results into memory.\n\n**Example**\n\n```python\ndef read_batches(records, batch_size):\n    for start in range(0, len(records), batch_size):\n        yield records[start : start + batch_size]\n\nfor batch in read_batches(list(range(10)), batch_size=4):\n    print(batch)\n# [0, 1, 2, 3], [4, 5, 6, 7], [8, 9]\n```\n\n**Failure Modes / Tradeoffs**\n\nGenerators trade memory use for one-pass behavior and deferred errors. An exception in a generator may appear later, when it is consumed rather than when it is created.\n\n**Interview-Ready Explanation**\n\n> A generator function uses `yield` to produce values lazily. It pauses after each yielded value, preserving its local state, which makes it ideal for streaming large data with low memory usage.\n\n---"
+    },
+    {
+      "id": "d17-generator-expressions-and-laziness",
+      "title": "Generator Expressions and Lazy Evaluation",
+      "priority": "must_know",
+      "category": "python-iteration",
+      "tags": [
+        "generator-expression",
+        "laziness",
+        "memory"
+      ],
+      "content_markdown": "**Core Concept**\n\nA generator expression uses parentheses—`(transform(x) for x in source)`—to create values lazily. A list comprehension uses brackets and materializes every result immediately.\n\n**Why It Matters**\n\nFor large datasets, laziness can prevent unnecessary memory use and avoid work when a consumer stops early.\n\n**Example**\n\n```python\nscores = [0.1, 0.9, 0.7, 0.2]\nfirst_high = next(score for score in scores if score > 0.8)\nprint(first_high)  # 0.9\n```\n\nOnly enough of `scores` is examined to find the first match. In contrast, `[score for score in scores if score > 0.8]` builds the complete filtered list.\n\n**Failure Modes / Tradeoffs**\n\nUse a list when you need indexing, length, repeated traversal, or all results at once. A generator expression is not automatically faster; it is valuable when laziness matches the workload.\n\n**Interview-Ready Explanation**\n\n> A generator expression computes items on demand, while a list comprehension computes and stores them all immediately. I choose laziness for a one-pass or streaming workload, and a list when I need the materialized result.\n\n---",
+      "markdown": "### [CARD: Generator Expressions and Lazy Evaluation]\n<!-- id: d17-generator-expressions-and-laziness -->\n\n- **Priority:** must_know\n- **Category:** python-iteration\n- **Tags:** generator-expression, laziness, memory\n\n**Core Concept**\n\nA generator expression uses parentheses—`(transform(x) for x in source)`—to create values lazily. A list comprehension uses brackets and materializes every result immediately.\n\n**Why It Matters**\n\nFor large datasets, laziness can prevent unnecessary memory use and avoid work when a consumer stops early.\n\n**Example**\n\n```python\nscores = [0.1, 0.9, 0.7, 0.2]\nfirst_high = next(score for score in scores if score > 0.8)\nprint(first_high)  # 0.9\n```\n\nOnly enough of `scores` is examined to find the first match. In contrast, `[score for score in scores if score > 0.8]` builds the complete filtered list.\n\n**Failure Modes / Tradeoffs**\n\nUse a list when you need indexing, length, repeated traversal, or all results at once. A generator expression is not automatically faster; it is valuable when laziness matches the workload.\n\n**Interview-Ready Explanation**\n\n> A generator expression computes items on demand, while a list comprehension computes and stores them all immediately. I choose laziness for a one-pass or streaming workload, and a list when I need the materialized result.\n\n---"
+    },
+    {
+      "id": "d17-decorators-as-wrappers",
+      "title": "Decorators as Callable Wrappers",
+      "priority": "must_know",
+      "category": "python-functions",
+      "tags": [
+        "decorators",
+        "higher-order-functions",
+        "closures"
+      ],
+      "content_markdown": "**Core Concept**\n\nA decorator takes a function (or class) and returns a replacement callable that adds behavior around the original. `@decorator` is syntax sugar for `function = decorator(function)`.\n\n**Why It Matters**\n\nDecorators separate cross-cutting concerns—logging, timing, authorization, retries, caching—from business logic. Framework routes and test fixtures frequently use them.\n\n**Example**\n\n```python\nfrom functools import wraps\n\ndef log_calls(func):\n    @wraps(func)\n    def wrapper(*args, **kwargs):\n        print(f\"calling {func.__name__}\")\n        return func(*args, **kwargs)\n    return wrapper\n\n@log_calls\ndef predict(value):\n    return value * 2\n```\n\n**Mental Model / Mechanics**\n\nThe wrapper closes over `func`, receives the original call's arguments, does work before and/or after `func`, and returns the original result.\n\n**Interview-Ready Explanation**\n\n> A decorator is a higher-order function that wraps another callable to add reusable behavior. `@decorator` rebinds the decorated function name to the wrapper returned by the decorator.\n\n---",
+      "markdown": "### [CARD: Decorators as Callable Wrappers]\n<!-- id: d17-decorators-as-wrappers -->\n\n- **Priority:** must_know\n- **Category:** python-functions\n- **Tags:** decorators, higher-order-functions, closures\n\n**Core Concept**\n\nA decorator takes a function (or class) and returns a replacement callable that adds behavior around the original. `@decorator` is syntax sugar for `function = decorator(function)`.\n\n**Why It Matters**\n\nDecorators separate cross-cutting concerns—logging, timing, authorization, retries, caching—from business logic. Framework routes and test fixtures frequently use them.\n\n**Example**\n\n```python\nfrom functools import wraps\n\ndef log_calls(func):\n    @wraps(func)\n    def wrapper(*args, **kwargs):\n        print(f\"calling {func.__name__}\")\n        return func(*args, **kwargs)\n    return wrapper\n\n@log_calls\ndef predict(value):\n    return value * 2\n```\n\n**Mental Model / Mechanics**\n\nThe wrapper closes over `func`, receives the original call's arguments, does work before and/or after `func`, and returns the original result.\n\n**Interview-Ready Explanation**\n\n> A decorator is a higher-order function that wraps another callable to add reusable behavior. `@decorator` rebinds the decorated function name to the wrapper returned by the decorator.\n\n---"
+    },
+    {
+      "id": "d17-decorator-metadata-and-parameters",
+      "title": "Decorator Metadata and Parameterized Decorators",
+      "priority": "should_know",
+      "category": "python-functions",
+      "tags": [
+        "decorators",
+        "functools-wraps",
+        "closures"
+      ],
+      "content_markdown": "**Core Concept**\n\nA wrapper normally hides the original function's `__name__`, docstring, and other metadata. `functools.wraps(original)` copies that metadata onto the wrapper. A parameterized decorator adds one outer factory layer that receives configuration first.\n\n**Example**\n\n```python\nfrom functools import wraps\n\ndef retry(times):\n    def decorate(func):\n        @wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except ValueError:\n                    if attempt == times - 1:\n                        raise\n        return wrapper\n    return decorate\n```\n\n`@retry(3)` means `operation = retry(3)(operation)`.\n\n**Failure Modes / Tradeoffs**\n\nDecorators can obscure control flow and complicate debugging. Keep wrapper behavior narrow, preserve metadata with `@wraps`, and be explicit about which exceptions a retry may handle.\n\n**Interview-Ready Explanation**\n\n> `functools.wraps` preserves a decorated function's useful identity and metadata. A parameterized decorator is a factory: configuration first returns the actual decorator, which then receives the function.\n\n---",
+      "markdown": "### [CARD: Decorator Metadata and Parameterized Decorators]\n<!-- id: d17-decorator-metadata-and-parameters -->\n\n- **Priority:** should_know\n- **Category:** python-functions\n- **Tags:** decorators, functools-wraps, closures\n\n**Core Concept**\n\nA wrapper normally hides the original function's `__name__`, docstring, and other metadata. `functools.wraps(original)` copies that metadata onto the wrapper. A parameterized decorator adds one outer factory layer that receives configuration first.\n\n**Example**\n\n```python\nfrom functools import wraps\n\ndef retry(times):\n    def decorate(func):\n        @wraps(func)\n        def wrapper(*args, **kwargs):\n            for attempt in range(times):\n                try:\n                    return func(*args, **kwargs)\n                except ValueError:\n                    if attempt == times - 1:\n                        raise\n        return wrapper\n    return decorate\n```\n\n`@retry(3)` means `operation = retry(3)(operation)`.\n\n**Failure Modes / Tradeoffs**\n\nDecorators can obscure control flow and complicate debugging. Keep wrapper behavior narrow, preserve metadata with `@wraps`, and be explicit about which exceptions a retry may handle.\n\n**Interview-Ready Explanation**\n\n> `functools.wraps` preserves a decorated function's useful identity and metadata. A parameterized decorator is a factory: configuration first returns the actual decorator, which then receives the function.\n\n---"
+    },
+    {
+      "id": "d17-context-managers",
+      "title": "Context Managers and Deterministic Cleanup",
+      "priority": "must_know",
+      "category": "python-resource-management",
+      "tags": [
+        "context-manager",
+        "with",
+        "cleanup",
+        "resources"
+      ],
+      "content_markdown": "**Core Concept**\n\nA context manager defines setup and cleanup around a block of code. The `with` statement guarantees that cleanup is attempted when the block exits, whether it exits normally or because of an exception.\n\n**Why It Matters**\n\nFiles, database connections, locks, temporary resources, and tracing spans must be released reliably. Deterministic cleanup prevents leaks and stuck locks.\n\n**Example**\n\n```python\nwith open(\"predictions.txt\", \"w\") as file:\n    file.write(\"0.91\\n\")\n# file is closed after the block, even if writing raises\n```\n\nFor a class-based context manager, `__enter__` acquires or returns a resource and `__exit__` performs cleanup. The `contextlib.contextmanager` decorator is a concise alternative for simple generator-based managers.\n\n**Failure Modes / Tradeoffs**\n\n`__exit__` can suppress an exception by returning a truthy value; do this only intentionally. Cleanup code should itself be robust and should not silently hide the original failure.\n\n**Interview-Ready Explanation**\n\n> A context manager scopes resource lifetime to a `with` block. Its cleanup runs on both normal and exceptional exit, which is why it is safer than relying on callers to remember `close()` or `release()`.\n\n---",
+      "markdown": "### [CARD: Context Managers and Deterministic Cleanup]\n<!-- id: d17-context-managers -->\n\n- **Priority:** must_know\n- **Category:** python-resource-management\n- **Tags:** context-manager, with, cleanup, resources\n\n**Core Concept**\n\nA context manager defines setup and cleanup around a block of code. The `with` statement guarantees that cleanup is attempted when the block exits, whether it exits normally or because of an exception.\n\n**Why It Matters**\n\nFiles, database connections, locks, temporary resources, and tracing spans must be released reliably. Deterministic cleanup prevents leaks and stuck locks.\n\n**Example**\n\n```python\nwith open(\"predictions.txt\", \"w\") as file:\n    file.write(\"0.91\\n\")\n# file is closed after the block, even if writing raises\n```\n\nFor a class-based context manager, `__enter__` acquires or returns a resource and `__exit__` performs cleanup. The `contextlib.contextmanager` decorator is a concise alternative for simple generator-based managers.\n\n**Failure Modes / Tradeoffs**\n\n`__exit__` can suppress an exception by returning a truthy value; do this only intentionally. Cleanup code should itself be robust and should not silently hide the original failure.\n\n**Interview-Ready Explanation**\n\n> A context manager scopes resource lifetime to a `with` block. Its cleanup runs on both normal and exceptional exit, which is why it is safer than relying on callers to remember `close()` or `release()`.\n\n---"
+    },
+    {
+      "id": "d17-exceptions-and-cleanup",
+      "title": "Exceptions, else, finally, and Raising",
+      "priority": "must_know",
+      "category": "python-error-handling",
+      "tags": [
+        "exceptions",
+        "try",
+        "except",
+        "else",
+        "finally"
+      ],
+      "content_markdown": "**Core Concept**\n\n`try` contains code that may fail; `except` handles expected exceptions; `else` runs only when the `try` block succeeds; `finally` runs regardless of success or failure. `raise` propagates an exception, optionally with a clearer domain-specific message.\n\n**Why It Matters**\n\nCorrect exception boundaries make pipeline failures visible and recoverable without accidentally turning genuine bugs into silent bad data.\n\n**Example**\n\n```python\ntry:\n    value = int(raw_value)\nexcept ValueError as exc:\n    raise ValueError(f\"invalid score: {raw_value!r}\") from exc\nelse:\n    save(value)\nfinally:\n    metrics.increment(\"records_processed\")\n```\n\n**Failure Modes / Tradeoffs**\n\nCatch specific, expected exception types. `except Exception:` is sometimes appropriate at a top-level service boundary for logging and cleanup, but a broad catch inside core logic can hide programming errors.\n\n**Interview-Ready Explanation**\n\n> I catch only exceptions I can handle meaningfully, use `else` for the success path, and use `finally` for unconditional cleanup. I preserve the original cause with `raise ... from exc` when adding domain context.\n\n---",
+      "markdown": "### [CARD: Exceptions, else, finally, and Raising]\n<!-- id: d17-exceptions-and-cleanup -->\n\n- **Priority:** must_know\n- **Category:** python-error-handling\n- **Tags:** exceptions, try, except, else, finally\n\n**Core Concept**\n\n`try` contains code that may fail; `except` handles expected exceptions; `else` runs only when the `try` block succeeds; `finally` runs regardless of success or failure. `raise` propagates an exception, optionally with a clearer domain-specific message.\n\n**Why It Matters**\n\nCorrect exception boundaries make pipeline failures visible and recoverable without accidentally turning genuine bugs into silent bad data.\n\n**Example**\n\n```python\ntry:\n    value = int(raw_value)\nexcept ValueError as exc:\n    raise ValueError(f\"invalid score: {raw_value!r}\") from exc\nelse:\n    save(value)\nfinally:\n    metrics.increment(\"records_processed\")\n```\n\n**Failure Modes / Tradeoffs**\n\nCatch specific, expected exception types. `except Exception:` is sometimes appropriate at a top-level service boundary for logging and cleanup, but a broad catch inside core logic can hide programming errors.\n\n**Interview-Ready Explanation**\n\n> I catch only exceptions I can handle meaningfully, use `else` for the success path, and use `finally` for unconditional cleanup. I preserve the original cause with `raise ... from exc` when adding domain context.\n\n---"
+    },
+    {
+      "id": "d17-classes-instances-and-attributes",
+      "title": "Classes, Instances, and Attribute Lookup",
+      "priority": "must_know",
+      "category": "python-oop",
+      "tags": [
+        "classes",
+        "instances",
+        "attributes",
+        "self"
+      ],
+      "content_markdown": "**Core Concept**\n\nA class defines behavior and shared defaults; an instance is a concrete object created from that class. Instance attributes hold per-object state, while class attributes are looked up as shared fallbacks when an instance has no attribute of that name.\n\n**Why It Matters**\n\nThis distinction prevents shared-state bugs in model configuration, clients, caches, and counters.\n\n**Example**\n\n```python\nclass ModelRun:\n    framework = \"pytorch\"  # class attribute\n\n    def __init__(self, run_id):\n        self.run_id = run_id  # instance attribute\n\nfirst = ModelRun(\"a\")\nsecond = ModelRun(\"b\")\n```\n\n`first.run_id` and `second.run_id` differ. Both can read `framework` through the class unless one instance shadows it.\n\n**Failure Modes / Tradeoffs**\n\nNever use a mutable class attribute for per-instance state, such as `items = []`; every instance would share that same list. Create it in `__init__` instead.\n\n**Interview-Ready Explanation**\n\n> A class is a blueprint; an instance has its own state. Attribute lookup checks the instance and then the class, so mutable per-instance state belongs in `__init__`, not as a class attribute.\n\n---",
+      "markdown": "### [CARD: Classes, Instances, and Attribute Lookup]\n<!-- id: d17-classes-instances-and-attributes -->\n\n- **Priority:** must_know\n- **Category:** python-oop\n- **Tags:** classes, instances, attributes, self\n\n**Core Concept**\n\nA class defines behavior and shared defaults; an instance is a concrete object created from that class. Instance attributes hold per-object state, while class attributes are looked up as shared fallbacks when an instance has no attribute of that name.\n\n**Why It Matters**\n\nThis distinction prevents shared-state bugs in model configuration, clients, caches, and counters.\n\n**Example**\n\n```python\nclass ModelRun:\n    framework = \"pytorch\"  # class attribute\n\n    def __init__(self, run_id):\n        self.run_id = run_id  # instance attribute\n\nfirst = ModelRun(\"a\")\nsecond = ModelRun(\"b\")\n```\n\n`first.run_id` and `second.run_id` differ. Both can read `framework` through the class unless one instance shadows it.\n\n**Failure Modes / Tradeoffs**\n\nNever use a mutable class attribute for per-instance state, such as `items = []`; every instance would share that same list. Create it in `__init__` instead.\n\n**Interview-Ready Explanation**\n\n> A class is a blueprint; an instance has its own state. Attribute lookup checks the instance and then the class, so mutable per-instance state belongs in `__init__`, not as a class attribute.\n\n---"
+    },
+    {
+      "id": "d17-method-types",
+      "title": "Instance, Class, and Static Methods",
+      "priority": "must_know",
+      "category": "python-oop",
+      "tags": [
+        "instance-method",
+        "classmethod",
+        "staticmethod",
+        "constructors"
+      ],
+      "content_markdown": "**Core Concept**\n\nAn instance method receives `self` and operates on one object's state. A class method receives `cls` and can operate on the class or provide alternative constructors. A static method receives neither automatically and is simply a related utility placed in the class namespace.\n\n**Example**\n\n```python\nclass Threshold:\n    default = 0.5\n\n    def accepts(self, score):          # instance method\n        return score >= self.default\n\n    @classmethod\n    def strict(cls):                    # alternative constructor\n        instance = cls()\n        instance.default = 0.9\n        return instance\n\n    @staticmethod\n    def is_valid(score):                # namespaced utility\n        return 0 <= score <= 1\n```\n\n**Interview-Ready Explanation**\n\n> Use an instance method when behavior needs one object's state, a class method when it needs class-level behavior or an alternative constructor, and a static method when no implicit object or class state is needed.\n\n---",
+      "markdown": "### [CARD: Instance, Class, and Static Methods]\n<!-- id: d17-method-types -->\n\n- **Priority:** must_know\n- **Category:** python-oop\n- **Tags:** instance-method, classmethod, staticmethod, constructors\n\n**Core Concept**\n\nAn instance method receives `self` and operates on one object's state. A class method receives `cls` and can operate on the class or provide alternative constructors. A static method receives neither automatically and is simply a related utility placed in the class namespace.\n\n**Example**\n\n```python\nclass Threshold:\n    default = 0.5\n\n    def accepts(self, score):          # instance method\n        return score >= self.default\n\n    @classmethod\n    def strict(cls):                    # alternative constructor\n        instance = cls()\n        instance.default = 0.9\n        return instance\n\n    @staticmethod\n    def is_valid(score):                # namespaced utility\n        return 0 <= score <= 1\n```\n\n**Interview-Ready Explanation**\n\n> Use an instance method when behavior needs one object's state, a class method when it needs class-level behavior or an alternative constructor, and a static method when no implicit object or class state is needed.\n\n---"
+    },
+    {
+      "id": "d17-composition-before-inheritance",
+      "title": "Composition Before Inheritance",
+      "priority": "should_know",
+      "category": "python-oop",
+      "tags": [
+        "composition",
+        "inheritance",
+        "design"
+      ],
+      "content_markdown": "**Core Concept**\n\nInheritance models a genuine “is-a” relationship and lets a subclass reuse or override parent behavior. Composition models a “has-a” relationship by giving an object collaborators. In application code, composition is often more flexible and easier to test.\n\n**Example**\n\n```python\nclass Predictor:\n    def __init__(self, model, feature_builder):\n        self.model = model\n        self.feature_builder = feature_builder\n\n    def predict(self, record):\n        return self.model.predict(self.feature_builder.build(record))\n```\n\n`Predictor` has a model and a feature builder; it does not need to inherit from either.\n\n**Failure Modes / Tradeoffs**\n\nDeep inheritance hierarchies make behavior hard to trace, especially with multiple inheritance and method-resolution order. Use inheritance for stable shared contracts; favor composition when you want to swap dependencies or behaviors.\n\n**Interview-Ready Explanation**\n\n> I prefer composition when an object uses another component, because dependencies are explicit and replaceable. I use inheritance only for a stable, meaningful is-a relationship or shared interface.\n\n---",
+      "markdown": "### [CARD: Composition Before Inheritance]\n<!-- id: d17-composition-before-inheritance -->\n\n- **Priority:** should_know\n- **Category:** python-oop\n- **Tags:** composition, inheritance, design\n\n**Core Concept**\n\nInheritance models a genuine “is-a” relationship and lets a subclass reuse or override parent behavior. Composition models a “has-a” relationship by giving an object collaborators. In application code, composition is often more flexible and easier to test.\n\n**Example**\n\n```python\nclass Predictor:\n    def __init__(self, model, feature_builder):\n        self.model = model\n        self.feature_builder = feature_builder\n\n    def predict(self, record):\n        return self.model.predict(self.feature_builder.build(record))\n```\n\n`Predictor` has a model and a feature builder; it does not need to inherit from either.\n\n**Failure Modes / Tradeoffs**\n\nDeep inheritance hierarchies make behavior hard to trace, especially with multiple inheritance and method-resolution order. Use inheritance for stable shared contracts; favor composition when you want to swap dependencies or behaviors.\n\n**Interview-Ready Explanation**\n\n> I prefer composition when an object uses another component, because dependencies are explicit and replaceable. I use inheritance only for a stable, meaningful is-a relationship or shared interface.\n\n---"
+    },
+    {
+      "id": "d17-dataclass",
+      "title": "dataclass for Data-Carrying Objects",
+      "priority": "should_know",
+      "category": "python-oop",
+      "tags": [
+        "dataclass",
+        "type-hints",
+        "defaults"
+      ],
+      "content_markdown": "**Core Concept**\n\n`@dataclass` generates common boilerplate for classes that primarily hold data, including an initializer and readable representation. It makes simple configuration and result objects concise while retaining ordinary Python class behavior.\n\n**Example**\n\n```python\nfrom dataclasses import dataclass, field\n\n@dataclass\nclass EvaluationResult:\n    accuracy: float\n    labels: list[str] = field(default_factory=list)\n```\n\n`default_factory` creates a fresh list per instance, avoiding the mutable-default problem.\n\n**Interview-Ready Explanation**\n\n> I use a dataclass for objects whose main job is to carry structured data. `default_factory` is important for mutable fields because it creates a separate value for every instance.\n\n---",
+      "markdown": "### [CARD: dataclass for Data-Carrying Objects]\n<!-- id: d17-dataclass -->\n\n- **Priority:** should_know\n- **Category:** python-oop\n- **Tags:** dataclass, type-hints, defaults\n\n**Core Concept**\n\n`@dataclass` generates common boilerplate for classes that primarily hold data, including an initializer and readable representation. It makes simple configuration and result objects concise while retaining ordinary Python class behavior.\n\n**Example**\n\n```python\nfrom dataclasses import dataclass, field\n\n@dataclass\nclass EvaluationResult:\n    accuracy: float\n    labels: list[str] = field(default_factory=list)\n```\n\n`default_factory` creates a fresh list per instance, avoiding the mutable-default problem.\n\n**Interview-Ready Explanation**\n\n> I use a dataclass for objects whose main job is to carry structured data. `default_factory` is important for mutable fields because it creates a separate value for every instance.\n\n---"
+    },
+    {
+      "id": "d17-yield-from",
+      "title": "Generator Delegation with yield from",
+      "priority": "nice_to_know",
+      "category": "python-iteration",
+      "tags": [
+        "generators",
+        "yield-from",
+        "delegation"
+      ],
+      "content_markdown": "**Core Concept**\n\n`yield from iterable` delegates iteration to another iterable or generator. It is a concise way for one generator to yield every value produced by another.\n\n**Example**\n\n```python\ndef all_records(groups):\n    for group in groups:\n        yield from group\n```\n\n**Interview-Ready Explanation**\n\n> `yield from` delegates part of a generator's output to another iterable, making generator composition clearer than writing an inner loop by hand.\n\n---",
+      "markdown": "### [CARD: Generator Delegation with yield from]\n<!-- id: d17-yield-from -->\n\n- **Priority:** nice_to_know\n- **Category:** python-iteration\n- **Tags:** generators, yield-from, delegation\n\n**Core Concept**\n\n`yield from iterable` delegates iteration to another iterable or generator. It is a concise way for one generator to yield every value produced by another.\n\n**Example**\n\n```python\ndef all_records(groups):\n    for group in groups:\n        yield from group\n```\n\n**Interview-Ready Explanation**\n\n> `yield from` delegates part of a generator's output to another iterable, making generator composition clearer than writing an inner loop by hand.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "- **Day 1:** Namespaces, closures, mutable defaults, and class attributes all rely on the object/reference and mutability model introduced there.\n- **Day 17 internal chain:** iterable → iterator protocol → generator; LEGB/closures → decorators; exceptions → context-manager cleanup.\n- **Day 18:** Context managers, exception propagation, lazy iteration, and shared mutable state are prerequisites for safe threads and `asyncio`.\n- **MLE work:** Generators are useful for streamed data; context managers manage files, database sessions, and locks; decorators frequently appear in API and ML framework code.\n\n---",
+  "common_misconceptions_markdown": "- **Myth:** A generator function runs when called.  \n  **Reality:** Calling it creates a generator; its body begins when it is iterated.\n\n- **Myth:** An iterable and iterator are interchangeable.  \n  **Reality:** An iterable can create an iterator; an iterator carries one traversal's state and may be exhausted.\n\n- **Myth:** A mutable default is recreated on every call.  \n  **Reality:** It is created once when the function is defined.\n\n- **Myth:** A decorator changes the original function in place.  \n  **Reality:** It normally returns a wrapper, and the function name is rebound to that wrapper.\n\n- **Myth:** `with` only closes files.  \n  **Reality:** It scopes and cleans up any resource represented by a context manager.\n\n- **Myth:** Inheritance is automatically more reusable than composition.  \n  **Reality:** Composition often produces clearer, easier-to-test designs.\n\n---",
+  "out_of_scope_markdown": "- CPython bytecode, frame objects, and reference-counting internals\n- Descriptor protocol, metaclasses, and advanced dunder-method design\n- Async generators and asynchronous context managers (Day 18 context)\n- Full multiple-inheritance and method-resolution-order rules\n- Building custom iterator, decorator, or context-manager libraries from scratch\n\n---",
+  "qa_drill": [
+    {
+      "id": "d17-qa-001",
+      "question": "What is a namespace in Python?",
+      "answer": "A mapping from names to objects in a particular context, such as a module or one function call.",
+      "tags": [
+        "namespaces",
+        "scope"
+      ],
+      "linked_card_ids": [
+        "d17-namespaces-and-call-frames"
+      ]
+    },
+    {
+      "id": "d17-qa-002",
+      "question": "What does LEGB stand for?",
+      "answer": "Local, Enclosing, Global, Built-in—the order Python uses to resolve an unqualified name inside a function.",
+      "tags": [
+        "legb",
+        "scope"
+      ],
+      "linked_card_ids": [
+        "d17-legb-and-closures"
+      ]
+    },
+    {
+      "id": "d17-qa-003",
+      "question": "Why is `def f(items=[]):` risky?",
+      "answer": "The list is created once at function definition time and is reused across calls that omit `items`.",
+      "tags": [
+        "defaults",
+        "mutability"
+      ],
+      "linked_card_ids": [
+        "d17-function-arguments-and-mutable-defaults"
+      ]
+    },
+    {
+      "id": "d17-qa-004",
+      "question": "What is the difference between an iterable and an iterator?",
+      "answer": "An iterable can provide an iterator. An iterator is stateful, produces values with `next()`, and eventually becomes exhausted.",
+      "tags": [
+        "iterables",
+        "iterators"
+      ],
+      "linked_card_ids": [
+        "d17-iterables-vs-iterators"
+      ]
+    },
+    {
+      "id": "d17-qa-005",
+      "question": "Which event signals that an iterator has no more values?",
+      "answer": "`next()` raises `StopIteration`; a `for` loop handles this automatically.",
+      "tags": [
+        "iterator-protocol",
+        "stopiteration"
+      ],
+      "linked_card_ids": [
+        "d17-iterator-protocol"
+      ]
+    },
+    {
+      "id": "d17-qa-006",
+      "question": "What does `yield` change about a function?",
+      "answer": "It makes the function produce a generator that yields values lazily and preserves state between yields.",
+      "tags": [
+        "generators",
+        "yield"
+      ],
+      "linked_card_ids": [
+        "d17-generator-functions-and-yield"
+      ]
+    },
+    {
+      "id": "d17-qa-007",
+      "question": "When would you choose a generator expression over a list comprehension?",
+      "answer": "For a one-pass or streaming workload where values can be computed on demand and materializing every result would waste memory or work.",
+      "tags": [
+        "laziness",
+        "generator-expression"
+      ],
+      "linked_card_ids": [
+        "d17-generator-expressions-and-laziness"
+      ]
+    },
+    {
+      "id": "d17-qa-008",
+      "question": "What does `@decorator` mean operationally?",
+      "answer": "It means the decorated name is rebound to the callable returned by `decorator(original_function)`.",
+      "tags": [
+        "decorators",
+        "wrappers"
+      ],
+      "linked_card_ids": [
+        "d17-decorators-as-wrappers"
+      ]
+    },
+    {
+      "id": "d17-qa-009",
+      "question": "Why use `functools.wraps` in a decorator?",
+      "answer": "It preserves useful metadata such as the original function's name and docstring on the wrapper.",
+      "tags": [
+        "decorators",
+        "metadata"
+      ],
+      "linked_card_ids": [
+        "d17-decorator-metadata-and-parameters"
+      ]
+    },
+    {
+      "id": "d17-qa-010",
+      "question": "What guarantee does a context manager provide?",
+      "answer": "It attempts cleanup when a `with` block exits, whether the block succeeds or raises an exception.",
+      "tags": [
+        "context-manager",
+        "cleanup"
+      ],
+      "linked_card_ids": [
+        "d17-context-managers"
+      ]
+    },
+    {
+      "id": "d17-qa-011",
+      "question": "When should you use `finally`?",
+      "answer": "For cleanup or actions that must run whether the protected code succeeds or fails.",
+      "tags": [
+        "exceptions",
+        "finally"
+      ],
+      "linked_card_ids": [
+        "d17-exceptions-and-cleanup"
+      ]
+    },
+    {
+      "id": "d17-qa-012",
+      "question": "Why should mutable per-instance state be created in `__init__`?",
+      "answer": "A mutable class attribute is shared by all instances; creating it in `__init__` gives every instance its own object.",
+      "tags": [
+        "classes",
+        "shared-state"
+      ],
+      "linked_card_ids": [
+        "d17-classes-instances-and-attributes"
+      ]
+    },
+    {
+      "id": "d17-qa-013",
+      "question": "When is a `@classmethod` appropriate?",
+      "answer": "When behavior needs the class itself, commonly for an alternative constructor or class-level configuration.",
+      "tags": [
+        "classmethod",
+        "constructors"
+      ],
+      "linked_card_ids": [
+        "d17-method-types"
+      ]
+    },
+    {
+      "id": "d17-qa-014",
+      "question": "Why is composition often preferred to inheritance?",
+      "answer": "It makes dependencies explicit and replaceable, avoiding deep inheritance hierarchies and making testing easier.",
+      "tags": [
+        "composition",
+        "inheritance"
+      ],
+      "linked_card_ids": [
+        "d17-composition-before-inheritance"
+      ]
+    },
+    {
+      "id": "d17-qa-015",
+      "question": "How do you safely give a dataclass a mutable default field?",
+      "answer": "Use `field(default_factory=...)`, such as `field(default_factory=list)`, so each instance receives a fresh object.",
+      "tags": [
+        "dataclass",
+        "defaults"
+      ],
+      "linked_card_ids": [
+        "d17-dataclass"
+      ]
+    },
+    {
+      "id": "d17-qa-016",
+      "question": "What does `yield from` do?",
+      "answer": "It delegates output from one generator to another iterable or generator.",
+      "tags": [
+        "generators",
+        "yield-from"
+      ],
+      "linked_card_ids": [
+        "d17-yield-from"
+      ]
+    }
+  ]
+}

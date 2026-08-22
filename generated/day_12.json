@@ -1,0 +1,352 @@
+{
+  "schema_version": 1,
+  "day": 12,
+  "title": "Transformers: Full Architecture + LLM Training/Inference/Decoding",
+  "topics": [
+    "transformers",
+    "llm-architecture",
+    "training-inference",
+    "decoding"
+  ],
+  "tags": [
+    "deep-learning",
+    "llm"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 0,
+    "must_know": 10,
+    "should_know": 4
+  },
+  "daily_objective_markdown": "By the end of today you should be able to assemble a complete Transformer block from the pieces built across Days 8–11, explain residual connections and why they matter at real depth, explain the training/inference asymmetry, and confidently walk through how an LLM actually generates text — temperature, top-k, top-p, context windows, hallucinations, and why quantization exists.\n\n---",
+  "syllabus_markdown": "- 🔴 **MUST KNOW:** the full Transformer block (attention + FFN + residuals + LayerNorm), why residual connections exist, causal masking mechanics, the training-parallel/inference-sequential asymmetry, next-token-prediction pretraining, temperature/top-k/top-p, why context windows are limited.\n- 🟡 **SHOULD KNOW:** Pre-LN vs. Post-LN, positional encoding mechanics (sinusoidal vs. learned), quantization's purpose and tradeoff.\n- 🟢 **NICE TO KNOW:** exact sinusoidal formula, RoPE mechanics, GELU's formula, distributed pretraining strategies, specific quantization algorithms (GPTQ/AWQ).\n\n---",
+  "cards": [
+    {
+      "id": "d12-ffn-sublayer",
+      "title": "The Feed-Forward Network (FFN) Sublayer",
+      "priority": "must_know",
+      "category": "llm",
+      "tags": [
+        "ffn",
+        "transformers",
+        "non-linearity"
+      ],
+      "content_markdown": "**Core Concept**\n\nAfter the attention sublayer, each token's representation independently passes through a small two-layer network: linear → activation (ReLU, or more commonly GELU in modern Transformers) → linear, typically expanding to a larger hidden dimension and back down.\n\n**Why It Matters**\n\nDivision of labor: attention mixes information across tokens (\"gather relevant context\"); the FFN adds additional non-linear processing capacity per token (\"transform what was gathered\"). Just like stacked linear layers collapse into one linear layer, a Transformer needs something beyond attention alone to add real per-token processing power.\n\n**Mental Model / Mechanics**\n\nCritically, this is applied identically (same weights) to every position, but each position is processed independently of the others — no cross-token mixing happens here.\n\n---",
+      "markdown": "### [CARD: The Feed-Forward Network (FFN) Sublayer]\n<!-- id: d12-ffn-sublayer -->\n\n- **Priority:** must_know\n- **Category:** llm\n- **Tags:** ffn, transformers, non-linearity\n**Core Concept**\n\nAfter the attention sublayer, each token's representation independently passes through a small two-layer network: linear → activation (ReLU, or more commonly GELU in modern Transformers) → linear, typically expanding to a larger hidden dimension and back down.\n\n**Why It Matters**\n\nDivision of labor: attention mixes information across tokens (\"gather relevant context\"); the FFN adds additional non-linear processing capacity per token (\"transform what was gathered\"). Just like stacked linear layers collapse into one linear layer, a Transformer needs something beyond attention alone to add real per-token processing power.\n\n**Mental Model / Mechanics**\n\nCritically, this is applied identically (same weights) to every position, but each position is processed independently of the others — no cross-token mixing happens here.\n\n---"
+    },
+    {
+      "id": "d12-residual-connections",
+      "title": "Residual Connections",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "residual-connections",
+        "gradient-flow"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe output of each sublayer (attention, and separately the FFN) is added back to its own input:\n`output = Sublayer(x) + x`\n\n**Why It Matters**\n\nModern Transformers stack dozens to 100+ layers. Without residual connections, gradients would have to flow back through every single one of those layers' non-linear transformations, causing the vanishing-gradient problem and making training this deep essentially impossible.\n\n**Mental Model / Mechanics**\n\nThe `+x` term gives gradients a direct, unimpeded path backward.\n\n---",
+      "markdown": "### [CARD: Residual Connections]\n<!-- id: d12-residual-connections -->\n\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** residual-connections, gradient-flow\n**Core Concept**\n\nThe output of each sublayer (attention, and separately the FFN) is added back to its own input:\n`output = Sublayer(x) + x`\n\n**Why It Matters**\n\nModern Transformers stack dozens to 100+ layers. Without residual connections, gradients would have to flow back through every single one of those layers' non-linear transformations, causing the vanishing-gradient problem and making training this deep essentially impossible.\n\n**Mental Model / Mechanics**\n\nThe `+x` term gives gradients a direct, unimpeded path backward.\n\n---"
+    },
+    {
+      "id": "d12-pre-ln-vs-post-ln",
+      "title": "Pre-LN vs Post-LN",
+      "priority": "should_know",
+      "category": "deep-learning",
+      "tags": [
+        "layer-norm",
+        "transformers"
+      ],
+      "content_markdown": "**Core Concept**\n\nLayerNorm normalizes across the feature dimension per individual example, independent of batch size. It can be placed before or after the residual addition.\n\n**Mental Model / Mechanics**\n\n- **Post-LN** (original Transformer paper): normalize after the residual addition.\n- **Pre-LN** (modern default): normalize the input before it enters the sublayer, then add the residual afterward. Pre-LN tends to give more stable gradient flow when training very deep Transformers.\n\n---",
+      "markdown": "### [CARD: Pre-LN vs Post-LN]\n<!-- id: d12-pre-ln-vs-post-ln -->\n\n- **Priority:** should_know\n- **Category:** deep-learning\n- **Tags:** layer-norm, transformers\n**Core Concept**\n\nLayerNorm normalizes across the feature dimension per individual example, independent of batch size. It can be placed before or after the residual addition.\n\n**Mental Model / Mechanics**\n\n- **Post-LN** (original Transformer paper): normalize after the residual addition.\n- **Pre-LN** (modern default): normalize the input before it enters the sublayer, then add the residual afterward. Pre-LN tends to give more stable gradient flow when training very deep Transformers.\n\n---"
+    },
+    {
+      "id": "d12-full-transformer-block",
+      "title": "One Full Transformer Block, Assembled",
+      "priority": "must_know",
+      "category": "llm",
+      "tags": [
+        "transformer-block",
+        "architecture"
+      ],
+      "content_markdown": "**Core Concept**\n\nA full Transformer block chains LayerNorm, Multi-Head Attention, and a residual connection, followed by LayerNorm, a Feed-Forward Network, and another residual connection.\n\n**Mental Model / Mechanics**\n\n```\nInput\n  │\n  ▼\nLayerNorm ──► Multi-Head Attention ──► (+ residual, add back Input)\n  │\n  ▼\nLayerNorm ──► Feed-Forward Network ──► (+ residual, add back previous output)\n  │\n  ▼\nOutput  →  feeds into the NEXT stacked block\n```\nA full Transformer model is this block stacked N times — 12, 24, 96+ layers.\n\n---",
+      "markdown": "### [CARD: One Full Transformer Block, Assembled]\n<!-- id: d12-full-transformer-block -->\n\n- **Priority:** must_know\n- **Category:** llm\n- **Tags:** transformer-block, architecture\n**Core Concept**\n\nA full Transformer block chains LayerNorm, Multi-Head Attention, and a residual connection, followed by LayerNorm, a Feed-Forward Network, and another residual connection.\n\n**Mental Model / Mechanics**\n\n```\nInput\n  │\n  ▼\nLayerNorm ──► Multi-Head Attention ──► (+ residual, add back Input)\n  │\n  ▼\nLayerNorm ──► Feed-Forward Network ──► (+ residual, add back previous output)\n  │\n  ▼\nOutput  →  feeds into the NEXT stacked block\n```\nA full Transformer model is this block stacked N times — 12, 24, 96+ layers.\n\n---"
+    },
+    {
+      "id": "d12-positional-encoding-mechanics",
+      "title": "Positional Encoding Mechanics",
+      "priority": "should_know",
+      "category": "llm",
+      "tags": [
+        "positional-encoding",
+        "attention"
+      ],
+      "content_markdown": "**Core Concept**\n\nAttention has no inherent sense of order. Positional encoding gives tokens a sense of sequence position.\n\n**Mental Model / Mechanics**\n\n- **Sinusoidal positional encoding** (original Transformer): a fixed, non-learned pattern using sine/cosine functions at different frequencies, added directly to each token's embedding.\n- **Learned positional embeddings**: just learn a separate embedding vector per position index. Simpler, but generalizes worse beyond max sequence length seen during training.\n- **RoPE (Rotary Positional Embeddings)**: the modern standard in many current LLMs — encodes relative position by rotating query/key vectors.\n\n---",
+      "markdown": "### [CARD: Positional Encoding Mechanics]\n<!-- id: d12-positional-encoding-mechanics -->\n\n- **Priority:** should_know\n- **Category:** llm\n- **Tags:** positional-encoding, attention\n**Core Concept**\n\nAttention has no inherent sense of order. Positional encoding gives tokens a sense of sequence position.\n\n**Mental Model / Mechanics**\n\n- **Sinusoidal positional encoding** (original Transformer): a fixed, non-learned pattern using sine/cosine functions at different frequencies, added directly to each token's embedding.\n- **Learned positional embeddings**: just learn a separate embedding vector per position index. Simpler, but generalizes worse beyond max sequence length seen during training.\n- **RoPE (Rotary Positional Embeddings)**: the modern standard in many current LLMs — encodes relative position by rotating query/key vectors.\n\n---"
+    },
+    {
+      "id": "d12-causal-masking",
+      "title": "Causal Masking",
+      "priority": "must_know",
+      "category": "llm",
+      "tags": [
+        "causal-masking",
+        "attention",
+        "autoregressive"
+      ],
+      "content_markdown": "**Core Concept**\n\nBefore softmax, every \"future\" position's attention score is set to -∞. After softmax, those positions collapse to exactly zero weight — position `i` can only attend to positions `1...i`.\n\n**Why It Matters**\n\nThis causal constraint is why decoder-only LLMs can be trained efficiently. During training, the entire target sequence is fed in at once (\"teacher forcing\") and causal masking guarantees that position `i`'s prediction still only \"sees\" positions `1...i-1`. Loss for every position can be computed in a single, parallel forward pass.\n\n---",
+      "markdown": "### [CARD: Causal Masking]\n<!-- id: d12-causal-masking -->\n\n- **Priority:** must_know\n- **Category:** llm\n- **Tags:** causal-masking, attention, autoregressive\n**Core Concept**\n\nBefore softmax, every \"future\" position's attention score is set to -∞. After softmax, those positions collapse to exactly zero weight — position `i` can only attend to positions `1...i`.\n\n**Why It Matters**\n\nThis causal constraint is why decoder-only LLMs can be trained efficiently. During training, the entire target sequence is fed in at once (\"teacher forcing\") and causal masking guarantees that position `i`'s prediction still only \"sees\" positions `1...i-1`. Loss for every position can be computed in a single, parallel forward pass.\n\n---"
+    },
+    {
+      "id": "d12-training-inference-asymmetry",
+      "title": "Training-Parallel vs Inference-Sequential Asymmetry",
+      "priority": "must_know",
+      "category": "llm",
+      "tags": [
+        "training",
+        "inference"
+      ],
+      "content_markdown": "**Core Concept**\n\nTraining an LLM can be heavily parallelized over the sequence, whereas inference generation fundamentally has to happen one token at a time sequentially.\n\n**Mental Model / Mechanics**\n\n- **Training:** The entire sequence is fed in at once. Causal masking ensures no token looks ahead, allowing loss computation for all tokens simultaneously in a single forward pass.\n- **Inference:** Because token `i+1` does not exist yet, the model must sequentially generate it before feeding it back in to predict token `i+2`.\n\n---",
+      "markdown": "### [CARD: Training-Parallel vs Inference-Sequential Asymmetry]\n<!-- id: d12-training-inference-asymmetry -->\n\n- **Priority:** must_know\n- **Category:** llm\n- **Tags:** training, inference\n**Core Concept**\n\nTraining an LLM can be heavily parallelized over the sequence, whereas inference generation fundamentally has to happen one token at a time sequentially.\n\n**Mental Model / Mechanics**\n\n- **Training:** The entire sequence is fed in at once. Causal masking ensures no token looks ahead, allowing loss computation for all tokens simultaneously in a single forward pass.\n- **Inference:** Because token `i+1` does not exist yet, the model must sequentially generate it before feeding it back in to predict token `i+2`.\n\n---"
+    },
+    {
+      "id": "d12-next-token-prediction-pretraining",
+      "title": "Next-Token Prediction Pretraining",
+      "priority": "must_know",
+      "category": "llm",
+      "tags": [
+        "pretraining",
+        "objective"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe base LLM training objective is to predict the next token given everything before it.\n\n**Mental Model / Mechanics**\n\nThis process is self-supervised: no manual labeling required — the \"label\" for predicting token `i+1` is just the actual next token in the raw text. It reuses cross-entropy loss over the vocabulary via softmax, at every position, in every sequence, simultaneously.\n\n---",
+      "markdown": "### [CARD: Next-Token Prediction Pretraining]\n<!-- id: d12-next-token-prediction-pretraining -->\n\n- **Priority:** must_know\n- **Category:** llm\n- **Tags:** pretraining, objective\n**Core Concept**\n\nThe base LLM training objective is to predict the next token given everything before it.\n\n**Mental Model / Mechanics**\n\nThis process is self-supervised: no manual labeling required — the \"label\" for predicting token `i+1` is just the actual next token in the raw text. It reuses cross-entropy loss over the vocabulary via softmax, at every position, in every sequence, simultaneously.\n\n---"
+    },
+    {
+      "id": "d12-base-model-to-assistant",
+      "title": "From Base Model to Usable Assistant",
+      "priority": "should_know",
+      "category": "llm",
+      "tags": [
+        "alignment",
+        "sft",
+        "rlhf"
+      ],
+      "content_markdown": "**Core Concept**\n\nA raw pretrained model is good at \"continuing text plausibly\", but it is not automatically good at following instructions.\n\n**Why It Matters**\n\nTo close this gap and create a helpful assistant, models undergo Supervised Fine-Tuning (SFT) and Reinforcement Learning from Human Feedback (RLHF).\n\n---",
+      "markdown": "### [CARD: From Base Model to Usable Assistant]\n<!-- id: d12-base-model-to-assistant -->\n\n- **Priority:** should_know\n- **Category:** llm\n- **Tags:** alignment, sft, rlhf\n**Core Concept**\n\nA raw pretrained model is good at \"continuing text plausibly\", but it is not automatically good at following instructions.\n\n**Why It Matters**\n\nTo close this gap and create a helpful assistant, models undergo Supervised Fine-Tuning (SFT) and Reinforcement Learning from Human Feedback (RLHF).\n\n---"
+    },
+    {
+      "id": "d12-autoregressive-decoding",
+      "title": "Autoregressive Decoding at Inference",
+      "priority": "must_know",
+      "category": "llm",
+      "tags": [
+        "inference",
+        "decoding"
+      ],
+      "content_markdown": "**Core Concept**\n\nAt generation time, the model follows a loop: feed in the prompt + tokens generated so far → get probability distribution over vocabulary for next token (softmax) → select a token via decoding strategy → append to sequence → repeat.\n\n**Why It Matters**\n\nThis sequential dependency is exactly why generation is inherently slower than training's parallelized forward pass.\n\n---",
+      "markdown": "### [CARD: Autoregressive Decoding at Inference]\n<!-- id: d12-autoregressive-decoding -->\n\n- **Priority:** must_know\n- **Category:** llm\n- **Tags:** inference, decoding\n**Core Concept**\n\nAt generation time, the model follows a loop: feed in the prompt + tokens generated so far → get probability distribution over vocabulary for next token (softmax) → select a token via decoding strategy → append to sequence → repeat.\n\n**Why It Matters**\n\nThis sequential dependency is exactly why generation is inherently slower than training's parallelized forward pass.\n\n---"
+    },
+    {
+      "id": "d12-decoding-strategies",
+      "title": "Decoding Strategies (Temperature, Top-k, Top-p)",
+      "priority": "must_know",
+      "category": "llm",
+      "tags": [
+        "decoding",
+        "sampling",
+        "generation"
+      ],
+      "content_markdown": "**Core Concept**\n\nDecoding strategies determine how the model selects the next token from the output probability distribution.\n\n**Mental Model / Mechanics**\n\n- **Greedy decoding:** always pick highest-probability token. Simple, deterministic, but repetitive and can get locked in.\n- **Temperature:** scaling factor applied to logits before softmax (`logits / T`). `T < 1` → more deterministic. `T > 1` → more random. `T = 1` → unmodified.\n- **Top-k sampling:** restrict sampling to only the `k` highest-probability tokens, renormalize, then sample.\n- **Top-p (nucleus) sampling:** include the smallest set of highest-probability tokens whose cumulative probability exceeds threshold `p`, then sample from that dynamically-sized set. Adapts to model's confidence at each step.\n\n---",
+      "markdown": "### [CARD: Decoding Strategies (Temperature, Top-k, Top-p)]\n<!-- id: d12-decoding-strategies -->\n\n- **Priority:** must_know\n- **Category:** llm\n- **Tags:** decoding, sampling, generation\n**Core Concept**\n\nDecoding strategies determine how the model selects the next token from the output probability distribution.\n\n**Mental Model / Mechanics**\n\n- **Greedy decoding:** always pick highest-probability token. Simple, deterministic, but repetitive and can get locked in.\n- **Temperature:** scaling factor applied to logits before softmax (`logits / T`). `T < 1` → more deterministic. `T > 1` → more random. `T = 1` → unmodified.\n- **Top-k sampling:** restrict sampling to only the `k` highest-probability tokens, renormalize, then sample.\n- **Top-p (nucleus) sampling:** include the smallest set of highest-probability tokens whose cumulative probability exceeds threshold `p`, then sample from that dynamically-sized set. Adapts to model's confidence at each step.\n\n---"
+    },
+    {
+      "id": "d12-context-windows",
+      "title": "Context Windows",
+      "priority": "must_know",
+      "category": "llm",
+      "tags": [
+        "context-window",
+        "attention"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe context window is the maximum number of tokens (prompt + generation combined) a model can process in one forward pass.\n\n**Why It Matters**\n\nIt is directly limited by attention's O(n²) computational cost and positional encoding's effective range. This strict limit is exactly why Retrieval-Augmented Generation (RAG) matters as a real engineering necessity.\n\n---",
+      "markdown": "### [CARD: Context Windows]\n<!-- id: d12-context-windows -->\n\n- **Priority:** must_know\n- **Category:** llm\n- **Tags:** context-window, attention\n**Core Concept**\n\nThe context window is the maximum number of tokens (prompt + generation combined) a model can process in one forward pass.\n\n**Why It Matters**\n\nIt is directly limited by attention's O(n²) computational cost and positional encoding's effective range. This strict limit is exactly why Retrieval-Augmented Generation (RAG) matters as a real engineering necessity.\n\n---"
+    },
+    {
+      "id": "d12-hallucinations",
+      "title": "Hallucinations",
+      "priority": "must_know",
+      "category": "llm",
+      "tags": [
+        "hallucinations",
+        "alignment"
+      ],
+      "content_markdown": "**Core Concept**\n\nHallucination occurs when the model generates fluent, confident-sounding text that's factually incorrect.\n\n**Why It Matters**\n\nThe training objective is \"predict a plausible next token,\" not \"only say true things.\" There is no built-in mechanism distinguishing linguistically fluent patterns from factually correct statements.\n\n---",
+      "markdown": "### [CARD: Hallucinations]\n<!-- id: d12-hallucinations -->\n\n- **Priority:** must_know\n- **Category:** llm\n- **Tags:** hallucinations, alignment\n**Core Concept**\n\nHallucination occurs when the model generates fluent, confident-sounding text that's factually incorrect.\n\n**Why It Matters**\n\nThe training objective is \"predict a plausible next token,\" not \"only say true things.\" There is no built-in mechanism distinguishing linguistically fluent patterns from factually correct statements.\n\n---"
+    },
+    {
+      "id": "d12-quantization",
+      "title": "Quantization",
+      "priority": "should_know",
+      "category": "llm",
+      "tags": [
+        "quantization",
+        "inference"
+      ],
+      "content_markdown": "**Core Concept**\n\nQuantization involves representing model weights with fewer bits (e.g., 8-bit or 4-bit integers) instead of 16/32-bit floats.\n\n**Why It Matters**\n\nIt dramatically cuts memory footprint and increases inference speed, at some cost to precision.\n\n**Mental Model / Mechanics**\n\nTypically applied post-training.\n- **GGUF + llama.cpp:** GGUF is a file format for storing quantized LLM weights efficiently for CPU/consumer-hardware inference; llama.cpp is the inference engine for running models in that format.\n- **The tradeoff:** lower bit-width means smaller and faster, but some accuracy degradation.\n\n---",
+      "markdown": "### [CARD: Quantization]\n<!-- id: d12-quantization -->\n\n- **Priority:** should_know\n- **Category:** llm\n- **Tags:** quantization, inference\n**Core Concept**\n\nQuantization involves representing model weights with fewer bits (e.g., 8-bit or 4-bit integers) instead of 16/32-bit floats.\n\n**Why It Matters**\n\nIt dramatically cuts memory footprint and increases inference speed, at some cost to precision.\n\n**Mental Model / Mechanics**\n\nTypically applied post-training.\n- **GGUF + llama.cpp:** GGUF is a file format for storing quantized LLM weights efficiently for CPU/consumer-hardware inference; llama.cpp is the inference engine for running models in that format.\n- **The tradeoff:** lower bit-width means smaller and faster, but some accuracy degradation.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "- Day 8 (non-linearity): the FFN sublayer's entire reason for existing.\n- Day 9 (vanishing gradients, residual connections, LayerNorm): residual connections and Pre-LN are the exact forward pointers from Day 9, fully cashed in.\n- Day 11 (attention, O(n²)): causal masking's full mechanics, and WHY context windows are cost-constrained.\n- Day 3 (cross-entropy): reused unchanged as the pretraining objective.\n- Day 8 (softmax): reused unchanged for next-token probabilities.\n- Forward: Day 13 (SFT and RLHF), Days 15-16 (RAG motivation from context limits + hallucinations).\n\n---",
+  "common_misconceptions_markdown": "1. \"Transformers don't need positional encoding since attention is so powerful.\" — They do.\n2. \"LLM training happens one token at a time, sequentially, just like inference.\" — No, training is parallelized via causal masking + teacher forcing.\n3. \"Greedy decoding is what's typically used in production.\" — Sampling-based strategies are common for open-ended generation.\n4. \"Temperature = 0 and greedy decoding are different mechanisms.\" — They converge to the same behavior.\n5. \"Hallucination means the model is malfunctioning.\" — It's an inherent consequence of the training objective.\n6. \"Quantization always destroys model quality significantly.\" — At well-calibrated 4-bit, degradation can be quite small.\n\n---",
+  "out_of_scope_markdown": "- Exact sinusoidal positional encoding formula, or RoPE's rotation math.\n- GELU's exact formula.\n- Distributed pretraining strategies.\n- Specific quantization algorithms (GPTQ, AWQ) beyond knowing they exist.\n\n---",
+  "qa_drill": [
+    {
+      "id": "d12-qa-001",
+      "question": "What is the division of labor between the Attention sublayer and the Feed-Forward Network (FFN) sublayer?",
+      "answer": "Attention mixes information across tokens to gather relevant context. The FFN processes each token independently, adding non-linear transformation capacity to process what was gathered.",
+      "tags": [
+        "ffn",
+        "attention"
+      ],
+      "linked_card_ids": [
+        "d12-ffn-sublayer"
+      ]
+    },
+    {
+      "id": "d12-qa-002",
+      "question": "Why are residual connections critical in modern deep Transformers?",
+      "answer": "They provide an unimpeded path for gradients to flow backward, preventing the vanishing gradient problem and allowing networks with dozens or hundreds of layers to be trained effectively.",
+      "tags": [
+        "residual-connections",
+        "gradient-flow"
+      ],
+      "linked_card_ids": [
+        "d12-residual-connections"
+      ]
+    },
+    {
+      "id": "d12-qa-003",
+      "question": "What is the difference between Pre-LN and Post-LN architectures?",
+      "answer": "Pre-LN normalizes the input before it enters the sublayer (giving more stable gradients for deep networks), while Post-LN normalizes after the residual addition.",
+      "tags": [
+        "layer-norm"
+      ],
+      "linked_card_ids": [
+        "d12-pre-ln-vs-post-ln"
+      ]
+    },
+    {
+      "id": "d12-qa-004",
+      "question": "What components make up one full Transformer block?",
+      "answer": "A LayerNorm followed by Multi-Head Attention and a residual connection, and then another LayerNorm followed by a Feed-Forward Network and another residual connection.",
+      "tags": [
+        "transformer-block"
+      ],
+      "linked_card_ids": [
+        "d12-full-transformer-block"
+      ]
+    },
+    {
+      "id": "d12-qa-005",
+      "question": "Since attention has no inherent sense of order, how does a Transformer know the sequence position of tokens?",
+      "answer": "Through positional encoding, which injects position information into token embeddings either via fixed sinusoidal functions, learned embeddings, or relative rotation (RoPE).",
+      "tags": [
+        "positional-encoding"
+      ],
+      "linked_card_ids": [
+        "d12-positional-encoding-mechanics"
+      ]
+    },
+    {
+      "id": "d12-qa-006",
+      "question": "How does causal masking enable parallelized training for LLMs?",
+      "answer": "By setting future token attention scores to -∞, causal masking ensures position `i` only attends to `1...i`. This allows the entire target sequence to be processed simultaneously (teacher forcing) without tokens \"looking ahead\" to cheat.",
+      "tags": [
+        "causal-masking",
+        "training"
+      ],
+      "linked_card_ids": [
+        "d12-causal-masking",
+        "d12-training-inference-asymmetry"
+      ]
+    },
+    {
+      "id": "d12-qa-007",
+      "question": "Why is generating text during inference fundamentally slower than training?",
+      "answer": "Training computes loss for all tokens in parallel. Inference must generate text autoregressively (sequentially), because token `i+1` does not exist until it is generated and fed back in to predict `i+2`.",
+      "tags": [
+        "inference",
+        "autoregressive"
+      ],
+      "linked_card_ids": [
+        "d12-training-inference-asymmetry",
+        "d12-autoregressive-decoding"
+      ]
+    },
+    {
+      "id": "d12-qa-008",
+      "question": "What objective function is used during the pretraining of a base LLM?",
+      "answer": "Next-token prediction. It uses self-supervised cross-entropy loss over the vocabulary to predict the next token given all previous tokens in the sequence.",
+      "tags": [
+        "pretraining"
+      ],
+      "linked_card_ids": [
+        "d12-next-token-prediction-pretraining"
+      ]
+    },
+    {
+      "id": "d12-qa-009",
+      "question": "Is a raw pretrained model immediately good at acting as a helpful assistant?",
+      "answer": "No. It is only trained to predict plausible text continuations. Closing the gap requires Supervised Fine-Tuning (SFT) and Reinforcement Learning from Human Feedback (RLHF).",
+      "tags": [
+        "alignment"
+      ],
+      "linked_card_ids": [
+        "d12-base-model-to-assistant"
+      ]
+    },
+    {
+      "id": "d12-qa-010",
+      "question": "How does adjusting the temperature affect token generation?",
+      "answer": "Temperature scales logits before the softmax step. `T < 1` makes the model more deterministic and confident, while `T > 1` flattens the distribution, making the output more random.",
+      "tags": [
+        "decoding",
+        "temperature"
+      ],
+      "linked_card_ids": [
+        "d12-decoding-strategies"
+      ]
+    },
+    {
+      "id": "d12-qa-011",
+      "question": "What is the difference between top-k and top-p sampling?",
+      "answer": "Top-k samples from the fixed `k` most probable tokens. Top-p (nucleus sampling) dynamically includes tokens whose cumulative probability exceeds `p`, adapting to how confident the model is at that step.",
+      "tags": [
+        "decoding",
+        "sampling"
+      ],
+      "linked_card_ids": [
+        "d12-decoding-strategies"
+      ]
+    },
+    {
+      "id": "d12-qa-012",
+      "question": "Why are LLM context windows strictly limited?",
+      "answer": "Primarily because of the O(n²) computational and memory cost of the attention mechanism, as well as the effective range of the positional encodings.",
+      "tags": [
+        "context-window"
+      ],
+      "linked_card_ids": [
+        "d12-context-windows"
+      ]
+    },
+    {
+      "id": "d12-qa-013",
+      "question": "Why do LLMs hallucinate facts?",
+      "answer": "Their training objective is just to predict a plausible linguistic continuation, not to verify truthfulness. There is no built-in mechanism to distinguish fluent text from factually correct text.",
+      "tags": [
+        "hallucinations"
+      ],
+      "linked_card_ids": [
+        "d12-hallucinations"
+      ]
+    }
+  ]
+}

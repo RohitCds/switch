@@ -1,0 +1,351 @@
+{
+  "schema_version": 1,
+  "day": 9,
+  "title": "BACKPROPAGATION & TRAINING MECHANICS",
+  "topics": [
+    "deep-learning",
+    "backpropagation",
+    "optimization"
+  ],
+  "tags": [
+    "neural-networks",
+    "deep-learning",
+    "training"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 0,
+    "must_know": 15,
+    "should_know": 2
+  },
+  "daily_objective_markdown": "By the end of today you should understand how a neural network actually learns — how gradients get computed for every single weight in a multi-layer network via backpropagation — why deep networks can suffer vanishing or exploding gradients, and the practical training mechanics (initialization, batch size/epochs, weight decay, dropout, batch/layer normalization) that make training stable in practice.\n\nWe reuse yesterday's exact network and numbers today, so the backward pass isn't abstract.\n\n---",
+  "syllabus_markdown": "- 🔴 **MUST KNOW:** the credit-assignment problem, chain-rule mechanics, backprop's layer-by-layer gradient flow, vanishing/exploding gradients, why zero-initialization is broken, dropout, weight decay = Day 2's L2, the backprop-vs-optimizer distinction.\n- 🟡 **SHOULD KNOW:** batch/layer norm mechanics, LR scheduling patterns, Xavier/He initialization (know they exist and why).\n- 🟢 **NICE TO KNOW:** exact batchnorm running-statistics formulas, second-order optimization methods.\n\n---",
+  "cards": [
+    {
+      "id": "d09-credit-assignment-problem",
+      "title": "The Credit Assignment Problem",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "backpropagation",
+        "gradients"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe credit assignment problem asks how much a specific weight deep inside a multi-layer network actually contributed to the final error.\n\n**Why It Matters**\n\nFor single-layer models like logistic regression, computing the gradient is direct. In deep networks, a weight is multiple operations removed from the loss. We need a systematic way to assign \"blame\" (or credit) to update that weight correctly.\n\n**Mental Model / Mechanics**\n\nThink of it like a company: if the final product fails (high loss), how do you figure out which specific middle manager (hidden weight) made the bad decisions? Backpropagation is the communication channel that passes feedback from the customer (loss) all the way back up the chain of command.\n\n**Interview-Ready Explanation**\n\n> The credit assignment problem is the challenge of determining the contribution of a specific hidden-layer parameter to the overall loss. Backpropagation solves this by computing gradients recursively from the output layer back to the inputs.\n\n---",
+      "markdown": "### [CARD: The Credit Assignment Problem]\n<!-- id: d09-credit-assignment-problem -->\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** backpropagation, gradients\n**Core Concept**\n\nThe credit assignment problem asks how much a specific weight deep inside a multi-layer network actually contributed to the final error.\n\n**Why It Matters**\n\nFor single-layer models like logistic regression, computing the gradient is direct. In deep networks, a weight is multiple operations removed from the loss. We need a systematic way to assign \"blame\" (or credit) to update that weight correctly.\n\n**Mental Model / Mechanics**\n\nThink of it like a company: if the final product fails (high loss), how do you figure out which specific middle manager (hidden weight) made the bad decisions? Backpropagation is the communication channel that passes feedback from the customer (loss) all the way back up the chain of command.\n\n**Interview-Ready Explanation**\n\n> The credit assignment problem is the challenge of determining the contribution of a specific hidden-layer parameter to the overall loss. Backpropagation solves this by computing gradients recursively from the output layer back to the inputs.\n\n---"
+    },
+    {
+      "id": "d09-computational-graphs",
+      "title": "Computational Graphs",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "math",
+        "computational-graphs"
+      ],
+      "content_markdown": "**Core Concept**\n\nA computational graph represents the forward pass as a directed graph where each operation (multiply, add, activation) is a node.\n\n**Why It Matters**\n\nThis representation makes the chain rule mechanically applicable, allowing automatic differentiation software (like PyTorch) to systematically walk backward from the loss and multiply local derivatives.\n\n**Mental Model / Mechanics**\n\n```\nx ──►[×W, +b]──► z ──►[activation]──► a ──► ... ──► Loss\n```\n\n**Interview-Ready Explanation**\n\n> Representing neural networks as computational graphs allows us to break down complex nested functions into simple, atomic operations. By applying the chain rule along the edges of the graph, we can automatically compute the gradient of the loss with respect to any parameter.\n\n---",
+      "markdown": "### [CARD: Computational Graphs]\n<!-- id: d09-computational-graphs -->\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** math, computational-graphs\n**Core Concept**\n\nA computational graph represents the forward pass as a directed graph where each operation (multiply, add, activation) is a node.\n\n**Why It Matters**\n\nThis representation makes the chain rule mechanically applicable, allowing automatic differentiation software (like PyTorch) to systematically walk backward from the loss and multiply local derivatives.\n\n**Mental Model / Mechanics**\n\n```\nx ──►[×W, +b]──► z ──►[activation]──► a ──► ... ──► Loss\n```\n\n**Interview-Ready Explanation**\n\n> Representing neural networks as computational graphs allows us to break down complex nested functions into simple, atomic operations. By applying the chain rule along the edges of the graph, we can automatically compute the gradient of the loss with respect to any parameter.\n\n---"
+    },
+    {
+      "id": "d09-chain-rule",
+      "title": "The Chain Rule",
+      "priority": "must_know",
+      "category": "math",
+      "tags": [
+        "calculus",
+        "gradients"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe chain rule is the mathematical engine of backpropagation: `d(f(g(x))) / dx = f'(g(x)) · g'(x)`.\n\n**Why It Matters**\n\nA neural network is essentially one massive composition of functions. The chain rule lets us compute the gradient of the loss with respect to early weights by multiplying derivatives backwards through every operation.\n\n**Mental Model / Mechanics**\n\nTo find how a weight affects the loss, you multiply the rate of change of the loss with respect to the output, by the rate of change of the output with respect to the hidden layer, and so on, down to the weight.\n\n**Interview-Ready Explanation**\n\n> A neural network's forward pass is a long composition of functions. The chain rule allows us to compute gradients by multiplying local derivatives recursively, backwards from the output to the early layers.\n\n---",
+      "markdown": "### [CARD: The Chain Rule]\n<!-- id: d09-chain-rule -->\n- **Priority:** must_know\n- **Category:** math\n- **Tags:** calculus, gradients\n**Core Concept**\n\nThe chain rule is the mathematical engine of backpropagation: `d(f(g(x))) / dx = f'(g(x)) · g'(x)`.\n\n**Why It Matters**\n\nA neural network is essentially one massive composition of functions. The chain rule lets us compute the gradient of the loss with respect to early weights by multiplying derivatives backwards through every operation.\n\n**Mental Model / Mechanics**\n\nTo find how a weight affects the loss, you multiply the rate of change of the loss with respect to the output, by the rate of change of the output with respect to the hidden layer, and so on, down to the weight.\n\n**Interview-Ready Explanation**\n\n> A neural network's forward pass is a long composition of functions. The chain rule allows us to compute gradients by multiplying local derivatives recursively, backwards from the output to the early layers.\n\n---"
+    },
+    {
+      "id": "d09-backpropagation",
+      "title": "Backpropagation Mechanics",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "backpropagation",
+        "algorithm"
+      ],
+      "content_markdown": "**Core Concept**\n\nBackpropagation systematically computes the gradient of the loss with respect to every weight in the network by caching forward pass values and applying the chain rule layer-by-layer backwards.\n\n**Why It Matters**\n\nIt is the single most important algorithm in deep learning, enabling the efficient computation of gradients for millions or billions of parameters.\n\n**Mental Model / Mechanics**\n\n1. FORWARD PASS: compute and CACHE every intermediate value (every z and every a at every layer).\n2. Compute the loss.\n3. BACKWARD PASS: starting from the loss, compute the gradient w.r.t. the output, then propagate it backward layer by layer.\n\nKey insight: each layer only needs (a) the gradient flowing in from the layer after it, and (b) its own local derivative, to compute both its own weights' gradients and the gradient to pass further backward.\n\n**Interview-Ready Explanation**\n\n> Backpropagation is an efficient algorithm to compute gradients in a neural network. It performs a forward pass to cache intermediate activations, then a backward pass that applies the chain rule layer-by-layer to find the gradient of the loss with respect to each parameter.\n\n---",
+      "markdown": "### [CARD: Backpropagation Mechanics]\n<!-- id: d09-backpropagation -->\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** backpropagation, algorithm\n**Core Concept**\n\nBackpropagation systematically computes the gradient of the loss with respect to every weight in the network by caching forward pass values and applying the chain rule layer-by-layer backwards.\n\n**Why It Matters**\n\nIt is the single most important algorithm in deep learning, enabling the efficient computation of gradients for millions or billions of parameters.\n\n**Mental Model / Mechanics**\n\n1. FORWARD PASS: compute and CACHE every intermediate value (every z and every a at every layer).\n2. Compute the loss.\n3. BACKWARD PASS: starting from the loss, compute the gradient w.r.t. the output, then propagate it backward layer by layer.\n\nKey insight: each layer only needs (a) the gradient flowing in from the layer after it, and (b) its own local derivative, to compute both its own weights' gradients and the gradient to pass further backward.\n\n**Interview-Ready Explanation**\n\n> Backpropagation is an efficient algorithm to compute gradients in a neural network. It performs a forward pass to cache intermediate activations, then a backward pass that applies the chain rule layer-by-layer to find the gradient of the loss with respect to each parameter.\n\n---"
+    },
+    {
+      "id": "d09-backprop-numeric-walkthrough",
+      "title": "Backprop Numeric Walkthrough",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "backpropagation",
+        "dying-relu"
+      ],
+      "content_markdown": "**Core Concept**\n\nWalking through the numerical gradients step-by-step reveals exactly how gradient flow works, and concretely demonstrates phenomena like the \"dying ReLU\" problem.\n\n**Why It Matters**\n\nSeeing the exact math eliminates the \"magic\" of backprop and shows how local derivatives act as gates (e.g., ReLU blocking gradients when z <= 0).\n\n**Mental Model / Mechanics**\n\nRecall from Day 8:\n```\nInputs: x1 = 1, x2 = 0.5\nh1 = ReLU(0.45) = 0.45          (alive)\nh2 = ReLU(-0.05) = 0            (dead — negative input)\nOutput: w = [0.6, 0.8], b = 0.1\nz_out = 0.6(0.45) + 0.8(0) + 0.1 = 0.37\nŷ = sigmoid(0.37) ≈ 0.5915\nTrue label y = 1. Using BCE: L = -log(ŷ) ≈ 0.5253.\n```\n\nStep 1 — gradient at output: ∂L/∂z_out = ŷ - y = 0.5915 - 1 = -0.4085\n\nStep 2 — output layer weights:\n∂L/∂w_out1 = -0.4085 × 0.45 = -0.1838\n∂L/∂w_out2 = -0.4085 × 0 = 0 ← h2 contributed nothing\n∂L/∂b_out = -0.4085\n\nStep 3 — propagate backward into hidden layer:\n∂L/∂h1 = -0.4085 × 0.6 = -0.2451\n∂L/∂h2 = -0.4085 × 0.8 = -0.3268\n\nStep 4 — apply LOCAL derivative of ReLU:\nh1: z_h1 = 0.45 > 0 → ReLU'(z_h1) = 1 → ∂L/∂z_h1 = -0.2451 × 1 = -0.2451 (gradient flows through)\nh2: z_h2 = -0.05 ≤ 0 → ReLU'(z_h2) = 0 → ∂L/∂z_h2 = -0.3268 × 0 = 0 (gradient COMPLETELY BLOCKED)\n\nStep 5 — hidden-layer weights:\nh1's weights DO get updated: ∂L/∂w_h1_1 = -0.2451, ∂L/∂w_h1_2 = -0.1226, ∂L/∂b_h1 = -0.2451\nh2's weights get EXACTLY ZERO gradient: ∂L/∂w_h2_1 = 0, ∂L/∂w_h2_2 = 0, ∂L/∂b_h2 = 0\n\n**Interview-Ready Explanation**\n\n> In backpropagation, the local derivative of an activation function modulates the gradient passing through it. For example, if a ReLU neuron outputs 0, its local derivative is 0, blocking all gradients from flowing back to its weights, leading to a dead neuron.\n\n---",
+      "markdown": "### [CARD: Backprop Numeric Walkthrough]\n<!-- id: d09-backprop-numeric-walkthrough -->\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** backpropagation, dying-relu\n**Core Concept**\n\nWalking through the numerical gradients step-by-step reveals exactly how gradient flow works, and concretely demonstrates phenomena like the \"dying ReLU\" problem.\n\n**Why It Matters**\n\nSeeing the exact math eliminates the \"magic\" of backprop and shows how local derivatives act as gates (e.g., ReLU blocking gradients when z <= 0).\n\n**Mental Model / Mechanics**\n\nRecall from Day 8:\n```\nInputs: x1 = 1, x2 = 0.5\nh1 = ReLU(0.45) = 0.45          (alive)\nh2 = ReLU(-0.05) = 0            (dead — negative input)\nOutput: w = [0.6, 0.8], b = 0.1\nz_out = 0.6(0.45) + 0.8(0) + 0.1 = 0.37\nŷ = sigmoid(0.37) ≈ 0.5915\nTrue label y = 1. Using BCE: L = -log(ŷ) ≈ 0.5253.\n```\n\nStep 1 — gradient at output: ∂L/∂z_out = ŷ - y = 0.5915 - 1 = -0.4085\n\nStep 2 — output layer weights:\n∂L/∂w_out1 = -0.4085 × 0.45 = -0.1838\n∂L/∂w_out2 = -0.4085 × 0 = 0 ← h2 contributed nothing\n∂L/∂b_out = -0.4085\n\nStep 3 — propagate backward into hidden layer:\n∂L/∂h1 = -0.4085 × 0.6 = -0.2451\n∂L/∂h2 = -0.4085 × 0.8 = -0.3268\n\nStep 4 — apply LOCAL derivative of ReLU:\nh1: z_h1 = 0.45 > 0 → ReLU'(z_h1) = 1 → ∂L/∂z_h1 = -0.2451 × 1 = -0.2451 (gradient flows through)\nh2: z_h2 = -0.05 ≤ 0 → ReLU'(z_h2) = 0 → ∂L/∂z_h2 = -0.3268 × 0 = 0 (gradient COMPLETELY BLOCKED)\n\nStep 5 — hidden-layer weights:\nh1's weights DO get updated: ∂L/∂w_h1_1 = -0.2451, ∂L/∂w_h1_2 = -0.1226, ∂L/∂b_h1 = -0.2451\nh2's weights get EXACTLY ZERO gradient: ∂L/∂w_h2_1 = 0, ∂L/∂w_h2_2 = 0, ∂L/∂b_h2 = 0\n\n**Interview-Ready Explanation**\n\n> In backpropagation, the local derivative of an activation function modulates the gradient passing through it. For example, if a ReLU neuron outputs 0, its local derivative is 0, blocking all gradients from flowing back to its weights, leading to a dead neuron.\n\n---"
+    },
+    {
+      "id": "d09-backprop-vs-optimizer",
+      "title": "Backprop vs Optimizer",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "optimization",
+        "backpropagation"
+      ],
+      "content_markdown": "**Core Concept**\n\nBackpropagation computes the gradients. The optimizer (SGD, Adam, etc.) uses those gradients to actually update the weights. They are two distinct steps.\n\n**Why It Matters**\n\nConflating the two leads to confusion about how learning rates, momentum, and Adam actually function.\n\n**Mental Model / Mechanics**\n\n```\nForward prop → Loss → Backprop (COMPUTE gradients)\n   → Optimizer: Day 3's SGD/Adam (USE gradients to update weights)\n   → Updated weights → repeat\n```\n\n**Interview-Ready Explanation**\n\n> Backpropagation and gradient descent are not the same thing. Backpropagation simply computes the gradient of the loss with respect to the parameters. The optimizer, like SGD or Adam, is what actually takes those gradients and updates the parameters to minimize the loss.\n\n---",
+      "markdown": "### [CARD: Backprop vs Optimizer]\n<!-- id: d09-backprop-vs-optimizer -->\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** optimization, backpropagation\n**Core Concept**\n\nBackpropagation computes the gradients. The optimizer (SGD, Adam, etc.) uses those gradients to actually update the weights. They are two distinct steps.\n\n**Why It Matters**\n\nConflating the two leads to confusion about how learning rates, momentum, and Adam actually function.\n\n**Mental Model / Mechanics**\n\n```\nForward prop → Loss → Backprop (COMPUTE gradients)\n   → Optimizer: Day 3's SGD/Adam (USE gradients to update weights)\n   → Updated weights → repeat\n```\n\n**Interview-Ready Explanation**\n\n> Backpropagation and gradient descent are not the same thing. Backpropagation simply computes the gradient of the loss with respect to the parameters. The optimizer, like SGD or Adam, is what actually takes those gradients and updates the parameters to minimize the loss.\n\n---"
+    },
+    {
+      "id": "d09-vanishing-gradients",
+      "title": "Vanishing Gradients",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "gradients",
+        "activation-functions"
+      ],
+      "content_markdown": "**Core Concept**\n\nIn deep networks, backprop multiplies many derivatives together. If these derivatives are consistently less than 1 (like sigmoid/tanh), the gradient shrinks exponentially as it propagates to early layers, causing them to learn extremely slowly or not at all.\n\n**Why It Matters**\n\nThis problem prevented the training of deep networks for decades until the adoption of ReLU and architectural innovations like residual connections.\n\n**Mental Model / Mechanics**\n\nSigmoid's maximum derivative is 0.25. If you stack 10 sigmoid layers, the gradient reaching the first layer is scaled by at most (0.25)^10, which is practically zero.\n\n**Interview-Ready Explanation**\n\n> The vanishing gradient problem occurs in deep networks when derivatives of activation functions (like sigmoid) are less than 1. As backpropagation multiplies these derivatives together, the gradient shrinks exponentially, preventing early layers from updating effectively. This is mitigated by using ReLUs and residual connections.\n\n---",
+      "markdown": "### [CARD: Vanishing Gradients]\n<!-- id: d09-vanishing-gradients -->\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** gradients, activation-functions\n**Core Concept**\n\nIn deep networks, backprop multiplies many derivatives together. If these derivatives are consistently less than 1 (like sigmoid/tanh), the gradient shrinks exponentially as it propagates to early layers, causing them to learn extremely slowly or not at all.\n\n**Why It Matters**\n\nThis problem prevented the training of deep networks for decades until the adoption of ReLU and architectural innovations like residual connections.\n\n**Mental Model / Mechanics**\n\nSigmoid's maximum derivative is 0.25. If you stack 10 sigmoid layers, the gradient reaching the first layer is scaled by at most (0.25)^10, which is practically zero.\n\n**Interview-Ready Explanation**\n\n> The vanishing gradient problem occurs in deep networks when derivatives of activation functions (like sigmoid) are less than 1. As backpropagation multiplies these derivatives together, the gradient shrinks exponentially, preventing early layers from updating effectively. This is mitigated by using ReLUs and residual connections.\n\n---"
+    },
+    {
+      "id": "d09-exploding-gradients",
+      "title": "Exploding Gradients",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "gradients",
+        "optimization"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe mirror-image of vanishing gradients: if derivatives and weights are consistently greater than 1, the gradient grows exponentially during backpropagation, causing massive, unstable weight updates.\n\n**Why It Matters**\n\nExploding gradients cause the loss to spike to NaN and destroy the model's progress.\n\n**Mental Model / Mechanics**\n\nFix: gradient clipping. Cap the gradient's total magnitude (e.g., L2 norm) to a maximum threshold before passing it to the optimizer.\n\n**Interview-Ready Explanation**\n\n> Exploding gradients happen when multiplied derivatives in deep networks cause the gradient to grow exponentially. This leads to unstable, massive weight updates. It is typically solved using gradient clipping, which caps the maximum magnitude of the gradient before applying the update.\n\n---",
+      "markdown": "### [CARD: Exploding Gradients]\n<!-- id: d09-exploding-gradients -->\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** gradients, optimization\n**Core Concept**\n\nThe mirror-image of vanishing gradients: if derivatives and weights are consistently greater than 1, the gradient grows exponentially during backpropagation, causing massive, unstable weight updates.\n\n**Why It Matters**\n\nExploding gradients cause the loss to spike to NaN and destroy the model's progress.\n\n**Mental Model / Mechanics**\n\nFix: gradient clipping. Cap the gradient's total magnitude (e.g., L2 norm) to a maximum threshold before passing it to the optimizer.\n\n**Interview-Ready Explanation**\n\n> Exploding gradients happen when multiplied derivatives in deep networks cause the gradient to grow exponentially. This leads to unstable, massive weight updates. It is typically solved using gradient clipping, which caps the maximum magnitude of the gradient before applying the update.\n\n---"
+    },
+    {
+      "id": "d09-weight-initialization",
+      "title": "Weight Initialization",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "initialization",
+        "symmetry-breaking"
+      ],
+      "content_markdown": "**Core Concept**\n\nWeights must be initialized randomly to break symmetry. If all weights start at zero, every neuron computes the same output and receives the exact same gradient, meaning they will update identically and never differentiate.\n\n**Why It Matters**\n\nImproper initialization completely stalls learning or leads to vanishing/exploding activations on the very first forward pass.\n\n**Mental Model / Mechanics**\n\nIf weights are identical, the network behaves as if it only has one neuron per layer. Random initialization ensures different neurons learn different features.\n\n**Interview-Ready Explanation**\n\n> If you initialize a neural network's weights to zero, all hidden units will compute the same gradients and undergo the exact same updates, failing to break symmetry. Weights must be randomly initialized so different neurons can learn to detect different features.\n\n---",
+      "markdown": "### [CARD: Weight Initialization]\n<!-- id: d09-weight-initialization -->\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** initialization, symmetry-breaking\n**Core Concept**\n\nWeights must be initialized randomly to break symmetry. If all weights start at zero, every neuron computes the same output and receives the exact same gradient, meaning they will update identically and never differentiate.\n\n**Why It Matters**\n\nImproper initialization completely stalls learning or leads to vanishing/exploding activations on the very first forward pass.\n\n**Mental Model / Mechanics**\n\nIf weights are identical, the network behaves as if it only has one neuron per layer. Random initialization ensures different neurons learn different features.\n\n**Interview-Ready Explanation**\n\n> If you initialize a neural network's weights to zero, all hidden units will compute the same gradients and undergo the exact same updates, failing to break symmetry. Weights must be randomly initialized so different neurons can learn to detect different features.\n\n---"
+    },
+    {
+      "id": "d09-xavier-he-initialization",
+      "title": "Xavier and He Initialization",
+      "priority": "should_know",
+      "category": "deep-learning",
+      "tags": [
+        "initialization"
+      ],
+      "content_markdown": "**Core Concept**\n\nXavier/Glorot and He initialization are principled ways to scale initial random weights based on the number of inputs and outputs of a layer, keeping activation and gradient variance stable across layers.\n\n**Why It Matters**\n\nPrevents activations from vanishing or exploding right from the start of training.\n\n**Mental Model / Mechanics**\n\n- **He initialization:** pairs with ReLU (accounts for ReLU zeroing out half the inputs).\n- **Xavier/Glorot initialization:** pairs with sigmoid/tanh.\n\n**Interview-Ready Explanation**\n\n> Xavier and He initialization methods scale initial weights by the size of the layer to maintain a stable variance of activations and gradients throughout the network. He initialization is used for ReLUs, while Xavier is used for sigmoid or tanh activations.\n\n---",
+      "markdown": "### [CARD: Xavier and He Initialization]\n<!-- id: d09-xavier-he-initialization -->\n- **Priority:** should_know\n- **Category:** deep-learning\n- **Tags:** initialization\n**Core Concept**\n\nXavier/Glorot and He initialization are principled ways to scale initial random weights based on the number of inputs and outputs of a layer, keeping activation and gradient variance stable across layers.\n\n**Why It Matters**\n\nPrevents activations from vanishing or exploding right from the start of training.\n\n**Mental Model / Mechanics**\n\n- **He initialization:** pairs with ReLU (accounts for ReLU zeroing out half the inputs).\n- **Xavier/Glorot initialization:** pairs with sigmoid/tanh.\n\n**Interview-Ready Explanation**\n\n> Xavier and He initialization methods scale initial weights by the size of the layer to maintain a stable variance of activations and gradients throughout the network. He initialization is used for ReLUs, while Xavier is used for sigmoid or tanh activations.\n\n---"
+    },
+    {
+      "id": "d09-batch-size-and-epochs",
+      "title": "Batch Size & Epochs",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "optimization",
+        "training-loop"
+      ],
+      "content_markdown": "**Core Concept**\n\nBatch size is the number of examples processed before a gradient update. An epoch is one full pass over the entire training dataset.\n\n**Why It Matters**\n\nBatch size dictates the speed/stability tradeoff of training, while epochs track how many times the model has seen the dataset.\n\n**Mental Model / Mechanics**\n\nUpdates per epoch = dataset size / batch size.\n- Larger batch → smoother gradient estimate, uses more memory.\n- Smaller batch → noisier gradient estimate, but faster iterations, and acts as a mild regularizer.\n\n**Interview-Ready Explanation**\n\n> A batch size is the number of samples used to compute a single gradient update, while an epoch represents one complete pass through the entire training dataset. The number of parameter updates per epoch is the dataset size divided by the batch size.\n\n---",
+      "markdown": "### [CARD: Batch Size & Epochs]\n<!-- id: d09-batch-size-and-epochs -->\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** optimization, training-loop\n**Core Concept**\n\nBatch size is the number of examples processed before a gradient update. An epoch is one full pass over the entire training dataset.\n\n**Why It Matters**\n\nBatch size dictates the speed/stability tradeoff of training, while epochs track how many times the model has seen the dataset.\n\n**Mental Model / Mechanics**\n\nUpdates per epoch = dataset size / batch size.\n- Larger batch → smoother gradient estimate, uses more memory.\n- Smaller batch → noisier gradient estimate, but faster iterations, and acts as a mild regularizer.\n\n**Interview-Ready Explanation**\n\n> A batch size is the number of samples used to compute a single gradient update, while an epoch represents one complete pass through the entire training dataset. The number of parameter updates per epoch is the dataset size divided by the batch size.\n\n---"
+    },
+    {
+      "id": "d09-learning-rate-scheduling",
+      "title": "Learning Rate Scheduling",
+      "priority": "should_know",
+      "category": "deep-learning",
+      "tags": [
+        "optimization",
+        "learning-rate"
+      ],
+      "content_markdown": "**Core Concept**\n\nA learning rate schedule dynamically changes the learning rate during training instead of keeping it constant.\n\n**Why It Matters**\n\nStarting high allows fast early progress out of bad local minima; decaying it later allows the model to settle into the sharpest minimum without bouncing out.\n\n**Mental Model / Mechanics**\n\n- **Step decay:** drop LR by a factor (e.g., 0.1) every N epochs.\n- **Cosine annealing:** smoothly decrease LR following a cosine curve.\n- **Warmup:** start very small, ramp up first, then decay (heavily used in Transformers/LLMs to avoid early instability).\n\n**Interview-Ready Explanation**\n\n> Learning rate scheduling adjusts the learning rate during training. It typically starts high for rapid progress and decays over time to fine-tune the weights. A common pattern in deep learning, especially LLMs, is a warmup phase followed by a cosine decay.\n\n---",
+      "markdown": "### [CARD: Learning Rate Scheduling]\n<!-- id: d09-learning-rate-scheduling -->\n- **Priority:** should_know\n- **Category:** deep-learning\n- **Tags:** optimization, learning-rate\n**Core Concept**\n\nA learning rate schedule dynamically changes the learning rate during training instead of keeping it constant.\n\n**Why It Matters**\n\nStarting high allows fast early progress out of bad local minima; decaying it later allows the model to settle into the sharpest minimum without bouncing out.\n\n**Mental Model / Mechanics**\n\n- **Step decay:** drop LR by a factor (e.g., 0.1) every N epochs.\n- **Cosine annealing:** smoothly decrease LR following a cosine curve.\n- **Warmup:** start very small, ramp up first, then decay (heavily used in Transformers/LLMs to avoid early instability).\n\n**Interview-Ready Explanation**\n\n> Learning rate scheduling adjusts the learning rate during training. It typically starts high for rapid progress and decays over time to fine-tune the weights. A common pattern in deep learning, especially LLMs, is a warmup phase followed by a cosine decay.\n\n---"
+    },
+    {
+      "id": "d09-weight-decay",
+      "title": "Weight Decay",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "regularization",
+        "optimization"
+      ],
+      "content_markdown": "**Core Concept**\n\nWeight decay is the neural network equivalent of L2 regularization, applied directly inside the optimizer step to shrink weights toward zero.\n\n**Why It Matters**\n\nIt prevents weights from growing excessively large, smoothing the model's decision boundaries and reducing overfitting.\n\n**Mental Model / Mechanics**\n\nOn every single update step, independent of the loss gradient, the optimizer explicitly subtracts a tiny fraction of the weight's current value.\n\n**Interview-Ready Explanation**\n\n> Weight decay is L2 regularization applied within a neural network's optimizer. By explicitly shrinking weights toward zero on every update, it penalizes overly complex models and helps prevent overfitting.\n\n---",
+      "markdown": "### [CARD: Weight Decay]\n<!-- id: d09-weight-decay -->\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** regularization, optimization\n**Core Concept**\n\nWeight decay is the neural network equivalent of L2 regularization, applied directly inside the optimizer step to shrink weights toward zero.\n\n**Why It Matters**\n\nIt prevents weights from growing excessively large, smoothing the model's decision boundaries and reducing overfitting.\n\n**Mental Model / Mechanics**\n\nOn every single update step, independent of the loss gradient, the optimizer explicitly subtracts a tiny fraction of the weight's current value.\n\n**Interview-Ready Explanation**\n\n> Weight decay is L2 regularization applied within a neural network's optimizer. By explicitly shrinking weights toward zero on every update, it penalizes overly complex models and helps prevent overfitting.\n\n---"
+    },
+    {
+      "id": "d09-dropout",
+      "title": "Dropout",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "regularization"
+      ],
+      "content_markdown": "**Core Concept**\n\nDropout randomly zeroes out a fraction of neurons in a layer on each training forward pass (commonly 20-50%).\n\n**Why It Matters**\n\nIt forces the network to avoid over-relying on any single neuron or pathway, distributing the learned representation and heavily reducing overfitting.\n\n**Mental Model / Mechanics**\n\nConceptually similar to Random Forest's feature subsampling.\nAt inference time, dropout is turned off, and all neurons are active (outputs are mathematically rescaled to compensate).\n\n**Interview-Ready Explanation**\n\n> Dropout is a regularization technique where a random fraction of neurons are temporarily deactivated during each training forward pass. This prevents co-adaptation of neurons and forces the network to learn robust features. Dropout is disabled during inference.\n\n---",
+      "markdown": "### [CARD: Dropout]\n<!-- id: d09-dropout -->\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** regularization\n**Core Concept**\n\nDropout randomly zeroes out a fraction of neurons in a layer on each training forward pass (commonly 20-50%).\n\n**Why It Matters**\n\nIt forces the network to avoid over-relying on any single neuron or pathway, distributing the learned representation and heavily reducing overfitting.\n\n**Mental Model / Mechanics**\n\nConceptually similar to Random Forest's feature subsampling.\nAt inference time, dropout is turned off, and all neurons are active (outputs are mathematically rescaled to compensate).\n\n**Interview-Ready Explanation**\n\n> Dropout is a regularization technique where a random fraction of neurons are temporarily deactivated during each training forward pass. This prevents co-adaptation of neurons and forces the network to learn robust features. Dropout is disabled during inference.\n\n---"
+    },
+    {
+      "id": "d09-batch-normalization",
+      "title": "Batch Normalization",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "normalization"
+      ],
+      "content_markdown": "**Core Concept**\n\nBatch Normalization normalizes activations across the batch dimension, per feature, and applies a learned scale and shift.\n\n**Why It Matters**\n\nIt stabilizes training distributions, allowing for much higher learning rates, faster convergence, and acts as a mild regularizer.\n\n**Mental Model / Mechanics**\n\nWeakness: depends entirely on batch statistics, behaves differently at train vs. inference time (needs running statistics), and fails with very small batch sizes. Used mainly in CNNs.\n\n**Interview-Ready Explanation**\n\n> Batch Normalization standardizes activations across the batch dimension for each feature. It stabilizes the training process and allows for higher learning rates, though its reliance on batch statistics causes issues with small batches and requires different behavior during inference.\n\n---",
+      "markdown": "### [CARD: Batch Normalization]\n<!-- id: d09-batch-normalization -->\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** normalization\n**Core Concept**\n\nBatch Normalization normalizes activations across the batch dimension, per feature, and applies a learned scale and shift.\n\n**Why It Matters**\n\nIt stabilizes training distributions, allowing for much higher learning rates, faster convergence, and acts as a mild regularizer.\n\n**Mental Model / Mechanics**\n\nWeakness: depends entirely on batch statistics, behaves differently at train vs. inference time (needs running statistics), and fails with very small batch sizes. Used mainly in CNNs.\n\n**Interview-Ready Explanation**\n\n> Batch Normalization standardizes activations across the batch dimension for each feature. It stabilizes the training process and allows for higher learning rates, though its reliance on batch statistics causes issues with small batches and requires different behavior during inference.\n\n---"
+    },
+    {
+      "id": "d09-layer-normalization",
+      "title": "Layer Normalization",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "normalization"
+      ],
+      "content_markdown": "**Core Concept**\n\nLayer Normalization normalizes activations across the feature dimension, independently for each individual example in the batch.\n\n**Why It Matters**\n\nBecause it computes statistics per-example, it is completely independent of batch size and behaves identically during training and inference.\n\n**Mental Model / Mechanics**\n\nThis is the standard normalization method for Transformers and RNNs, precisely because sequence lengths vary and batch dependencies would break training.\n\n**Interview-Ready Explanation**\n\n> Layer Normalization standardizes activations across the feature dimension for each individual example. Because it doesn't rely on batch statistics, it works well for small batches and variable-length sequences, making it the standard choice for Transformers.\n\n---",
+      "markdown": "### [CARD: Layer Normalization]\n<!-- id: d09-layer-normalization -->\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** normalization\n**Core Concept**\n\nLayer Normalization normalizes activations across the feature dimension, independently for each individual example in the batch.\n\n**Why It Matters**\n\nBecause it computes statistics per-example, it is completely independent of batch size and behaves identically during training and inference.\n\n**Mental Model / Mechanics**\n\nThis is the standard normalization method for Transformers and RNNs, precisely because sequence lengths vary and batch dependencies would break training.\n\n**Interview-Ready Explanation**\n\n> Layer Normalization standardizes activations across the feature dimension for each individual example. Because it doesn't rely on batch statistics, it works well for small batches and variable-length sequences, making it the standard choice for Transformers.\n\n---"
+    },
+    {
+      "id": "d09-batchnorm-vs-layernorm",
+      "title": "BatchNorm vs LayerNorm",
+      "priority": "must_know",
+      "category": "deep-learning",
+      "tags": [
+        "normalization",
+        "architecture"
+      ],
+      "content_markdown": "**Core Concept**\n\nThe difference between BatchNorm and LayerNorm lies in which dimension they compute the mean and variance over.\n\n**Mental Model / Mechanics**\n\n| | Batch Norm | Layer Norm |\n|---|---|---|\n| Normalizes across | The batch (per feature) | The features (per example) |\n| Depends on batch size? | Yes | No |\n| Train vs. inference | Different behavior (running stats at inference) | Same behavior always |\n| Used in | CNNs mainly | Transformers, RNNs |\n\n**Interview-Ready Explanation**\n\n> Batch Normalization normalizes a specific feature across all examples in a batch, while Layer Normalization normalizes all features for a single example. LayerNorm is independent of batch size and is heavily used in Transformers, whereas BatchNorm is traditional for CNNs.\n\n---",
+      "markdown": "### [CARD: BatchNorm vs LayerNorm]\n<!-- id: d09-batchnorm-vs-layernorm -->\n- **Priority:** must_know\n- **Category:** deep-learning\n- **Tags:** normalization, architecture\n**Core Concept**\n\nThe difference between BatchNorm and LayerNorm lies in which dimension they compute the mean and variance over.\n\n**Mental Model / Mechanics**\n\n| | Batch Norm | Layer Norm |\n|---|---|---|\n| Normalizes across | The batch (per feature) | The features (per example) |\n| Depends on batch size? | Yes | No |\n| Train vs. inference | Different behavior (running stats at inference) | Same behavior always |\n| Used in | CNNs mainly | Transformers, RNNs |\n\n**Interview-Ready Explanation**\n\n> Batch Normalization normalizes a specific feature across all examples in a batch, while Layer Normalization normalizes all features for a single example. LayerNorm is independent of batch size and is heavily used in Transformers, whereas BatchNorm is traditional for CNNs.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "- Day 3 (loss, gradient descent, optimizers): backprop computes the gradient; Day 3's SGD/momentum/Adam is what actually applies it — two distinct steps.\n- Day 2 (L2 regularization): weight decay is exactly this, applied inside a neural network's optimizer step.\n- Day 6 (Random Forest's feature subsampling): conceptual cousin of dropout — both prevent over-reliance.\n- Forward-looking: Day 12 Transformers use LayerNorm (today's batch-vs-layer-norm distinction); Day 13 LR warmup is standard in LLM fine-tuning.",
+  "common_misconceptions_markdown": "1. \"Backpropagation and gradient descent are the same algorithm.\" — They're not — backprop computes gradients; gradient descent applies them.\n2. \"Vanishing gradients are an old problem that doesn't matter with modern tools.\" — It's exactly why ReLU, residual connections, LayerNorm exist.\n3. \"Dropout is applied at inference time too.\" — No, training-time-only.\n4. \"BatchNorm and LayerNorm are basically interchangeable.\" — They normalize across different dimensions with real architectural consequences.\n5. \"A dead ReLU neuron will eventually recover on its own.\" — Not necessarily — zero gradient means no update.",
+  "out_of_scope_markdown": "- Full symbolic derivation of the sigmoid+BCE gradient simplification.\n- Xavier/He initialization's exact variance formulas.\n- BatchNorm's exact running-mean/variance update equations.\n- Second-order optimization methods.\n- LSTM/GRU-specific gradient-flow mechanisms — that's Day 10.\n\n---",
+  "qa_drill": [
+    {
+      "id": "d09-qa-001",
+      "question": "What is the credit assignment problem in deep learning?",
+      "answer": "It is the challenge of determining how much a parameter deep inside a multi-layer network contributed to the final loss, which backpropagation solves via the chain rule.",
+      "tags": [
+        "backpropagation",
+        "theory"
+      ],
+      "linked_card_ids": [
+        "d09-credit-assignment-problem"
+      ]
+    },
+    {
+      "id": "d09-qa-002",
+      "question": "Why do we represent neural networks as computational graphs?",
+      "answer": "It breaks down complex functions into atomic operations (like add, multiply), making it easy to mechanically apply the chain rule layer-by-layer backwards.",
+      "tags": [
+        "math",
+        "backpropagation"
+      ],
+      "linked_card_ids": [
+        "d09-computational-graphs",
+        "d09-chain-rule"
+      ]
+    },
+    {
+      "id": "d09-qa-003",
+      "question": "In the context of a dead ReLU neuron, why does it stop learning?",
+      "answer": "When the input to ReLU is negative, its local derivative is 0. By the chain rule, this multiplies the incoming gradient by 0, meaning no gradient flows back to update its weights.",
+      "tags": [
+        "activation",
+        "gradients"
+      ],
+      "linked_card_ids": [
+        "d09-backprop-numeric-walkthrough"
+      ]
+    },
+    {
+      "id": "d09-qa-004",
+      "question": "What is the difference between backpropagation and an optimizer like Adam?",
+      "answer": "Backpropagation is an algorithm to *compute* gradients. The optimizer is the algorithm that takes those gradients and uses them to *update* the network's weights.",
+      "tags": [
+        "optimization",
+        "backpropagation"
+      ],
+      "linked_card_ids": [
+        "d09-backprop-vs-optimizer"
+      ]
+    },
+    {
+      "id": "d09-qa-005",
+      "question": "What causes the vanishing gradient problem?",
+      "answer": "When backprop multiplies many derivatives that are less than 1 (like sigmoid derivatives), the gradient shrinks exponentially, preventing early layers from updating.",
+      "tags": [
+        "gradients",
+        "activation"
+      ],
+      "linked_card_ids": [
+        "d09-vanishing-gradients"
+      ]
+    },
+    {
+      "id": "d09-qa-006",
+      "question": "Why can't you initialize all weights in a neural network to zero?",
+      "answer": "It causes the symmetry problem. Every neuron will compute the same output and receive the same gradient, causing them to update identically and fail to learn distinct features.",
+      "tags": [
+        "initialization",
+        "symmetry"
+      ],
+      "linked_card_ids": [
+        "d09-weight-initialization"
+      ]
+    },
+    {
+      "id": "d09-qa-007",
+      "question": "What is the difference between an epoch and a batch?",
+      "answer": "A batch is a subset of data used for a single gradient update. An epoch is one complete pass through the entire training dataset.",
+      "tags": [
+        "optimization",
+        "training-loop"
+      ],
+      "linked_card_ids": [
+        "d09-batch-size-and-epochs"
+      ]
+    },
+    {
+      "id": "d09-qa-008",
+      "question": "How does weight decay relate to L2 regularization?",
+      "answer": "Weight decay is the neural network equivalent of L2 regularization, directly applied inside the optimizer step to shrink weights toward zero on every update.",
+      "tags": [
+        "regularization",
+        "optimization"
+      ],
+      "linked_card_ids": [
+        "d09-weight-decay"
+      ]
+    },
+    {
+      "id": "d09-qa-009",
+      "question": "How does dropout help prevent overfitting?",
+      "answer": "By randomly deactivating a fraction of neurons during training, it prevents the network from over-relying on any single pathway, forcing it to learn robust, distributed representations.",
+      "tags": [
+        "regularization"
+      ],
+      "linked_card_ids": [
+        "d09-dropout"
+      ]
+    },
+    {
+      "id": "d09-qa-010",
+      "question": "What is the main structural difference between Batch Normalization and Layer Normalization?",
+      "answer": "Batch Normalization normalizes a specific feature across all examples in a batch, while Layer Normalization normalizes all features for a single, independent example.",
+      "tags": [
+        "normalization",
+        "architecture"
+      ],
+      "linked_card_ids": [
+        "d09-batchnorm-vs-layernorm",
+        "d09-batch-normalization",
+        "d09-layer-normalization"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,323 @@
+{
+  "schema_version": 1,
+  "day": 23,
+  "title": "Interview Coding, DSA & Testing",
+  "topics": [
+    "dsa",
+    "testing",
+    "data-structures",
+    "code-quality"
+  ],
+  "tags": [
+    "interview-prep",
+    "mle-coding"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 0,
+    "must_know": 7,
+    "should_know": 5
+  },
+  "daily_objective_markdown": "Master essential DSA patterns, core data structures, testing strategies, and code quality practices tailored for Machine Learning Engineering interviews. Focus on recognizing algorithm patterns in MLE contexts (streaming data, feature processing) and writing robust, testable ML code.\n\n---",
+  "syllabus_markdown": "- 🔴 **MUST KNOW:** Sliding Window, Top-K (Heaps), Hash Maps & Sets, Boundary Test Cases, Mocking External Services, Handling Edge Cases, Time & Space Complexity\n- 🟡 **SHOULD KNOW:** Two Pointers, BFS / DFS, Deques, Parameterized Testing, Testing Stochastic Functions\n- 🟢 **NICE TO KNOW:** None for today\n\n---",
+  "cards": [
+    {
+      "id": "d23-sliding-window",
+      "title": "Sliding Window Pattern",
+      "priority": "must_know",
+      "category": "coding",
+      "tags": [
+        "dsa",
+        "sliding-window",
+        "streaming"
+      ],
+      "content_markdown": "**Core Concept**\n\nMaintains a subset of items (a \"window\") that moves over a larger dataset. Useful for running metrics (e.g., moving average).\n**Why It Matters**\n\nIn MLE, this pattern is heavily used in stream processing, calculating rolling features, or managing fixed-size context windows for language models.\n**Mental Model / Mechanics**\n\nUse two pointers to define the window boundaries. Expand the right pointer to add new elements, and shrink the left pointer when the window condition is violated.\n**Example**\n\n```python\ndef moving_average(stream, k):\n    window_sum = 0\n    left = 0\n    res = []\n    for right in range(len(stream)):\n        window_sum += stream[right]\n        if right - left + 1 > k:\n            window_sum -= stream[left]\n            left += 1\n        if right - left + 1 == k:\n            res.append(window_sum / k)\n    return res\n```\n**Failure Modes / Tradeoffs**\n\n- Off-by-one errors when adjusting window boundaries.\n- Recomputing the entire window instead of incrementally updating the state.\n**Interview-Ready Explanation**\n\n> The sliding window pattern maintains a continuous subset of data, updating state incrementally. It optimizes O(N*K) naive approaches to O(N) by adding the new element and removing the old one.\n\n---",
+      "markdown": "### [CARD: Sliding Window Pattern]\n<!-- id: d23-sliding-window -->\n\n- **Priority:** must_know\n- **Category:** coding\n- **Tags:** dsa, sliding-window, streaming\n**Core Concept**\n\nMaintains a subset of items (a \"window\") that moves over a larger dataset. Useful for running metrics (e.g., moving average).\n**Why It Matters**\n\nIn MLE, this pattern is heavily used in stream processing, calculating rolling features, or managing fixed-size context windows for language models.\n**Mental Model / Mechanics**\n\nUse two pointers to define the window boundaries. Expand the right pointer to add new elements, and shrink the left pointer when the window condition is violated.\n**Example**\n\n```python\ndef moving_average(stream, k):\n    window_sum = 0\n    left = 0\n    res = []\n    for right in range(len(stream)):\n        window_sum += stream[right]\n        if right - left + 1 > k:\n            window_sum -= stream[left]\n            left += 1\n        if right - left + 1 == k:\n            res.append(window_sum / k)\n    return res\n```\n**Failure Modes / Tradeoffs**\n\n- Off-by-one errors when adjusting window boundaries.\n- Recomputing the entire window instead of incrementally updating the state.\n**Interview-Ready Explanation**\n\n> The sliding window pattern maintains a continuous subset of data, updating state incrementally. It optimizes O(N*K) naive approaches to O(N) by adding the new element and removing the old one.\n\n---"
+    },
+    {
+      "id": "d23-two-pointers",
+      "title": "Two Pointers Pattern",
+      "priority": "should_know",
+      "category": "coding",
+      "tags": [
+        "dsa",
+        "two-pointers",
+        "arrays"
+      ],
+      "content_markdown": "**Core Concept**\n\nUsing two indices to traverse an array simultaneously, often from opposite ends or at different speeds.\n**Why It Matters**\n\nUseful for finding pairs in sorted feature arrays, or merging ranked lists (e.g., combining results from two different recommendation models).\n**Mental Model / Mechanics**\n\nInitialize pointers at `start` and `end`. Move them inwards based on a condition until they meet, narrowing down the search space in O(N) instead of O(N^2).\n**Example**\n\n```python\ndef two_sum_sorted(features, target):\n    l, r = 0, len(features) - 1\n    while l < r:\n        s = features[l] + features[r]\n        if s == target: return (l, r)\n        elif s < target: l += 1\n        else: r -= 1\n    return None\n```\n**Failure Modes / Tradeoffs**\n\n- Array must usually be sorted first, adding O(N log N) overhead if not already sorted.\n- Handling duplicate values gracefully.\n**Interview-Ready Explanation**\n\n> Two pointers involves traversing a sequence with two indices, often from both ends, to optimize pair finding or merging tasks from O(N^2) to O(N) for sorted data.\n\n---",
+      "markdown": "### [CARD: Two Pointers Pattern]\n<!-- id: d23-two-pointers -->\n\n- **Priority:** should_know\n- **Category:** coding\n- **Tags:** dsa, two-pointers, arrays\n**Core Concept**\n\nUsing two indices to traverse an array simultaneously, often from opposite ends or at different speeds.\n**Why It Matters**\n\nUseful for finding pairs in sorted feature arrays, or merging ranked lists (e.g., combining results from two different recommendation models).\n**Mental Model / Mechanics**\n\nInitialize pointers at `start` and `end`. Move them inwards based on a condition until they meet, narrowing down the search space in O(N) instead of O(N^2).\n**Example**\n\n```python\ndef two_sum_sorted(features, target):\n    l, r = 0, len(features) - 1\n    while l < r:\n        s = features[l] + features[r]\n        if s == target: return (l, r)\n        elif s < target: l += 1\n        else: r -= 1\n    return None\n```\n**Failure Modes / Tradeoffs**\n\n- Array must usually be sorted first, adding O(N log N) overhead if not already sorted.\n- Handling duplicate values gracefully.\n**Interview-Ready Explanation**\n\n> Two pointers involves traversing a sequence with two indices, often from both ends, to optimize pair finding or merging tasks from O(N^2) to O(N) for sorted data.\n\n---"
+    },
+    {
+      "id": "d23-top-k-heaps",
+      "title": "Top-K Pattern (Heaps)",
+      "priority": "must_know",
+      "category": "coding",
+      "tags": [
+        "dsa",
+        "heaps",
+        "ranking"
+      ],
+      "content_markdown": "**Core Concept**\n\nUsing a min-heap or max-heap to efficiently track the K largest or smallest elements in a dataset or stream.\n**Why It Matters**\n\nThis is the core algorithmic primitive for ranking systems, recommendation retrieval, and nearest-neighbor search.\n**Mental Model / Mechanics**\n\nTo find Top-K largest items, maintain a **min-heap** of size K. When a new item arrives, push it. If heap size > K, pop the smallest item. The heap retains the K largest seen so far.\n**Example**\n\n```python\nimport heapq\ndef get_top_k(scores, k):\n    min_heap = []\n    for score in scores:\n        heapq.heappush(min_heap, score)\n        if len(min_heap) > k:\n            heapq.heappop(min_heap)\n    return min_heap\n```\n**Failure Modes / Tradeoffs**\n\n- Memory usage is O(K), which is highly efficient for streaming compared to sorting the entire array O(N log N).\n- Remember to invert values for a max-heap in Python since `heapq` only implements min-heaps.\n**Interview-Ready Explanation**\n\n> The Top-K pattern uses a heap to keep track of the largest or smallest items efficiently. By maintaining a min-heap of size K, we can find the K largest items in a stream in O(N log K) time without storing the entire dataset.\n\n---",
+      "markdown": "### [CARD: Top-K Pattern (Heaps)]\n<!-- id: d23-top-k-heaps -->\n\n- **Priority:** must_know\n- **Category:** coding\n- **Tags:** dsa, heaps, ranking\n**Core Concept**\n\nUsing a min-heap or max-heap to efficiently track the K largest or smallest elements in a dataset or stream.\n**Why It Matters**\n\nThis is the core algorithmic primitive for ranking systems, recommendation retrieval, and nearest-neighbor search.\n**Mental Model / Mechanics**\n\nTo find Top-K largest items, maintain a **min-heap** of size K. When a new item arrives, push it. If heap size > K, pop the smallest item. The heap retains the K largest seen so far.\n**Example**\n\n```python\nimport heapq\ndef get_top_k(scores, k):\n    min_heap = []\n    for score in scores:\n        heapq.heappush(min_heap, score)\n        if len(min_heap) > k:\n            heapq.heappop(min_heap)\n    return min_heap\n```\n**Failure Modes / Tradeoffs**\n\n- Memory usage is O(K), which is highly efficient for streaming compared to sorting the entire array O(N log N).\n- Remember to invert values for a max-heap in Python since `heapq` only implements min-heaps.\n**Interview-Ready Explanation**\n\n> The Top-K pattern uses a heap to keep track of the largest or smallest items efficiently. By maintaining a min-heap of size K, we can find the K largest items in a stream in O(N log K) time without storing the entire dataset.\n\n---"
+    },
+    {
+      "id": "d23-bfs-dfs",
+      "title": "BFS / DFS for Graphs",
+      "priority": "should_know",
+      "category": "coding",
+      "tags": [
+        "dsa",
+        "graphs",
+        "traversal"
+      ],
+      "content_markdown": "**Core Concept**\n\nBreadth-First Search explores level by level; Depth-First Search explores as far along a branch as possible before backtracking.\n**Why It Matters**\n\nGraph processing in MLE includes resolving computational dependencies (DAGs in ML pipelines), parsing ontologies, or traversing user-item interaction graphs.\n**Mental Model / Mechanics**\n\nBFS uses a Queue (FIFO) and is ideal for finding the shortest path or level-order traversal. DFS uses a Stack (LIFO) or recursion and is ideal for topological sorting or exhaustively exploring paths.\n**Example**\n\n```python\nfrom collections import deque\ndef bfs(graph, start):\n    visited = set([start])\n    queue = deque([start])\n    while queue:\n        node = queue.popleft()\n        for neighbor in graph[node]:\n            if neighbor not in visited:\n                visited.add(neighbor)\n                queue.append(neighbor)\n```\n**Failure Modes / Tradeoffs**\n\n- Forgetting to track `visited` nodes will result in infinite loops in cyclic graphs.\n- DFS recursion depth can exceed system limits for deep graphs.\n**Interview-Ready Explanation**\n\n> BFS and DFS are graph traversal algorithms. BFS explores level-by-level using a queue, useful for shortest path. DFS explores deep using recursion or a stack, useful for topological sorting. Always track visited nodes to avoid cycles.\n\n---",
+      "markdown": "### [CARD: BFS / DFS for Graphs]\n<!-- id: d23-bfs-dfs -->\n\n- **Priority:** should_know\n- **Category:** coding\n- **Tags:** dsa, graphs, traversal\n**Core Concept**\n\nBreadth-First Search explores level by level; Depth-First Search explores as far along a branch as possible before backtracking.\n**Why It Matters**\n\nGraph processing in MLE includes resolving computational dependencies (DAGs in ML pipelines), parsing ontologies, or traversing user-item interaction graphs.\n**Mental Model / Mechanics**\n\nBFS uses a Queue (FIFO) and is ideal for finding the shortest path or level-order traversal. DFS uses a Stack (LIFO) or recursion and is ideal for topological sorting or exhaustively exploring paths.\n**Example**\n\n```python\nfrom collections import deque\ndef bfs(graph, start):\n    visited = set([start])\n    queue = deque([start])\n    while queue:\n        node = queue.popleft()\n        for neighbor in graph[node]:\n            if neighbor not in visited:\n                visited.add(neighbor)\n                queue.append(neighbor)\n```\n**Failure Modes / Tradeoffs**\n\n- Forgetting to track `visited` nodes will result in infinite loops in cyclic graphs.\n- DFS recursion depth can exceed system limits for deep graphs.\n**Interview-Ready Explanation**\n\n> BFS and DFS are graph traversal algorithms. BFS explores level-by-level using a queue, useful for shortest path. DFS explores deep using recursion or a stack, useful for topological sorting. Always track visited nodes to avoid cycles.\n\n---"
+    },
+    {
+      "id": "d23-hash-maps-sets",
+      "title": "Hash Maps & Sets",
+      "priority": "must_know",
+      "category": "data-structures",
+      "tags": [
+        "data-structures",
+        "hashing",
+        "lookups"
+      ],
+      "content_markdown": "**Core Concept**\n\nData structures providing O(1) average-case time complexity for insertions, deletions, and lookups using hash functions.\n**Why It Matters**\n\nEssential for feature matching, deduplication of datasets, frequency counting (TF-IDF), and fast lookups during model inference.\n**Mental Model / Mechanics**\n\nMaps link a unique key to a value. Sets store unique keys. If you need to quickly check \"Have I seen this user ID before?\" or \"What is the precomputed embedding for this token?\", use a hash map/set.\n**Example**\n\n```python\ndef count_feature_frequencies(data_stream):\n    freq = {}\n    for item in data_stream:\n        freq[item] = freq.get(item, 0) + 1\n    return freq\n```\n**Failure Modes / Tradeoffs**\n\n- O(1) is average case; poor hash functions or many collisions degrade performance to O(N).\n- Keys must be hashable (immutable in Python).\n**Interview-Ready Explanation**\n\n> Hash maps and sets provide O(1) average lookup times. They are indispensable for fast feature lookups, caching, and frequency counting, dramatically optimizing O(N) linear scans.\n\n---",
+      "markdown": "### [CARD: Hash Maps & Sets]\n<!-- id: d23-hash-maps-sets -->\n\n- **Priority:** must_know\n- **Category:** data-structures\n- **Tags:** data-structures, hashing, lookups\n**Core Concept**\n\nData structures providing O(1) average-case time complexity for insertions, deletions, and lookups using hash functions.\n**Why It Matters**\n\nEssential for feature matching, deduplication of datasets, frequency counting (TF-IDF), and fast lookups during model inference.\n**Mental Model / Mechanics**\n\nMaps link a unique key to a value. Sets store unique keys. If you need to quickly check \"Have I seen this user ID before?\" or \"What is the precomputed embedding for this token?\", use a hash map/set.\n**Example**\n\n```python\ndef count_feature_frequencies(data_stream):\n    freq = {}\n    for item in data_stream:\n        freq[item] = freq.get(item, 0) + 1\n    return freq\n```\n**Failure Modes / Tradeoffs**\n\n- O(1) is average case; poor hash functions or many collisions degrade performance to O(N).\n- Keys must be hashable (immutable in Python).\n**Interview-Ready Explanation**\n\n> Hash maps and sets provide O(1) average lookup times. They are indispensable for fast feature lookups, caching, and frequency counting, dramatically optimizing O(N) linear scans.\n\n---"
+    },
+    {
+      "id": "d23-deques",
+      "title": "Deques (Double-Ended Queues)",
+      "priority": "should_know",
+      "category": "data-structures",
+      "tags": [
+        "data-structures",
+        "queues"
+      ],
+      "content_markdown": "**Core Concept**\n\nA queue that allows O(1) appending and popping from both ends.\n**Why It Matters**\n\nUsed for maintaining rolling windows of fixed sizes (like recent interaction history) or implementing BFS.\n**Mental Model / Mechanics**\n\nUnlike a standard Python list where `pop(0)` is O(N), a `collections.deque` makes operations on both the left and right ends O(1).\n**Example**\n\n```python\nfrom collections import deque\n# Maintain last 3 active sessions\nhistory = deque(maxlen=3)\nhistory.append(\"session_1\")\nhistory.append(\"session_2\")\nhistory.append(\"session_3\")\nhistory.append(\"session_4\") # session_1 is automatically removed\n```\n**Failure Modes / Tradeoffs**\n\n- Random access (e.g., `d[5]`) in a deque is O(N), whereas it is O(1) for a list. Only use if operating strictly on the ends.\n**Interview-Ready Explanation**\n\n> A deque allows O(1) appends and pops from both ends. It is preferred over lists when implementing queues or fixed-size sliding windows, avoiding the O(N) cost of list prepends.\n\n---",
+      "markdown": "### [CARD: Deques (Double-Ended Queues)]\n<!-- id: d23-deques -->\n\n- **Priority:** should_know\n- **Category:** data-structures\n- **Tags:** data-structures, queues\n**Core Concept**\n\nA queue that allows O(1) appending and popping from both ends.\n**Why It Matters**\n\nUsed for maintaining rolling windows of fixed sizes (like recent interaction history) or implementing BFS.\n**Mental Model / Mechanics**\n\nUnlike a standard Python list where `pop(0)` is O(N), a `collections.deque` makes operations on both the left and right ends O(1).\n**Example**\n\n```python\nfrom collections import deque\n# Maintain last 3 active sessions\nhistory = deque(maxlen=3)\nhistory.append(\"session_1\")\nhistory.append(\"session_2\")\nhistory.append(\"session_3\")\nhistory.append(\"session_4\") # session_1 is automatically removed\n```\n**Failure Modes / Tradeoffs**\n\n- Random access (e.g., `d[5]`) in a deque is O(N), whereas it is O(1) for a list. Only use if operating strictly on the ends.\n**Interview-Ready Explanation**\n\n> A deque allows O(1) appends and pops from both ends. It is preferred over lists when implementing queues or fixed-size sliding windows, avoiding the O(N) cost of list prepends.\n\n---"
+    },
+    {
+      "id": "d23-boundary-test-cases",
+      "title": "Boundary Test Cases",
+      "priority": "must_know",
+      "category": "testing",
+      "tags": [
+        "testing",
+        "edge-cases"
+      ],
+      "content_markdown": "**Core Concept**\n\nTesting the extreme limits of input domains (empty lists, 0, negative values, very large arrays, NaNs).\n**Why It Matters**\n\nML pipelines frequently crash or produce silent errors when encountering unexpected boundary data (e.g., zero variance causing division by zero).\n**Mental Model / Mechanics**\n\nFor every function, explicitly test: empty input, minimum valid input, maximum valid input, and invalid inputs (NaN, null).\n**Example**\n\n```python\ndef normalize(features):\n    if not features: return []\n    import numpy as np\n    variance = np.var(features)\n    if variance == 0: return [0.0] * len(features)\n    return (features - np.mean(features)) / variance\n```\n**Failure Modes / Tradeoffs**\n\n- Silent numerical failures (NaN propagation) are much harder to debug than outright exceptions.\n**Interview-Ready Explanation**\n\n> Boundary testing validates behavior at the extreme ends of input ranges. For ML code, this means rigorously testing empty data, single-item arrays, zero variance, and NaN values to prevent silent mathematical failures.\n\n---",
+      "markdown": "### [CARD: Boundary Test Cases]\n<!-- id: d23-boundary-test-cases -->\n\n- **Priority:** must_know\n- **Category:** testing\n- **Tags:** testing, edge-cases\n**Core Concept**\n\nTesting the extreme limits of input domains (empty lists, 0, negative values, very large arrays, NaNs).\n**Why It Matters**\n\nML pipelines frequently crash or produce silent errors when encountering unexpected boundary data (e.g., zero variance causing division by zero).\n**Mental Model / Mechanics**\n\nFor every function, explicitly test: empty input, minimum valid input, maximum valid input, and invalid inputs (NaN, null).\n**Example**\n\n```python\ndef normalize(features):\n    if not features: return []\n    import numpy as np\n    variance = np.var(features)\n    if variance == 0: return [0.0] * len(features)\n    return (features - np.mean(features)) / variance\n```\n**Failure Modes / Tradeoffs**\n\n- Silent numerical failures (NaN propagation) are much harder to debug than outright exceptions.\n**Interview-Ready Explanation**\n\n> Boundary testing validates behavior at the extreme ends of input ranges. For ML code, this means rigorously testing empty data, single-item arrays, zero variance, and NaN values to prevent silent mathematical failures.\n\n---"
+    },
+    {
+      "id": "d23-parameterized-testing",
+      "title": "Parameterized Testing",
+      "priority": "should_know",
+      "category": "testing",
+      "tags": [
+        "testing",
+        "pytest"
+      ],
+      "content_markdown": "**Core Concept**\n\nRunning the same test function repeatedly with different sets of inputs and expected outputs.\n**Why It Matters**\n\nML preprocessing logic requires testing many variations of inputs. Parameterization avoids duplicated test code and clearly isolates failing cases.\n**Mental Model / Mechanics**\n\nDefine a single test logic block, and feed it a list of `(input, expected_output)` tuples.\n**Example**\n\n```python\nimport pytest\n\n@pytest.mark.parametrize(\"input_val, expected\", [\n    ([1, 2, 3], 2.0),\n    ([0, 0, 0], 0.0),\n    ([-1, 1], 0.0)\n])\ndef test_mean(input_val, expected):\n    assert calculate_mean(input_val) == expected\n```\n**Failure Modes / Tradeoffs**\n\n- Parameterized tests can become hard to read if the test tuples are extremely large or complex objects.\n**Interview-Ready Explanation**\n\n> Parameterized testing executes the same test logic over multiple input-output pairs. It cleanly scales test coverage for data transformations without duplicating test boilerplate.\n\n---",
+      "markdown": "### [CARD: Parameterized Testing]\n<!-- id: d23-parameterized-testing -->\n\n- **Priority:** should_know\n- **Category:** testing\n- **Tags:** testing, pytest\n**Core Concept**\n\nRunning the same test function repeatedly with different sets of inputs and expected outputs.\n**Why It Matters**\n\nML preprocessing logic requires testing many variations of inputs. Parameterization avoids duplicated test code and clearly isolates failing cases.\n**Mental Model / Mechanics**\n\nDefine a single test logic block, and feed it a list of `(input, expected_output)` tuples.\n**Example**\n\n```python\nimport pytest\n\n@pytest.mark.parametrize(\"input_val, expected\", [\n    ([1, 2, 3], 2.0),\n    ([0, 0, 0], 0.0),\n    ([-1, 1], 0.0)\n])\ndef test_mean(input_val, expected):\n    assert calculate_mean(input_val) == expected\n```\n**Failure Modes / Tradeoffs**\n\n- Parameterized tests can become hard to read if the test tuples are extremely large or complex objects.\n**Interview-Ready Explanation**\n\n> Parameterized testing executes the same test logic over multiple input-output pairs. It cleanly scales test coverage for data transformations without duplicating test boilerplate.\n\n---"
+    },
+    {
+      "id": "d23-mocking",
+      "title": "Mocking External Services",
+      "priority": "must_know",
+      "category": "testing",
+      "tags": [
+        "testing",
+        "mocking"
+      ],
+      "content_markdown": "**Core Concept**\n\nReplacing real external dependencies (databases, APIs, LLM calls) with simulated objects that return predictable responses.\n**Why It Matters**\n\nYou cannot reliably test an ML service if it depends on an unpredictable, rate-limited, or paid external API (like OpenAI).\n**Mental Model / Mechanics**\n\nUse `unittest.mock.patch` to intercept a function call and return a static response. Assert that the external function was called with the expected prompts/arguments.\n**Example**\n\n```python\nfrom unittest.mock import patch\n\n@patch(\"openai.ChatCompletion.create\")\ndef test_llm_chain(mock_create):\n    mock_create.return_value = {\"choices\": [{\"message\": {\"content\": \"mocked text\"}}]}\n    \n    result = run_my_chain(\"test prompt\")\n    \n    assert result == \"mocked text\"\n    mock_create.assert_called_once()\n```\n**Failure Modes / Tradeoffs**\n\n- Mocks can drift from reality if the external API changes its signature.\n- Over-mocking leads to tests that just verify the mock setup, not the business logic.\n**Interview-Ready Explanation**\n\n> Mocking replaces real external calls with predictable stubs. This isolates the code under test, prevents flaky tests due to network issues, and avoids burning API credits during CI/CD.\n\n---",
+      "markdown": "### [CARD: Mocking External Services]\n<!-- id: d23-mocking -->\n\n- **Priority:** must_know\n- **Category:** testing\n- **Tags:** testing, mocking\n**Core Concept**\n\nReplacing real external dependencies (databases, APIs, LLM calls) with simulated objects that return predictable responses.\n**Why It Matters**\n\nYou cannot reliably test an ML service if it depends on an unpredictable, rate-limited, or paid external API (like OpenAI).\n**Mental Model / Mechanics**\n\nUse `unittest.mock.patch` to intercept a function call and return a static response. Assert that the external function was called with the expected prompts/arguments.\n**Example**\n\n```python\nfrom unittest.mock import patch\n\n@patch(\"openai.ChatCompletion.create\")\ndef test_llm_chain(mock_create):\n    mock_create.return_value = {\"choices\": [{\"message\": {\"content\": \"mocked text\"}}]}\n    \n    result = run_my_chain(\"test prompt\")\n    \n    assert result == \"mocked text\"\n    mock_create.assert_called_once()\n```\n**Failure Modes / Tradeoffs**\n\n- Mocks can drift from reality if the external API changes its signature.\n- Over-mocking leads to tests that just verify the mock setup, not the business logic.\n**Interview-Ready Explanation**\n\n> Mocking replaces real external calls with predictable stubs. This isolates the code under test, prevents flaky tests due to network issues, and avoids burning API credits during CI/CD.\n\n---"
+    },
+    {
+      "id": "d23-testing-stochastic",
+      "title": "Testing Stochastic Functions",
+      "priority": "should_know",
+      "category": "testing",
+      "tags": [
+        "testing",
+        "randomness"
+      ],
+      "content_markdown": "**Core Concept**\n\nTesting functions that involve randomness (e.g., sampling, model initialization) by fixing seeds or checking statistical bounds.\n**Why It Matters**\n\nML models inherently involve randomness. Tests must be deterministic to be useful in CI pipelines.\n**Mental Model / Mechanics**\n\nApproach 1: Fix the random seed before the function call to ensure identical outputs. Approach 2: Check properties of the output distribution (e.g., mean falls within an expected confidence interval).\n**Example**\n\n```python\nimport numpy as np\n\ndef test_random_sampler():\n    np.random.seed(42)\n    sample_1 = my_sampler(10)\n    \n    np.random.seed(42)\n    sample_2 = my_sampler(10)\n    \n    assert np.array_equal(sample_1, sample_2) # Determinism check\n```\n**Failure Modes / Tradeoffs**\n\n- Hardcoding seeds can hide true edge cases that only emerge under specific random states.\n- Statistical bounds tests can be flaky if bounds are too tight.\n**Interview-Ready Explanation**\n\n> To test stochastic functions reliably, either fix the random seed to guarantee deterministic outputs, or test that the output distribution meets expected statistical properties within acceptable bounds.\n\n---",
+      "markdown": "### [CARD: Testing Stochastic Functions]\n<!-- id: d23-testing-stochastic -->\n\n- **Priority:** should_know\n- **Category:** testing\n- **Tags:** testing, randomness\n**Core Concept**\n\nTesting functions that involve randomness (e.g., sampling, model initialization) by fixing seeds or checking statistical bounds.\n**Why It Matters**\n\nML models inherently involve randomness. Tests must be deterministic to be useful in CI pipelines.\n**Mental Model / Mechanics**\n\nApproach 1: Fix the random seed before the function call to ensure identical outputs. Approach 2: Check properties of the output distribution (e.g., mean falls within an expected confidence interval).\n**Example**\n\n```python\nimport numpy as np\n\ndef test_random_sampler():\n    np.random.seed(42)\n    sample_1 = my_sampler(10)\n    \n    np.random.seed(42)\n    sample_2 = my_sampler(10)\n    \n    assert np.array_equal(sample_1, sample_2) # Determinism check\n```\n**Failure Modes / Tradeoffs**\n\n- Hardcoding seeds can hide true edge cases that only emerge under specific random states.\n- Statistical bounds tests can be flaky if bounds are too tight.\n**Interview-Ready Explanation**\n\n> To test stochastic functions reliably, either fix the random seed to guarantee deterministic outputs, or test that the output distribution meets expected statistical properties within acceptable bounds.\n\n---"
+    },
+    {
+      "id": "d23-edge-cases",
+      "title": "Handling Edge Cases",
+      "priority": "must_know",
+      "category": "code-quality",
+      "tags": [
+        "coding",
+        "robust-code"
+      ],
+      "content_markdown": "**Core Concept**\n\nAnticipating and gracefully handling unexpected or extreme data states.\n**Why It Matters**\n\nIn production ML, the data pipeline *will* eventually receive missing features, infinities, empty batches, or unmapped categorical values.\n**Mental Model / Mechanics**\n\nFail fast with clear error messages, or fallback to sensible defaults. Check preconditions (e.g., `len(batch) > 0`) early in the function.\n**Example**\n\n```python\ndef compute_click_through_rate(clicks, impressions):\n    if impressions < 0 or clicks < 0:\n        raise ValueError(\"Metrics cannot be negative.\")\n    if impressions == 0:\n        return 0.0 # Handle division by zero\n    return clicks / impressions\n```\n**Failure Modes / Tradeoffs**\n\n- Returning `None` or `0` silently when an exception should be raised can pollute downstream model training.\n**Interview-Ready Explanation**\n\n> Robust ML code proactively checks for edge cases like missing values, empty arrays, and division by zero. Handling these gracefully prevents silent propagation of NaNs and catastrophic pipeline failures.\n\n---",
+      "markdown": "### [CARD: Handling Edge Cases]\n<!-- id: d23-edge-cases -->\n\n- **Priority:** must_know\n- **Category:** code-quality\n- **Tags:** coding, robust-code\n**Core Concept**\n\nAnticipating and gracefully handling unexpected or extreme data states.\n**Why It Matters**\n\nIn production ML, the data pipeline *will* eventually receive missing features, infinities, empty batches, or unmapped categorical values.\n**Mental Model / Mechanics**\n\nFail fast with clear error messages, or fallback to sensible defaults. Check preconditions (e.g., `len(batch) > 0`) early in the function.\n**Example**\n\n```python\ndef compute_click_through_rate(clicks, impressions):\n    if impressions < 0 or clicks < 0:\n        raise ValueError(\"Metrics cannot be negative.\")\n    if impressions == 0:\n        return 0.0 # Handle division by zero\n    return clicks / impressions\n```\n**Failure Modes / Tradeoffs**\n\n- Returning `None` or `0` silently when an exception should be raised can pollute downstream model training.\n**Interview-Ready Explanation**\n\n> Robust ML code proactively checks for edge cases like missing values, empty arrays, and division by zero. Handling these gracefully prevents silent propagation of NaNs and catastrophic pipeline failures.\n\n---"
+    },
+    {
+      "id": "d23-complexity",
+      "title": "Time & Space Complexity",
+      "priority": "must_know",
+      "category": "code-quality",
+      "tags": [
+        "coding",
+        "big-o",
+        "performance"
+      ],
+      "content_markdown": "**Core Concept**\n\nEvaluating how runtime (Time) and memory usage (Space) scale as input size N grows.\n**Why It Matters**\n\nML systems deal with massive datasets. An O(N^2) feature extraction loop will crash the system in production.\n**Mental Model / Mechanics**\n\nAlways identify the bottleneck. Trade space for time by caching/precomputing (Hash Maps). Trade time for space by processing in chunks (Generators/Iterators).\n**Example**\n\n```python\n# O(N) Space, O(N) Time -> Hash Map deduplication\nseen = set(data)\n\n# O(1) Space, O(N log N) Time -> In-place sort deduplication\ndata.sort()\n```\n**Failure Modes / Tradeoffs**\n\n- Optimizing for O(1) space often requires modifying data in-place, which can be dangerous if the caller expects the input to be immutable.\n**Interview-Ready Explanation**\n\n> Time and space complexity measure algorithm scalability. In ML coding interviews, you must be able to state the Big-O of your solution and discuss tradeoffs, such as using extra memory (Hash Maps) to reduce time complexity.\n\n---",
+      "markdown": "### [CARD: Time & Space Complexity]\n<!-- id: d23-complexity -->\n\n- **Priority:** must_know\n- **Category:** code-quality\n- **Tags:** coding, big-o, performance\n**Core Concept**\n\nEvaluating how runtime (Time) and memory usage (Space) scale as input size N grows.\n**Why It Matters**\n\nML systems deal with massive datasets. An O(N^2) feature extraction loop will crash the system in production.\n**Mental Model / Mechanics**\n\nAlways identify the bottleneck. Trade space for time by caching/precomputing (Hash Maps). Trade time for space by processing in chunks (Generators/Iterators).\n**Example**\n\n```python\n# O(N) Space, O(N) Time -> Hash Map deduplication\nseen = set(data)\n\n# O(1) Space, O(N log N) Time -> In-place sort deduplication\ndata.sort()\n```\n**Failure Modes / Tradeoffs**\n\n- Optimizing for O(1) space often requires modifying data in-place, which can be dangerous if the caller expects the input to be immutable.\n**Interview-Ready Explanation**\n\n> Time and space complexity measure algorithm scalability. In ML coding interviews, you must be able to state the Big-O of your solution and discuss tradeoffs, such as using extra memory (Hash Maps) to reduce time complexity.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "**DSA to ML:**\n```\nTop-K Heaps → Recommendation Ranking\nSliding Window → Streaming Feature Extraction\nHash Maps → O(1) Embedding Lookups\nGraphs (BFS/DFS) → DAG execution in Airflow / User-Item bipartite graphs\n```\n\n**Testing to Production:**\n```\nBoundary testing / Mocking → Deterministic CI pipelines → Safe deployments of non-deterministic models.\n```\n\n---",
+  "common_misconceptions_markdown": "- **Myth:** MLE interviews are purely theoretical ML math.\n  **Reality:** You must write clean, optimized Python. Poor time/space complexity or ignoring edge cases will fail you.\n\n- **Myth:** Mocks are only for databases.\n  **Reality:** Mocking LLMs and external inference APIs is critical for fast, free, deterministic tests.\n\n- **Myth:** Randomness can't be tested.\n  **Reality:** It can be made deterministic with fixed seeds, or validated via statistical bounds.\n\n---",
+  "out_of_scope_markdown": "- Implementing balanced binary search trees from scratch\n- Obscure graph algorithms (e.g., A* search, network flow)\n- Advanced competitive programming DP problems\n- Heavy integration testing infrastructure\n\n---",
+  "qa_drill": [
+    {
+      "id": "d23-qa-001",
+      "question": "How does the sliding window pattern improve performance?",
+      "answer": "It updates state incrementally (adding the new element and removing the old one) instead of recomputing the entire window, optimizing O(N*K) naive approaches to O(N).",
+      "tags": [
+        "sliding-window",
+        "streaming"
+      ],
+      "linked_card_ids": [
+        "d23-sliding-window"
+      ]
+    },
+    {
+      "id": "d23-qa-002",
+      "question": "When is the Two Pointers pattern useful?",
+      "answer": "It is useful for finding pairs in sorted arrays or merging ranked lists, narrowing down the search space in O(N) time instead of O(N^2).",
+      "tags": [
+        "two-pointers",
+        "arrays"
+      ],
+      "linked_card_ids": [
+        "d23-two-pointers"
+      ]
+    },
+    {
+      "id": "d23-qa-003",
+      "question": "What is the most efficient way to track the K largest items in a stream?",
+      "answer": "Maintain a min-heap of size K. When a new item arrives, push it to the heap and pop the smallest item if the size exceeds K. This takes O(N log K) time.",
+      "tags": [
+        "heaps",
+        "ranking"
+      ],
+      "linked_card_ids": [
+        "d23-top-k-heaps"
+      ]
+    },
+    {
+      "id": "d23-qa-004",
+      "question": "What data structures are used for BFS and DFS?",
+      "answer": "BFS uses a Queue (FIFO) to explore level-by-level. DFS uses a Stack (LIFO) or recursion to explore deep paths.",
+      "tags": [
+        "graphs",
+        "traversal"
+      ],
+      "linked_card_ids": [
+        "d23-bfs-dfs"
+      ]
+    },
+    {
+      "id": "d23-qa-005",
+      "question": "Why are Hash Maps so common in ML pipelines?",
+      "answer": "They provide O(1) average lookup times, making them essential for fast feature matching, caching embeddings, and frequency counting.",
+      "tags": [
+        "hashing",
+        "lookups"
+      ],
+      "linked_card_ids": [
+        "d23-hash-maps-sets"
+      ]
+    },
+    {
+      "id": "d23-qa-006",
+      "question": "Why use a deque instead of a list?",
+      "answer": "A deque allows O(1) appends and pops from both ends, while a list takes O(N) to pop from the beginning. Deques are ideal for fixed-size sliding windows or queues.",
+      "tags": [
+        "data-structures",
+        "queues"
+      ],
+      "linked_card_ids": [
+        "d23-deques"
+      ]
+    },
+    {
+      "id": "d23-qa-007",
+      "question": "Why is boundary testing important for ML code?",
+      "answer": "Missing data, single items, or zero variance can cause silent numerical failures (like propagating NaNs). Boundary testing prevents these failures by validating edge cases explicitly.",
+      "tags": [
+        "testing",
+        "edge-cases"
+      ],
+      "linked_card_ids": [
+        "d23-boundary-test-cases"
+      ]
+    },
+    {
+      "id": "d23-qa-008",
+      "question": "What is parameterized testing?",
+      "answer": "Running the same test logic repeatedly over a list of input-output pairs. It scales test coverage efficiently without duplicating code.",
+      "tags": [
+        "testing",
+        "pytest"
+      ],
+      "linked_card_ids": [
+        "d23-parameterized-testing"
+      ]
+    },
+    {
+      "id": "d23-qa-009",
+      "question": "Why do we mock external services in ML tests?",
+      "answer": "To avoid unpredictable network errors, rate limits, and API costs. Mocking isolates the code being tested by returning deterministic responses.",
+      "tags": [
+        "testing",
+        "mocking"
+      ],
+      "linked_card_ids": [
+        "d23-mocking"
+      ]
+    },
+    {
+      "id": "d23-qa-010",
+      "question": "How can you write a deterministic test for a stochastic ML function?",
+      "answer": "Either fix the random seed before the function call to guarantee exact outputs, or assert that the results fall within expected statistical bounds.",
+      "tags": [
+        "testing",
+        "randomness"
+      ],
+      "linked_card_ids": [
+        "d23-testing-stochastic"
+      ]
+    },
+    {
+      "id": "d23-qa-011",
+      "question": "Why is handling edge cases like zero division critical in feature engineering?",
+      "answer": "If ignored, they can return incorrect values or raise exceptions mid-pipeline, halting production or silently degrading the ML model with corrupted data (like NaNs).",
+      "tags": [
+        "robust-code",
+        "edge-cases"
+      ],
+      "linked_card_ids": [
+        "d23-edge-cases"
+      ]
+    },
+    {
+      "id": "d23-qa-012",
+      "question": "How do you typically trade space for time when optimizing algorithms?",
+      "answer": "By caching or precomputing intermediate results in data structures like Hash Maps (using extra memory) to avoid redundant calculations, effectively reducing time complexity.",
+      "tags": [
+        "big-o",
+        "performance"
+      ],
+      "linked_card_ids": [
+        "d23-complexity"
+      ]
+    }
+  ]
+}

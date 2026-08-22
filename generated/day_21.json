@@ -1,0 +1,390 @@
+{
+  "schema_version": 1,
+  "day": 21,
+  "title": "ML System Design & MLOps Foundations",
+  "topics": [
+    "ml-system-design",
+    "mlops",
+    "model-serving",
+    "monitoring",
+    "experimentation"
+  ],
+  "tags": [
+    "mle-systems",
+    "mlops",
+    "system-design",
+    "interview-prep"
+  ],
+  "priority_distribution": {
+    "nice_to_know": 0,
+    "must_know": 13,
+    "should_know": 1
+  },
+  "daily_objective_markdown": "Learn to design and explain an end-to-end ML system under real constraints: data freshness, latency, scale, evaluation, safe deployment, monitoring, and failure recovery. The goal is to make defensible tradeoffs—not to memorize one architecture.\n\n---",
+  "syllabus_markdown": "- 🔴 **MUST KNOW:** requirements and success metrics, data/label definition, training-serving consistency, offline/online features, batch/online serving, retrieval-ranking-re-ranking, embedding freshness/cold start, offline/online evaluation, experimentation, monitoring/drift, model registry/reproducibility, safe deployment, rollback/fallbacks, and incident diagnosis.\n- 🟡 **SHOULD KNOW:** privacy/access control and capacity/cost planning.\n- 🟢 **NICE TO KNOW:** detailed distributed-consensus, service-mesh, and infrastructure-as-code internals.\n\n---",
+  "cards": [
+    {
+      "id": "d21-requirements-and-success-metrics",
+      "title": "Start System Design with Requirements and Success Metrics",
+      "priority": "must_know",
+      "category": "ml-system-design",
+      "tags": [
+        "requirements",
+        "metrics",
+        "latency",
+        "scale",
+        "product"
+      ],
+      "content_markdown": "**Core Concept**\n\nAn ML design begins by defining the product decision, target users, input/output, success metric, scale, latency, freshness, cost, and safety constraints. Architecture is a response to these requirements—not the starting point.\n\n**Why It Matters**\n\nThe same model can be appropriate for overnight recommendations and unacceptable for fraud blocking within 50 milliseconds. Interviewers evaluate whether you ask the questions that change the design.\n\n**Example**\n\nFor “rank jobs for a user,” clarify: one-time feed or real-time search? candidates per request? p95 latency? update frequency? relevance metric? exposure/fairness constraints? available user history for new users?\n\n**Interview-Ready Explanation**\n\n> I first define the decision and measurable success, then state scale, latency, freshness, cost, and safety constraints. Only then do I choose batch versus online features, model complexity, retrieval, and serving architecture.\n\n---",
+      "markdown": "### [CARD: Start System Design with Requirements and Success Metrics]\n<!-- id: d21-requirements-and-success-metrics -->\n\n- **Priority:** must_know\n- **Category:** ml-system-design\n- **Tags:** requirements, metrics, latency, scale, product\n\n**Core Concept**\n\nAn ML design begins by defining the product decision, target users, input/output, success metric, scale, latency, freshness, cost, and safety constraints. Architecture is a response to these requirements—not the starting point.\n\n**Why It Matters**\n\nThe same model can be appropriate for overnight recommendations and unacceptable for fraud blocking within 50 milliseconds. Interviewers evaluate whether you ask the questions that change the design.\n\n**Example**\n\nFor “rank jobs for a user,” clarify: one-time feed or real-time search? candidates per request? p95 latency? update frequency? relevance metric? exposure/fairness constraints? available user history for new users?\n\n**Interview-Ready Explanation**\n\n> I first define the decision and measurable success, then state scale, latency, freshness, cost, and safety constraints. Only then do I choose batch versus online features, model complexity, retrieval, and serving architecture.\n\n---"
+    },
+    {
+      "id": "d21-data-labels-and-point-in-time-correctness",
+      "title": "Data, Labels, and Point-in-Time Correctness",
+      "priority": "must_know",
+      "category": "ml-data",
+      "tags": [
+        "labels",
+        "leakage",
+        "point-in-time",
+        "training-data"
+      ],
+      "content_markdown": "**Core Concept**\n\nTraining examples must reflect the information available at prediction time. A label must be defined with an outcome window, and every feature must be computed using data from at or before that example's prediction timestamp.\n\n**Why It Matters**\n\nFuture information leaks can create excellent offline metrics and a failing production model. This is especially common when joining slowly updated tables or using aggregates computed after the label event.\n\n**Example**\n\nTo predict whether a user will purchase in the next 7 days at time `t`, a feature such as “purchases in the prior 30 days” must use only events before `t`; the purchase label uses the interval after `t`.\n\n**Interview-Ready Explanation**\n\n> I define an example timestamp, a feature lookback window, and a label horizon. Every training feature must be point-in-time correct—available no later than the time at which the model would have made that prediction.\n\n---",
+      "markdown": "### [CARD: Data, Labels, and Point-in-Time Correctness]\n<!-- id: d21-data-labels-and-point-in-time-correctness -->\n\n- **Priority:** must_know\n- **Category:** ml-data\n- **Tags:** labels, leakage, point-in-time, training-data\n\n**Core Concept**\n\nTraining examples must reflect the information available at prediction time. A label must be defined with an outcome window, and every feature must be computed using data from at or before that example's prediction timestamp.\n\n**Why It Matters**\n\nFuture information leaks can create excellent offline metrics and a failing production model. This is especially common when joining slowly updated tables or using aggregates computed after the label event.\n\n**Example**\n\nTo predict whether a user will purchase in the next 7 days at time `t`, a feature such as “purchases in the prior 30 days” must use only events before `t`; the purchase label uses the interval after `t`.\n\n**Interview-Ready Explanation**\n\n> I define an example timestamp, a feature lookback window, and a label horizon. Every training feature must be point-in-time correct—available no later than the time at which the model would have made that prediction.\n\n---"
+    },
+    {
+      "id": "d21-training-serving-consistency",
+      "title": "Training-Serving Consistency and Feature Stores",
+      "priority": "must_know",
+      "category": "ml-data",
+      "tags": [
+        "training-serving-skew",
+        "feature-store",
+        "consistency",
+        "features"
+      ],
+      "content_markdown": "**Core Concept**\n\nTraining-serving skew occurs when the features, transformations, defaults, or data timing used in production differ from those used during training. A feature store or shared transformation layer can provide offline historical features and online low-latency features with the same definitions.\n\n**Why It Matters**\n\nA model can be mathematically correct and still underperform because production provides a stale, missing, differently normalized, or differently ordered feature.\n\n**Example**\n\nDefine one `days_since_last_purchase` feature contract: source events, event-time logic, null default, owner, freshness SLA, and version. Both training and serving use that contract rather than separate ad hoc implementations.\n\n**Interview-Ready Explanation**\n\n> I prevent training-serving skew by versioning feature definitions and using the same transformation semantics offline and online. A feature store is useful when it provides point-in-time offline retrieval, low-latency online retrieval, and clear freshness ownership.\n\n---",
+      "markdown": "### [CARD: Training-Serving Consistency and Feature Stores]\n<!-- id: d21-training-serving-consistency -->\n\n- **Priority:** must_know\n- **Category:** ml-data\n- **Tags:** training-serving-skew, feature-store, consistency, features\n\n**Core Concept**\n\nTraining-serving skew occurs when the features, transformations, defaults, or data timing used in production differ from those used during training. A feature store or shared transformation layer can provide offline historical features and online low-latency features with the same definitions.\n\n**Why It Matters**\n\nA model can be mathematically correct and still underperform because production provides a stale, missing, differently normalized, or differently ordered feature.\n\n**Example**\n\nDefine one `days_since_last_purchase` feature contract: source events, event-time logic, null default, owner, freshness SLA, and version. Both training and serving use that contract rather than separate ad hoc implementations.\n\n**Interview-Ready Explanation**\n\n> I prevent training-serving skew by versioning feature definitions and using the same transformation semantics offline and online. A feature store is useful when it provides point-in-time offline retrieval, low-latency online retrieval, and clear freshness ownership.\n\n---"
+    },
+    {
+      "id": "d21-batch-online-and-hybrid-serving",
+      "title": "Batch, Online, and Hybrid ML Serving",
+      "priority": "must_know",
+      "category": "model-serving",
+      "tags": [
+        "batch-inference",
+        "online-inference",
+        "latency",
+        "freshness"
+      ],
+      "content_markdown": "**Core Concept**\n\nBatch inference computes predictions for many entities ahead of time and stores them for later lookup. Online inference computes a prediction during a request. Hybrid systems precompute stable work and combine it with fresh request-time signals.\n\n**Why It Matters**\n\nBatch is cheaper and simpler; online is fresher and more personalized but requires latency budgets, feature availability, fallbacks, and operational reliability.\n\n**Example**\n\nFor a homepage feed, precompute item embeddings and candidate lists in batch, then use the current session and recent clicks to re-rank a small set online.\n\n**Interview-Ready Explanation**\n\n> I choose batch when freshness requirements allow it, online when a request needs current context, and hybrid when stable expensive work can be precomputed while a small online stage adds recency or personalization.\n\n---",
+      "markdown": "### [CARD: Batch, Online, and Hybrid ML Serving]\n<!-- id: d21-batch-online-and-hybrid-serving -->\n\n- **Priority:** must_know\n- **Category:** model-serving\n- **Tags:** batch-inference, online-inference, latency, freshness\n\n**Core Concept**\n\nBatch inference computes predictions for many entities ahead of time and stores them for later lookup. Online inference computes a prediction during a request. Hybrid systems precompute stable work and combine it with fresh request-time signals.\n\n**Why It Matters**\n\nBatch is cheaper and simpler; online is fresher and more personalized but requires latency budgets, feature availability, fallbacks, and operational reliability.\n\n**Example**\n\nFor a homepage feed, precompute item embeddings and candidate lists in batch, then use the current session and recent clicks to re-rank a small set online.\n\n**Interview-Ready Explanation**\n\n> I choose batch when freshness requirements allow it, online when a request needs current context, and hybrid when stable expensive work can be precomputed while a small online stage adds recency or personalization.\n\n---"
+    },
+    {
+      "id": "d21-retrieval-ranking-reranking",
+      "title": "Retrieval, Ranking, and Re-Ranking Funnel",
+      "priority": "must_know",
+      "category": "ml-system-design",
+      "tags": [
+        "retrieval",
+        "ranking",
+        "reranking",
+        "latency",
+        "candidates"
+      ],
+      "content_markdown": "**Core Concept**\n\nLarge-scale recommendation and search systems use a funnel. Retrieval quickly selects hundreds or thousands of plausible candidates; ranking applies a more expensive model to score them; re-ranking applies diversity, freshness, policy, and business constraints to the final small list.\n\n**Why It Matters**\n\nScoring every catalog item with a heavy model violates latency and cost budgets. Each stage spends compute only on a progressively smaller, more relevant set.\n\n**Example**\n\n```text\n10 million items\n  → ANN / rules retrieve 1,000\n  → learned ranker scores 100\n  → re-ranker returns 20 diverse, eligible items\n```\n\n**Interview-Ready Explanation**\n\n> I use a multi-stage funnel: cheap high-recall retrieval, richer ranking, then policy-aware re-ranking. This makes latency a first-class design constraint rather than an afterthought.\n\n---",
+      "markdown": "### [CARD: Retrieval, Ranking, and Re-Ranking Funnel]\n<!-- id: d21-retrieval-ranking-reranking -->\n\n- **Priority:** must_know\n- **Category:** ml-system-design\n- **Tags:** retrieval, ranking, reranking, latency, candidates\n\n**Core Concept**\n\nLarge-scale recommendation and search systems use a funnel. Retrieval quickly selects hundreds or thousands of plausible candidates; ranking applies a more expensive model to score them; re-ranking applies diversity, freshness, policy, and business constraints to the final small list.\n\n**Why It Matters**\n\nScoring every catalog item with a heavy model violates latency and cost budgets. Each stage spends compute only on a progressively smaller, more relevant set.\n\n**Example**\n\n```text\n10 million items\n  → ANN / rules retrieve 1,000\n  → learned ranker scores 100\n  → re-ranker returns 20 diverse, eligible items\n```\n\n**Interview-Ready Explanation**\n\n> I use a multi-stage funnel: cheap high-recall retrieval, richer ranking, then policy-aware re-ranking. This makes latency a first-class design constraint rather than an afterthought.\n\n---"
+    },
+    {
+      "id": "d21-two-tower-freshness-and-cold-start",
+      "title": "Two-Tower Retrieval, Embedding Freshness, and Cold Start",
+      "priority": "must_know",
+      "category": "retrieval-systems",
+      "tags": [
+        "two-tower",
+        "embeddings",
+        "freshness",
+        "cold-start",
+        "ann"
+      ],
+      "content_markdown": "**Core Concept**\n\nA two-tower retrieval model maps users/queries and items/documents into one embedding space, allowing approximate nearest-neighbor search. Item embeddings can be precomputed and indexed; user/query embeddings are often computed or updated close to request time.\n\n**Why It Matters**\n\nThe system must answer practical questions beyond similarity: how does a new item enter the index, how does a new user get recommendations, and how quickly do embeddings reflect changing behavior?\n\n**Example**\n\nFor a new user, use popular or content-based candidates until interaction history exists. For a new item, embed its metadata immediately and insert it into the index before enough engagement data exists to learn collaborative signals.\n\n**Interview-Ready Explanation**\n\n> Two-tower models make retrieval scalable through vector search. I separately design item-index freshness, user-context freshness, and cold-start fallbacks; otherwise a retrieval system systematically misses new content and new users.\n\n---",
+      "markdown": "### [CARD: Two-Tower Retrieval, Embedding Freshness, and Cold Start]\n<!-- id: d21-two-tower-freshness-and-cold-start -->\n\n- **Priority:** must_know\n- **Category:** retrieval-systems\n- **Tags:** two-tower, embeddings, freshness, cold-start, ann\n\n**Core Concept**\n\nA two-tower retrieval model maps users/queries and items/documents into one embedding space, allowing approximate nearest-neighbor search. Item embeddings can be precomputed and indexed; user/query embeddings are often computed or updated close to request time.\n\n**Why It Matters**\n\nThe system must answer practical questions beyond similarity: how does a new item enter the index, how does a new user get recommendations, and how quickly do embeddings reflect changing behavior?\n\n**Example**\n\nFor a new user, use popular or content-based candidates until interaction history exists. For a new item, embed its metadata immediately and insert it into the index before enough engagement data exists to learn collaborative signals.\n\n**Interview-Ready Explanation**\n\n> Two-tower models make retrieval scalable through vector search. I separately design item-index freshness, user-context freshness, and cold-start fallbacks; otherwise a retrieval system systematically misses new content and new users.\n\n---"
+    },
+    {
+      "id": "d21-offline-online-evaluation-and-guardrails",
+      "title": "Offline Evaluation, Online Evaluation, and Guardrails",
+      "priority": "must_know",
+      "category": "ml-evaluation",
+      "tags": [
+        "offline-evaluation",
+        "online-evaluation",
+        "metrics",
+        "guardrails"
+      ],
+      "content_markdown": "**Core Concept**\n\nOffline evaluation estimates model quality on held-out historical data. Online experiments measure user and business impact under real behavior. Guardrail metrics protect against harmful side effects even if the primary metric improves.\n\n**Why It Matters**\n\nOffline lift does not guarantee online lift because logged data is biased by the old system, user behavior changes, and production constraints differ from a static dataset.\n\n**Example**\n\nFor a ranking model, primary online metric might be long-term conversion; guardrails may include latency, complaint rate, diversity, cancellation rate, or fairness indicators.\n\n**Interview-Ready Explanation**\n\n> Offline metrics select promising candidates; controlled online experiments validate causal product impact. I define guardrails so a local gain such as click-through rate does not silently harm latency, quality, or user trust.\n\n---",
+      "markdown": "### [CARD: Offline Evaluation, Online Evaluation, and Guardrails]\n<!-- id: d21-offline-online-evaluation-and-guardrails -->\n\n- **Priority:** must_know\n- **Category:** ml-evaluation\n- **Tags:** offline-evaluation, online-evaluation, metrics, guardrails\n\n**Core Concept**\n\nOffline evaluation estimates model quality on held-out historical data. Online experiments measure user and business impact under real behavior. Guardrail metrics protect against harmful side effects even if the primary metric improves.\n\n**Why It Matters**\n\nOffline lift does not guarantee online lift because logged data is biased by the old system, user behavior changes, and production constraints differ from a static dataset.\n\n**Example**\n\nFor a ranking model, primary online metric might be long-term conversion; guardrails may include latency, complaint rate, diversity, cancellation rate, or fairness indicators.\n\n**Interview-Ready Explanation**\n\n> Offline metrics select promising candidates; controlled online experiments validate causal product impact. I define guardrails so a local gain such as click-through rate does not silently harm latency, quality, or user trust.\n\n---"
+    },
+    {
+      "id": "d21-ab-testing",
+      "title": "Experimentation and A/B Testing",
+      "priority": "must_know",
+      "category": "experimentation",
+      "tags": [
+        "ab-testing",
+        "randomization",
+        "experimentation",
+        "metrics"
+      ],
+      "content_markdown": "**Core Concept**\n\nAn A/B test randomly assigns comparable units—often users—to variants, then compares predeclared metrics. Randomization aims to make the variants differ only in the treatment, allowing a causal estimate of the change's effect.\n\n**Why It Matters**\n\nWithout controlled assignment, a model may appear better merely because it served easier users, a different season, or a different traffic source.\n\n**Failure Modes / Tradeoffs**\n\nAvoid repeatedly checking results until significance appears, changing metrics mid-test, or ignoring interference between users. Ensure event logging identifies variant, model version, and exposure.\n\n**Interview-Ready Explanation**\n\n> I randomize at the correct unit, predefine the success and guardrail metrics, log assignment and exposure, and run long enough for a reliable decision. Offline evaluation narrows candidates; A/B tests establish online causal impact.\n\n---",
+      "markdown": "### [CARD: Experimentation and A/B Testing]\n<!-- id: d21-ab-testing -->\n\n- **Priority:** must_know\n- **Category:** experimentation\n- **Tags:** ab-testing, randomization, experimentation, metrics\n\n**Core Concept**\n\nAn A/B test randomly assigns comparable units—often users—to variants, then compares predeclared metrics. Randomization aims to make the variants differ only in the treatment, allowing a causal estimate of the change's effect.\n\n**Why It Matters**\n\nWithout controlled assignment, a model may appear better merely because it served easier users, a different season, or a different traffic source.\n\n**Failure Modes / Tradeoffs**\n\nAvoid repeatedly checking results until significance appears, changing metrics mid-test, or ignoring interference between users. Ensure event logging identifies variant, model version, and exposure.\n\n**Interview-Ready Explanation**\n\n> I randomize at the correct unit, predefine the success and guardrail metrics, log assignment and exposure, and run long enough for a reliable decision. Offline evaluation narrows candidates; A/B tests establish online causal impact.\n\n---"
+    },
+    {
+      "id": "d21-monitoring-and-drift",
+      "title": "Monitoring: Data, Prediction, and Business Health",
+      "priority": "must_know",
+      "category": "mlops",
+      "tags": [
+        "monitoring",
+        "data-drift",
+        "concept-drift",
+        "observability"
+      ],
+      "content_markdown": "**Core Concept**\n\nProduction monitoring spans multiple layers: service health (errors, latency, throughput), data health (freshness, nulls, distributions), prediction health (score distributions, calibration), and delayed business/model outcomes. Data drift changes input distributions; concept drift changes the relationship between inputs and outcomes.\n\n**Why It Matters**\n\nModels often fail silently. A system may return valid responses while upstream data has gone stale, a categorical feature has changed meaning, or relevance is degrading.\n\n**Example**\n\nAlert if a critical feature's null rate spikes, the model's score distribution collapses, p95 latency breaches the SLA, or conversion declines after a rollout. Diagnose the layer before retraining blindly.\n\n**Interview-Ready Explanation**\n\n> I monitor the full chain: infrastructure, input freshness and distributions, predictions, and eventual outcomes. Drift is a signal to investigate—possible causes include data breakage, changing users, seasonality, or a genuine concept shift.\n\n---",
+      "markdown": "### [CARD: Monitoring: Data, Prediction, and Business Health]\n<!-- id: d21-monitoring-and-drift -->\n\n- **Priority:** must_know\n- **Category:** mlops\n- **Tags:** monitoring, data-drift, concept-drift, observability\n\n**Core Concept**\n\nProduction monitoring spans multiple layers: service health (errors, latency, throughput), data health (freshness, nulls, distributions), prediction health (score distributions, calibration), and delayed business/model outcomes. Data drift changes input distributions; concept drift changes the relationship between inputs and outcomes.\n\n**Why It Matters**\n\nModels often fail silently. A system may return valid responses while upstream data has gone stale, a categorical feature has changed meaning, or relevance is degrading.\n\n**Example**\n\nAlert if a critical feature's null rate spikes, the model's score distribution collapses, p95 latency breaches the SLA, or conversion declines after a rollout. Diagnose the layer before retraining blindly.\n\n**Interview-Ready Explanation**\n\n> I monitor the full chain: infrastructure, input freshness and distributions, predictions, and eventual outcomes. Drift is a signal to investigate—possible causes include data breakage, changing users, seasonality, or a genuine concept shift.\n\n---"
+    },
+    {
+      "id": "d21-reproducibility-model-registry-and-lineage",
+      "title": "Reproducibility, Model Registry, and Lineage",
+      "priority": "must_know",
+      "category": "mlops",
+      "tags": [
+        "reproducibility",
+        "model-registry",
+        "lineage",
+        "versioning"
+      ],
+      "content_markdown": "**Core Concept**\n\nEvery deployable model should be traceable to its code version, training-data snapshot or query, feature definitions, hyperparameters, environment, evaluation results, and approval status. A model registry manages versioned artifacts and lifecycle states such as candidate, approved, deployed, and archived.\n\n**Why It Matters**\n\nWhen a model regresses, you need to answer “what changed?” and roll back safely. Reproducibility is operational control, not academic perfection.\n\n**Interview-Ready Explanation**\n\n> I record data, code, feature, environment, and metric lineage for each model version. The registry makes promotion and rollback explicit, so production never depends on an untraceable local artifact.\n\n---",
+      "markdown": "### [CARD: Reproducibility, Model Registry, and Lineage]\n<!-- id: d21-reproducibility-model-registry-and-lineage -->\n\n- **Priority:** must_know\n- **Category:** mlops\n- **Tags:** reproducibility, model-registry, lineage, versioning\n\n**Core Concept**\n\nEvery deployable model should be traceable to its code version, training-data snapshot or query, feature definitions, hyperparameters, environment, evaluation results, and approval status. A model registry manages versioned artifacts and lifecycle states such as candidate, approved, deployed, and archived.\n\n**Why It Matters**\n\nWhen a model regresses, you need to answer “what changed?” and roll back safely. Reproducibility is operational control, not academic perfection.\n\n**Interview-Ready Explanation**\n\n> I record data, code, feature, environment, and metric lineage for each model version. The registry makes promotion and rollback explicit, so production never depends on an untraceable local artifact.\n\n---"
+    },
+    {
+      "id": "d21-safe-deployment-and-rollback",
+      "title": "Safe Deployment: Shadow, Canary, Blue-Green, and Rollback",
+      "priority": "must_know",
+      "category": "mlops",
+      "tags": [
+        "deployment",
+        "shadow",
+        "canary",
+        "blue-green",
+        "rollback"
+      ],
+      "content_markdown": "**Core Concept**\n\nSafe release patterns limit blast radius. Shadow deployment sends live inputs to a new model without returning its output. Canary deployment serves a small traffic share first. Blue-green deployment keeps two full environments and switches traffic between them. Rollback returns traffic to a known-good version.\n\n**Why It Matters**\n\nOffline validation cannot reveal every production failure: feature availability, latency, schema changes, cost, and unexpected user behavior all appear only under real traffic.\n\n**Example**\n\nShadow a new ranker to compare predictions and latency, canary to 1% of eligible traffic with guardrail alerts, then increase gradually. Keep the old model and feature contract available for fast rollback.\n\n**Interview-Ready Explanation**\n\n> I release ML systems progressively: shadow for production validation without user impact, canary for limited real impact, automated guardrails, and a tested rollback path to a compatible previous model and feature version.\n\n---",
+      "markdown": "### [CARD: Safe Deployment: Shadow, Canary, Blue-Green, and Rollback]\n<!-- id: d21-safe-deployment-and-rollback -->\n\n- **Priority:** must_know\n- **Category:** mlops\n- **Tags:** deployment, shadow, canary, blue-green, rollback\n\n**Core Concept**\n\nSafe release patterns limit blast radius. Shadow deployment sends live inputs to a new model without returning its output. Canary deployment serves a small traffic share first. Blue-green deployment keeps two full environments and switches traffic between them. Rollback returns traffic to a known-good version.\n\n**Why It Matters**\n\nOffline validation cannot reveal every production failure: feature availability, latency, schema changes, cost, and unexpected user behavior all appear only under real traffic.\n\n**Example**\n\nShadow a new ranker to compare predictions and latency, canary to 1% of eligible traffic with guardrail alerts, then increase gradually. Keep the old model and feature contract available for fast rollback.\n\n**Interview-Ready Explanation**\n\n> I release ML systems progressively: shadow for production validation without user impact, canary for limited real impact, automated guardrails, and a tested rollback path to a compatible previous model and feature version.\n\n---"
+    },
+    {
+      "id": "d21-fallbacks-and-graceful-degradation",
+      "title": "Fallbacks, Timeouts, and Graceful Degradation",
+      "priority": "must_know",
+      "category": "model-serving",
+      "tags": [
+        "fallbacks",
+        "timeouts",
+        "reliability",
+        "degradation"
+      ],
+      "content_markdown": "**Core Concept**\n\nA serving system should define what happens when a model, feature source, vector index, or downstream service is slow or unavailable. A timeout prevents waiting indefinitely; a fallback gives a useful, safe response at reduced quality.\n\n**Why It Matters**\n\nAn unavailable personalized ranker should not necessarily take down a product page. Reliability and product behavior must be designed together.\n\n**Example**\n\nIf online features miss the freshness SLA, serve a cached candidate list or popularity-based ranking, emit a metric, and avoid silently treating stale data as fresh.\n\n**Interview-Ready Explanation**\n\n> I set explicit timeouts and define a safe fallback for each critical dependency. I prefer a measurable quality degradation over a complete outage, while making the fallback observable so it cannot become the unnoticed normal path.\n\n---",
+      "markdown": "### [CARD: Fallbacks, Timeouts, and Graceful Degradation]\n<!-- id: d21-fallbacks-and-graceful-degradation -->\n\n- **Priority:** must_know\n- **Category:** model-serving\n- **Tags:** fallbacks, timeouts, reliability, degradation\n\n**Core Concept**\n\nA serving system should define what happens when a model, feature source, vector index, or downstream service is slow or unavailable. A timeout prevents waiting indefinitely; a fallback gives a useful, safe response at reduced quality.\n\n**Why It Matters**\n\nAn unavailable personalized ranker should not necessarily take down a product page. Reliability and product behavior must be designed together.\n\n**Example**\n\nIf online features miss the freshness SLA, serve a cached candidate list or popularity-based ranking, emit a metric, and avoid silently treating stale data as fresh.\n\n**Interview-Ready Explanation**\n\n> I set explicit timeouts and define a safe fallback for each critical dependency. I prefer a measurable quality degradation over a complete outage, while making the fallback observable so it cannot become the unnoticed normal path.\n\n---"
+    },
+    {
+      "id": "d21-ml-incident-diagnosis",
+      "title": "Incident Diagnosis for ML Systems",
+      "priority": "must_know",
+      "category": "mlops",
+      "tags": [
+        "incident-response",
+        "debugging",
+        "telemetry",
+        "rollback"
+      ],
+      "content_markdown": "**Core Concept**\n\nWhen model quality or latency degrades, diagnose from the outside in: verify serving health, compare recent versions, inspect feature freshness and distribution changes, inspect prediction changes, and examine outcome slices. Stabilize first, then identify root cause.\n\n**Why It Matters**\n\nImmediate retraining is not a universal fix. The cause could be a failed feature job, schema change, traffic shift, bad deployment, index lag, or genuine population change.\n\n**Mental Model / Mechanics**\n\n```text\nAlert → assess blast radius → apply fallback/rollback if needed\n      → compare model + feature + data versions\n      → isolate changed layer → remediate → verify → document\n```\n\n**Interview-Ready Explanation**\n\n> I stabilize the user-facing system first using a fallback or rollback, then compare versions and telemetry across service, features, predictions, and outcomes. That prevents treating every ML incident as a retraining problem.\n\n---",
+      "markdown": "### [CARD: Incident Diagnosis for ML Systems]\n<!-- id: d21-ml-incident-diagnosis -->\n\n- **Priority:** must_know\n- **Category:** mlops\n- **Tags:** incident-response, debugging, telemetry, rollback\n\n**Core Concept**\n\nWhen model quality or latency degrades, diagnose from the outside in: verify serving health, compare recent versions, inspect feature freshness and distribution changes, inspect prediction changes, and examine outcome slices. Stabilize first, then identify root cause.\n\n**Why It Matters**\n\nImmediate retraining is not a universal fix. The cause could be a failed feature job, schema change, traffic shift, bad deployment, index lag, or genuine population change.\n\n**Mental Model / Mechanics**\n\n```text\nAlert → assess blast radius → apply fallback/rollback if needed\n      → compare model + feature + data versions\n      → isolate changed layer → remediate → verify → document\n```\n\n**Interview-Ready Explanation**\n\n> I stabilize the user-facing system first using a fallback or rollback, then compare versions and telemetry across service, features, predictions, and outcomes. That prevents treating every ML incident as a retraining problem.\n\n---"
+    },
+    {
+      "id": "d21-privacy-access-and-cost",
+      "title": "Privacy, Access Control, and Cost Constraints",
+      "priority": "should_know",
+      "category": "ml-system-design",
+      "tags": [
+        "privacy",
+        "access-control",
+        "cost",
+        "security"
+      ],
+      "content_markdown": "**Core Concept**\n\nData access and cost are design constraints. A system should minimize use of sensitive data, enforce authorization at the data and serving layers, retain data only as required, and make expensive model or retrieval calls observable and bounded.\n\n**Why It Matters**\n\nThe technically best model may be unacceptable if it exposes restricted data, cannot meet budget, or relies on a sensitive feature that cannot be used in production.\n\n**Interview-Ready Explanation**\n\n> I include data classification, access control, retention, and per-request cost in the initial requirements. Privacy and budget constraints shape the feasible architecture just as strongly as latency does.\n\n---",
+      "markdown": "### [CARD: Privacy, Access Control, and Cost Constraints]\n<!-- id: d21-privacy-access-and-cost -->\n\n- **Priority:** should_know\n- **Category:** ml-system-design\n- **Tags:** privacy, access-control, cost, security\n\n**Core Concept**\n\nData access and cost are design constraints. A system should minimize use of sensitive data, enforce authorization at the data and serving layers, retain data only as required, and make expensive model or retrieval calls observable and bounded.\n\n**Why It Matters**\n\nThe technically best model may be unacceptable if it exposes restricted data, cannot meet budget, or relies on a sensitive feature that cannot be used in production.\n\n**Interview-Ready Explanation**\n\n> I include data classification, access control, retention, and per-request cost in the initial requirements. Privacy and budget constraints shape the feasible architecture just as strongly as latency does.\n\n---"
+    }
+  ],
+  "key_connections_markdown": "- **Days 5–7:** Feature engineering, leakage, monitoring, experiment tracking, feature stores, and training-serving skew are operationalized here.\n- **Days 14–16:** RAG is another retrieval-and-serving system; it needs the same requirements, evaluation, monitoring, safety, and fallback discipline.\n- **Days 19–20:** SQL defines data grain and validation; Kafka/Spark/Airflow deliver freshness, idempotency, and scheduled computation.\n- **Day 22:** LLM serving applies the same latency, cost, rollout, and observability reasoning to GPU-bound generation.\n\n---",
+  "common_misconceptions_markdown": "- **Myth:** Choosing a model is the first system-design step.  \n  **Reality:** Requirements, data availability, metrics, and constraints determine the viable model and architecture.\n\n- **Myth:** Strong offline metrics prove production value.  \n  **Reality:** They are necessary screening evidence; online experiments and guardrails validate real impact.\n\n- **Myth:** A feature store automatically eliminates skew.  \n  **Reality:** It helps only when feature definitions, timing, versioning, and serving behavior are governed consistently.\n\n- **Myth:** Monitoring only means tracking accuracy.  \n  **Reality:** Inputs, service health, prediction distributions, and delayed outcomes can fail independently.\n\n- **Myth:** A canary release removes the need for rollback.  \n  **Reality:** Canary limits blast radius; rollback is still required when guardrails fail.\n\n- **Myth:** Retraining fixes every production issue.  \n  **Reality:** First isolate whether the issue is data, features, serving, indexing, deployment, or a genuine model/data shift.\n\n---",
+  "out_of_scope_markdown": "- Detailed distributed-system consensus, autoscaling, and service-mesh internals\n- Exact statistical power calculations for experiments\n- Domain-specific fairness policy and regulatory implementation\n- Detailed RAG architecture and evaluation mechanics (Days 14–16)\n- GPU kernel optimization and LLM inference internals (Day 22)\n\n---",
+  "qa_drill": [
+    {
+      "id": "d21-qa-001",
+      "question": "What should you clarify before proposing an ML architecture?",
+      "answer": "The product decision, success metric, scale, latency, freshness, cost, data availability, and safety constraints.",
+      "tags": [
+        "requirements",
+        "system-design"
+      ],
+      "linked_card_ids": [
+        "d21-requirements-and-success-metrics"
+      ]
+    },
+    {
+      "id": "d21-qa-002",
+      "question": "What makes a training feature point-in-time correct?",
+      "answer": "It uses only data that would have been available at the prediction timestamp, never information from after that time.",
+      "tags": [
+        "leakage",
+        "point-in-time"
+      ],
+      "linked_card_ids": [
+        "d21-data-labels-and-point-in-time-correctness"
+      ]
+    },
+    {
+      "id": "d21-qa-003",
+      "question": "What is training-serving skew?",
+      "answer": "A mismatch between training and production feature values, transformations, defaults, or timing that makes a deployed model receive different inputs than it was trained on.",
+      "tags": [
+        "features",
+        "training-serving-skew"
+      ],
+      "linked_card_ids": [
+        "d21-training-serving-consistency"
+      ]
+    },
+    {
+      "id": "d21-qa-004",
+      "question": "When is a hybrid serving design useful?",
+      "answer": "When stable expensive work can be precomputed, while a small online stage incorporates fresh request context or personalization.",
+      "tags": [
+        "batch",
+        "online-serving"
+      ],
+      "linked_card_ids": [
+        "d21-batch-online-and-hybrid-serving"
+      ]
+    },
+    {
+      "id": "d21-qa-005",
+      "question": "Why use retrieval, ranking, and re-ranking stages?",
+      "answer": "They spend increasing compute on progressively smaller candidate sets, balancing high recall, relevance, policy constraints, and latency.",
+      "tags": [
+        "retrieval",
+        "ranking",
+        "latency"
+      ],
+      "linked_card_ids": [
+        "d21-retrieval-ranking-reranking"
+      ]
+    },
+    {
+      "id": "d21-qa-006",
+      "question": "Name two cold-start fallbacks in a two-tower retrieval system.",
+      "answer": "Use popularity or content-based candidates for new users, and embed new-item metadata immediately so new items enter retrieval before engagement data exists.",
+      "tags": [
+        "cold-start",
+        "embeddings"
+      ],
+      "linked_card_ids": [
+        "d21-two-tower-freshness-and-cold-start"
+      ]
+    },
+    {
+      "id": "d21-qa-007",
+      "question": "Why is online experimentation needed after offline evaluation?",
+      "answer": "Offline data is shaped by historical behavior and the old system; an A/B test estimates causal impact under real users and production constraints.",
+      "tags": [
+        "evaluation",
+        "ab-testing"
+      ],
+      "linked_card_ids": [
+        "d21-offline-online-evaluation-and-guardrails",
+        "d21-ab-testing"
+      ]
+    },
+    {
+      "id": "d21-qa-008",
+      "question": "What layers should ML monitoring cover?",
+      "answer": "Service health, input freshness and distributions, prediction distributions/quality, and delayed business or label outcomes.",
+      "tags": [
+        "monitoring",
+        "drift"
+      ],
+      "linked_card_ids": [
+        "d21-monitoring-and-drift"
+      ]
+    },
+    {
+      "id": "d21-qa-009",
+      "question": "What lineage should a model registry preserve?",
+      "answer": "Code, data snapshot/query, features, hyperparameters, environment, evaluation results, artifact version, and approval/deployment status.",
+      "tags": [
+        "model-registry",
+        "reproducibility"
+      ],
+      "linked_card_ids": [
+        "d21-reproducibility-model-registry-and-lineage"
+      ]
+    },
+    {
+      "id": "d21-qa-010",
+      "question": "How do shadow, canary, and blue-green deployments differ?",
+      "answer": "Shadow receives live inputs without serving output; canary serves a small traffic share; blue-green switches traffic between two full environments.",
+      "tags": [
+        "deployment",
+        "rollback"
+      ],
+      "linked_card_ids": [
+        "d21-safe-deployment-and-rollback"
+      ]
+    },
+    {
+      "id": "d21-qa-011",
+      "question": "What should happen when an online feature source times out?",
+      "answer": "Enforce a timeout, serve a defined safe fallback such as cached or popularity-based results, and emit telemetry for the degraded path.",
+      "tags": [
+        "fallbacks",
+        "reliability"
+      ],
+      "linked_card_ids": [
+        "d21-fallbacks-and-graceful-degradation"
+      ]
+    },
+    {
+      "id": "d21-qa-012",
+      "question": "What is the first priority in an ML production incident?",
+      "answer": "Stabilize user impact with a fallback or rollback if necessary, then isolate the cause using version comparisons and telemetry.",
+      "tags": [
+        "incidents",
+        "rollback"
+      ],
+      "linked_card_ids": [
+        "d21-ml-incident-diagnosis"
+      ]
+    },
+    {
+      "id": "d21-qa-013",
+      "question": "Why are privacy and cost system-design requirements rather than afterthoughts?",
+      "answer": "They determine which data, models, retrieval paths, and serving patterns are feasible and acceptable in production.",
+      "tags": [
+        "privacy",
+        "cost"
+      ],
+      "linked_card_ids": [
+        "d21-privacy-access-and-cost"
+      ]
+    }
+  ]
+}
