@@ -47,13 +47,24 @@ python3 scripts/md_to_json.py --notes-dir notes --output-dir generated
 
 ---
 
-## Output Schema
+---
 
-Each `generated/day_XX.json` contains:
-- Frontmatter metadata (`day`, `title`, `topics`, `tags`, `priority_distribution`)
-- Top-level Markdown sections (`daily_objective_markdown`, `syllabus_markdown`, `key_connections_markdown`, etc.)
-- `cards`: List of cards with metadata (`id`, `title`, `priority`, `category`, `tags`) + `content_markdown` and complete `markdown`
-- `qa_drill`: List of Q&A drill entries with `id`, `question`, `answer`, `tags`, and `linked_card_ids`
+# Zero-Knowledge AES-256-GCM Encryption
 
-`generated/index.json` provides an aggregate manifest of all compiled days, their card counts, Q&A counts, priority distributions, and relative paths.
+The `scripts/encrypt_data.py` script encrypts or decrypts all JSON files in `generated/` using **AES-256-GCM** authenticated encryption with PBKDF2 key derivation (100,000 iterations).
+
+### Usage
+
+```bash
+# Encrypt all generated JSON files before pushing to GitHub
+python3 scripts/encrypt_data.py
+
+# Or pass password directly
+python3 scripts/encrypt_data.py --password "your_secret_password"
+
+# Decrypt files back to plaintext for local inspection
+python3 scripts/encrypt_data.py --decrypt --password "your_secret_password"
+```
+
+When files in `generated/` are encrypted, the web app will prompt for the password on sign-in and decrypt the cards in-memory using the browser's Web Crypto API. On GitHub, the files remain unreadable encrypted ciphertext.
 

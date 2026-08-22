@@ -97,7 +97,14 @@ async function loadDay(dayNumber) {
   const entry = state.index.days.find((day) => day.day === dayNumber) || state.index.days[0];
   const response = await fetch(`../generated/${entry.path}`);
   if (!response.ok) throw new Error(`Could not load Day ${entry.day}.`);
-  state.day = await response.json();
+  const rawData = await response.json();
+  if (rawData && rawData.encrypted === true) {
+    const secret = getSessionSecret();
+    if (!secret) throw new Error("Missing decryption key. Please sign in again.");
+    state.day = await decryptPayload(rawData, secret);
+  } else {
+    state.day = rawData;
+  }
   state.selectedDay = entry.day;
   state.selectedCard = 0;
   state.drillIndex = 0;
@@ -218,6 +225,59 @@ function hideAuthModal() {
   $("#auth-overlay").setAttribute("hidden", "");
 }
 
+function getSessionSecret() {
+  return sessionStorage.getItem("switch:secret") || localStorage.getItem("switch:secret") || "";
+}
+
+function base64ToBytes(b64) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+async function deriveAesKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveKey"]
+  );
+  return await crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["decrypt", "encrypt"]
+  );
+}
+
+async function decryptPayload(envelope, password) {
+  try {
+    const salt = base64ToBytes(envelope.salt);
+    const iv = base64ToBytes(envelope.iv);
+    const data = base64ToBytes(envelope.data);
+    const key = await deriveAesKey(password, salt);
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: iv },
+      key,
+      data
+    );
+    return JSON.parse(new TextDecoder().decode(decrypted));
+  } catch (err) {
+    throw new Error("Decryption failed. Please check your credentials.");
+  }
+}
+
 async function handleLogin(event) {
   event.preventDefault();
   const username = $("#auth-username").value.trim();
@@ -230,12 +290,18 @@ async function handleLogin(event) {
     errorEl.setAttribute("hidden", "");
     if (remember) {
       localStorage.setItem("switch:auth", "true");
+      localStorage.setItem("switch:secret", password);
     } else {
       sessionStorage.setItem("switch:auth", "true");
+      sessionStorage.setItem("switch:secret", password);
     }
     hideAuthModal();
-    if (!state.index) {
+    try {
       await loadCourseData();
+    } catch (err) {
+      errorEl.removeAttribute("hidden");
+      errorEl.textContent = err.message || "Failed to decrypt study data.";
+      showAuthModal();
     }
   } else {
     errorEl.removeAttribute("hidden");
@@ -247,7 +313,9 @@ async function handleLogin(event) {
 
 function handleLock() {
   sessionStorage.removeItem("switch:auth");
+  sessionStorage.removeItem("switch:secret");
   localStorage.removeItem("switch:auth");
+  localStorage.removeItem("switch:secret");
   showAuthModal();
 }
 
@@ -255,10 +323,18 @@ async function loadCourseData() {
   try {
     const response = await fetch("../generated/index.json");
     if (!response.ok) throw new Error("Could not load generated/index.json.");
-    state.index = await response.json();
+    const rawIndex = await response.json();
+    if (rawIndex && rawIndex.encrypted === true) {
+      const secret = getSessionSecret();
+      if (!secret) throw new Error("Missing decryption key. Please sign in.");
+      state.index = await decryptPayload(rawIndex, secret);
+    } else {
+      state.index = rawIndex;
+    }
     await loadDay(state.selectedDay);
   } catch (error) {
-    $("#workspace").innerHTML = `<div class="empty"><h2>Couldn’t load your study data.</h2><p>${escapeHtml(error.message)} Run the site through a local server from the project root, not by opening this file directly.</p></div>`;
+    $("#workspace").innerHTML = `<div class="empty"><h2>Couldn’t load your study data.</h2><p>${escapeHtml(error.message)}</p></div>`;
+    throw error;
   }
 }
 

@@ -21,3 +21,6 @@ venv/
 
 # Temporary build files
 flashcards-build-*
+notes/
+*.pages
+ML Engineer Interview Syllabus.md
