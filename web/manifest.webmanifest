@@ -1,0 +1,16 @@
+{
+  "name": "Switch — MLE Flashcards",
+  "short_name": "Switch",
+  "description": "A focused MLE interview study companion.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8f7f4",
+  "theme_color": "#175b49",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
