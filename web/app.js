@@ -8,6 +8,7 @@ const state = {
   query: "",
   drillIndex: 0,
   revealed: false,
+  cardListOpen: false,
   completed: new Set(JSON.parse(localStorage.getItem("switch:completed") || "[]")),
   bookmarked: new Set(JSON.parse(localStorage.getItem("switch:bookmarked") || "[]")),
 };
@@ -153,14 +154,15 @@ function learnHtml() {
   const filters = [["all", "All"], ["must_know", "Must know"], ["should_know", "Should know"], ["nice_to_know", "Nice to know"]];
   const listHtml = cards.length ? cards.map((item, index) => `<button class="card-nav-button ${index === state.selectedCard ? "active" : ""} ${state.completed.has(item.id) ? "done" : ""}" data-card-index="${index}"><span class="priority-dot ${item.priority}"></span><span><span class="card-title">${escapeHtml(item.title)}</span><span class="card-category">${escapeHtml(item.category.replaceAll("-", " "))}</span></span></button>`).join("") : `<p class="empty">No cards match this filter.</p>`;
   const content = card ? `<article class="study-card"><header class="study-card-header"><div><p class="card-count">CARD ${String(state.selectedCard + 1).padStart(2, "0")} OF ${String(cards.length).padStart(2, "0")}</p><h3>${escapeHtml(card.title)}</h3></div><button class="bookmark-button ${state.bookmarked.has(card.id) ? "active" : ""}" data-bookmark="${card.id}" aria-label="Bookmark card">${state.bookmarked.has(card.id) ? "★" : "☆"}</button></header><div class="card-tags">${card.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}</div><div class="markdown">${markdownToHtml(card.content_markdown)}</div><footer class="card-actions"><button class="button" data-previous ${state.selectedCard === 0 ? "disabled" : ""}>← Previous</button><button class="button primary" data-complete="${card.id}">${state.completed.has(card.id) ? "Completed ✓" : "Mark complete"}</button><button class="button" data-next ${state.selectedCard === cards.length - 1 ? "disabled" : ""}>Next →</button></footer></article>` : "";
-  return `${controlsHtml()}<div class="controls"><label class="search"><input id="card-search" value="${escapeHtml(state.query)}" placeholder="Search this day" aria-label="Search cards" /></label><div class="filter-row">${filters.map(([value, label]) => `<button class="filter-chip ${state.filter === value ? "active" : ""}" data-filter="${value}">${label}</button>`).join("")}</div></div><div class="study-grid"><section class="card-list"><div class="card-list-header">Cards <span>${cards.length} shown</span></div><div class="card-list-items">${listHtml}</div></section>${content}</div>`;
+  const listCollapsed = state.cardListOpen ? "" : "collapsed";
+  return `${controlsHtml()}<div class="controls"><label class="search"><input id="card-search" value="${escapeHtml(state.query)}" placeholder="Search this day" aria-label="Search cards" /></label><div class="filter-row">${filters.map(([value, label]) => `<button class="filter-chip ${state.filter === value ? "active" : ""}" data-filter="${value}">${label}</button>`).join("")}</div></div><div class="study-grid"><section class="card-list ${listCollapsed}"><button type="button" class="card-list-header" data-toggle-list><span class="card-list-title">Jump to card <span>${cards.length} shown</span></span><span class="card-list-toggle" aria-hidden="true">▾</span></button><div class="card-list-items">${listHtml}</div></section>${content}</div>`;
 }
 
 function drillHtml() {
   const drill = state.day.qa_drill[state.drillIndex];
   if (!drill) return `<div class="empty">No drill questions are available for this day.</div>`;
   const links = drill.linked_card_ids.map((id) => { const card = state.day.cards.find((item) => item.id === id); return `<button data-linked-card="${id}">${escapeHtml(card?.title || id)}</button>`; }).join("");
-  return `${controlsHtml()}<article class="drill-card"><div class="drill-meta"><span>ACTIVE RECALL</span><span>${String(state.drillIndex + 1).padStart(2, "0")} / ${String(state.day.qa_drill.length).padStart(2, "0")}</span></div><h3 class="drill-question">${escapeHtml(drill.question)}</h3><div class="drill-answer" ${state.revealed ? "" : "hidden"}><strong>Answer</strong><br>${inlineMarkdown(drill.answer)}</div><div class="drill-actions"><button class="button" data-drill-previous ${state.drillIndex === 0 ? "disabled" : ""}>← Previous</button><button class="button primary" data-reveal>${state.revealed ? "Hide answer" : "Reveal answer"}</button><button class="button" data-drill-next ${state.drillIndex === state.day.qa_drill.length - 1 ? "disabled" : ""}>Next →</button></div><div class="linked-cards">Linked learning cards: ${links}</div></article>`;
+  return `${controlsHtml()}<article class="drill-card"><div class="drill-meta"><span>ACTIVE RECALL</span><span>${String(state.drillIndex + 1).padStart(2, "0")} / ${String(state.day.qa_drill.length).padStart(2, "0")}</span></div><h3 class="drill-question" data-reveal role="button" tabindex="0">${escapeHtml(drill.question)}${state.revealed ? "" : `<span class="drill-hint">Tap to reveal answer</span>`}</h3><div class="drill-answer" ${state.revealed ? "" : "hidden"}><strong>Answer</strong><br>${inlineMarkdown(drill.answer)}</div><div class="drill-actions"><button class="button" data-drill-previous ${state.drillIndex === 0 ? "disabled" : ""}>← Previous</button><button class="button primary" data-reveal>${state.revealed ? "Hide answer" : "Reveal answer"}</button><button class="button" data-drill-next ${state.drillIndex === state.day.qa_drill.length - 1 ? "disabled" : ""}>Next →</button></div><div class="linked-cards">Linked learning cards: ${links}</div></article>`;
 }
 
 function overviewHtml() {
@@ -171,23 +173,59 @@ function overviewHtml() {
 function bindWorkspaceEvents() {
   document.querySelectorAll("[data-mode]").forEach((button) => button.addEventListener("click", () => { state.mode = button.dataset.mode; render(); }));
   document.querySelectorAll("[data-filter]").forEach((button) => button.addEventListener("click", () => { state.filter = button.dataset.filter; state.selectedCard = 0; render(); }));
-  document.querySelectorAll("[data-card-index]").forEach((button) => button.addEventListener("click", () => { state.selectedCard = Number(button.dataset.cardIndex); render(); }));
+  document.querySelectorAll("[data-card-index]").forEach((button) => button.addEventListener("click", () => { state.selectedCard = Number(button.dataset.cardIndex); state.cardListOpen = false; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }));
+  document.querySelector("[data-toggle-list]")?.addEventListener("click", () => { state.cardListOpen = !state.cardListOpen; render(); });
   $("#card-search")?.addEventListener("input", (event) => { state.query = event.target.value; state.selectedCard = 0; render(); });
   document.querySelector("[data-previous]")?.addEventListener("click", () => { state.selectedCard -= 1; render(); });
   document.querySelector("[data-next]")?.addEventListener("click", () => { state.selectedCard += 1; render(); });
   document.querySelector("[data-complete]")?.addEventListener("click", (event) => { const id = event.currentTarget.dataset.complete; state.completed.has(id) ? state.completed.delete(id) : state.completed.add(id); saveState(); render(); });
   document.querySelector("[data-bookmark]")?.addEventListener("click", (event) => { const id = event.currentTarget.dataset.bookmark; state.bookmarked.has(id) ? state.bookmarked.delete(id) : state.bookmarked.add(id); saveState(); render(); });
-  document.querySelector("[data-reveal]")?.addEventListener("click", () => { state.revealed = !state.revealed; render(); });
+  document.querySelectorAll("[data-reveal]").forEach((el) => el.addEventListener("click", () => { state.revealed = !state.revealed; render(); }));
   document.querySelector("[data-drill-previous]")?.addEventListener("click", () => { state.drillIndex -= 1; state.revealed = false; render(); });
   document.querySelector("[data-drill-next]")?.addEventListener("click", () => { state.drillIndex += 1; state.revealed = false; render(); });
   document.querySelectorAll("[data-linked-card]").forEach((button) => button.addEventListener("click", () => { const index = state.day.cards.findIndex((card) => card.id === button.dataset.linkedCard); state.mode = "learn"; state.filter = "all"; state.query = ""; state.selectedCard = Math.max(0, index); render(); }));
 }
 
+function renderTabbar() {
+  document.querySelectorAll("#tabbar .tab").forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.mode === state.mode);
+  });
+}
+
 function render() {
-  renderSidebar(); renderHeader();
+  renderSidebar(); renderHeader(); renderTabbar();
   const body = state.mode === "learn" ? learnHtml() : state.mode === "drill" ? drillHtml() : overviewHtml();
   $("#workspace").innerHTML = `${heroHtml()}${body}`;
   bindWorkspaceEvents();
+}
+
+function swipeNavigate(direction) {
+  // Drill only: -1 = swiped right (previous), 1 = swiped left (next).
+  if (state.mode !== "drill" || !state.day) return;
+  const total = state.day.qa_drill.length;
+  const next = state.drillIndex + direction;
+  if (next >= 0 && next < total) { state.drillIndex = next; state.revealed = false; render(); }
+}
+
+function bindGestures() {
+  const surface = $("#workspace");
+  let startX = 0, startY = 0, startT = 0, tracking = false;
+  surface.addEventListener("touchstart", (event) => {
+    if (event.touches.length !== 1 || state.mode !== "drill") { tracking = false; return; }
+    tracking = true;
+    startX = event.touches[0].clientX;
+    startY = event.touches[0].clientY;
+    startT = Date.now();
+  }, { passive: true });
+  surface.addEventListener("touchend", (event) => {
+    if (!tracking) return;
+    tracking = false;
+    const dx = event.changedTouches[0].clientX - startX;
+    const dy = event.changedTouches[0].clientY - startY;
+    if (Date.now() - startT < 600 && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 2) {
+      swipeNavigate(dx < 0 ? 1 : -1);
+    }
+  }, { passive: true });
 }
 
 function openSidebar() { $("#sidebar").classList.add("open"); $("#sidebar-backdrop").classList.add("open"); }
@@ -344,6 +382,14 @@ async function init() {
   $("#sidebar-backdrop").addEventListener("click", closeSidebar);
   $("#auth-form").addEventListener("submit", handleLogin);
   $("#auth-lock").addEventListener("click", handleLock);
+
+  document.querySelectorAll("#tabbar .tab").forEach((tab) => tab.addEventListener("click", () => {
+    if (state.mode === tab.dataset.mode) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    state.mode = tab.dataset.mode;
+    render();
+    window.scrollTo({ top: 0 });
+  }));
+  bindGestures();
 
   $("#theme-toggle").addEventListener("click", () => {
     const dark = document.documentElement.dataset.theme !== "dark";
