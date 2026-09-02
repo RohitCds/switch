@@ -573,14 +573,17 @@ button {
 
   .app-shell { grid-template-columns: 1fr; }
   .sidebar {
-    position: fixed; left: 0; transform: translateX(-105%);
+    position: fixed; top: 0; left: 0; bottom: 0;
+    height: 100vh; height: 100dvh;
+    transform: translateX(-105%);
     width: min(86vw, 320px); box-shadow: var(--shadow-lift);
     transition: transform .28s var(--ease);
+    z-index: 100;
   }
   .sidebar.open { transform: translateX(0); }
   .sidebar-close, .menu-button { display: grid; }
   .sidebar-close { margin-left: auto; width: 32px; height: 32px; font-size: var(--t-md); }
-  .sidebar-backdrop.open { position: fixed; inset: 0; display: block; background: rgba(5, 10, 8, .42); z-index: 15; animation: fade .22s var(--ease); }
+  .sidebar-backdrop.open { position: fixed; inset: 0; display: block; background: rgba(5, 10, 8, .42); z-index: 90; animation: fade .22s var(--ease); }
   @keyframes fade { from { opacity: 0; } }
 
   .day-hero { display: block; }
