@@ -29,8 +29,32 @@
           </div>
           <button class="icon-button sidebar-close" id="close-sidebar" aria-label="Close course navigation">×</button>
         </div>
+        <div class="library-tabs" role="tablist" aria-label="Library">
+          <button role="tab" data-library="core" aria-selected="true">Core</button>
+          <button role="tab" data-library="tracks" aria-selected="false">Tracks</button>
+          <button role="tab" data-library="roles" aria-selected="false">Roles</button>
+        </div>
         <div class="course-summary" id="course-summary"></div>
-        <nav class="day-list" id="day-list" aria-label="Study days"></nav>
+        <nav class="day-list" id="day-list" aria-label="Library"></nav>
+
+        <div class="reader-controls" role="group" aria-label="Reading preferences">
+          <p class="eyebrow">Reading</p>
+          <div class="reader-row">
+            <span class="reader-label">Text size</span>
+            <div class="seg" role="group" aria-label="Text size">
+              <button data-text-size="s" aria-label="Small text">S</button>
+              <button data-text-size="m" aria-label="Medium text">M</button>
+              <button data-text-size="l" aria-label="Large text">L</button>
+            </div>
+          </div>
+          <button class="reader-toggle" id="toggle-focus" aria-pressed="false">
+            <span>Focus mode</span><span class="switch" aria-hidden="true"></span>
+          </button>
+          <button class="reader-toggle" id="toggle-primers" aria-pressed="true">
+            <span>Show primers</span><span class="switch" aria-hidden="true"></span>
+          </button>
+          <button class="reader-lock" id="auth-lock">Lock workspace</button>
+        </div>
       </aside>
 
       <main class="main-content">
@@ -40,8 +64,10 @@
             <p class="eyebrow" id="topbar-label">LOADING COURSE</p>
             <p class="topbar-title" id="topbar-title">Preparing your study space…</p>
           </div>
-          <button class="icon-button" id="auth-lock" aria-label="Lock workspace" title="Lock workspace">🔒</button>
-          <button class="icon-button" id="theme-toggle" aria-label="Switch color theme" title="Switch color theme">◐</button>
+          <div class="topbar-actions">
+            <button class="icon-button" id="open-search" aria-label="Search all cards" title="Search all cards (press /)">⌕</button>
+            <button class="icon-button" id="theme-toggle" aria-label="Switch color theme" title="Switch color theme">◐</button>
+          </div>
         </header>
 
         <div class="workspace" id="workspace" aria-live="polite">
@@ -58,6 +84,10 @@
           <button class="tab" data-mode="drill" aria-label="Drill">
             <span class="tab-icon" aria-hidden="true">⚡️</span><span class="tab-label">Drill</span>
           </button>
+          <button class="tab" data-mode="review" aria-label="Review">
+            <span class="tab-icon" aria-hidden="true">🔁</span><span class="tab-label">Review</span>
+            <span class="tab-badge" id="review-badge" hidden>0</span>
+          </button>
           <button class="tab" data-mode="overview" aria-label="Notes">
             <span class="tab-icon" aria-hidden="true">🗒️</span><span class="tab-label">Notes</span>
           </button>
@@ -65,6 +95,18 @@
       </main>
     </div>
     <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <div class="search-overlay" id="search-overlay" hidden>
+      <div class="search-panel" role="dialog" aria-modal="true" aria-label="Search all cards">
+        <div class="search-field">
+          <span aria-hidden="true">⌕</span>
+          <input type="search" id="global-search" placeholder="Search all cards…" autocomplete="off"
+                 autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Search all cards" />
+          <button class="icon-button search-close" id="close-search" aria-label="Close search">×</button>
+        </div>
+        <div class="search-results" id="search-results"></div>
+      </div>
+    </div>
 
     <div class="auth-overlay" id="auth-overlay" hidden>
       <div class="auth-card">

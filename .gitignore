@@ -22,6 +22,7 @@ venv/
 # Temporary build files
 flashcards-build-*
 notes/
+roles/
 *.pages
 *.icon
 *.icon/
